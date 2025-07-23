@@ -236,6 +236,7 @@ func (s *UsageMetricsStore) List(
 	    usage_metric_date BETWEEN $1 AND $2
 	GROUP BY usage_metric_space_id
 	ORDER BY 
+		usage_metric_space_id ASC,
 		usage_metric_bandwidth_out DESC,
 		usage_metric_bandwidth_in DESC,
 		usage_metric_storage_total DESC,
