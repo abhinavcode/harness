@@ -59,6 +59,7 @@ import (
 // WireSet provides a wire set for this package.
 var WireSet = wire.NewSet(
 	ProvideRouter,
+	ProvideLLMRouter,
 	api.WireSet,
 )
 
@@ -112,8 +113,9 @@ func ProvideRouter(
 	registryRouter router.AppRouter,
 	usageSender usage.Sender,
 	lfsCtrl *lfs.Controller,
+	llmRouter *LLMRoute,
 ) *Router {
-	routers := make([]Interface, 4)
+	routers := make([]Interface, 5)
 
 	gitRoutingHost := GetGitRoutingHost(appCtx, urlProvider)
 	gitHandler := NewGitHandler(
@@ -143,5 +145,15 @@ func ProvideRouter(
 	)
 	routers[3] = NewWebRouter(webHandler)
 
+	// Use the injected LLM router
+	routers[4] = llmRouter
+
 	return NewRouter(routers)
+}
+
+// ProvideLLMRouter provides the LLM router for dependency injection.
+func ProvideLLMRouter() *LLMRouter {
+	// Use the dedicated LLM handler
+	llmHandler := NewLLMHandler()
+	return NewLLMRouter(llmHandler, "/api/v1/llm")
 }
