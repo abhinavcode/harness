@@ -17,7 +17,8 @@ package token
 import (
 	"context"
 	"fmt"
-	"math/rand/v2"
+	v1 "math/rand"
+	v2 "math/rand/v2"
 	"time"
 
 	"github.com/harness/gitness/app/jwt"
@@ -123,7 +124,12 @@ func CreateRemoteAuthToken(
 
 func GenerateIdentifier(prefix string) string {
 	//nolint:gosec // math/rand is sufficient for this use case
-	r := rand.IntN(0x10000)
+	r := v2.IntN(0x10000)
+	return fmt.Sprintf("%s-%08x-%04x", prefix, time.Now().Unix(), r)
+}
+
+func GenerateIdentifierV1(prefix string) string {
+	r := v1.Intn(0x10000)
 	return fmt.Sprintf("%s-%08x-%04x", prefix, time.Now().Unix(), r)
 }
 

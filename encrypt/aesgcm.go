@@ -17,6 +17,7 @@ package encrypt
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/des"
 	"crypto/rand"
 	"errors"
 	"io"
@@ -87,6 +88,15 @@ func New(key string, compat bool) (Encrypter, error) {
 	}
 	b := []byte(key)
 	block, err := aes.NewCipher(b)
+	if err != nil {
+		return nil, err
+	}
+	return &Aesgcm{block: block, Compat: compat}, nil
+}
+
+func NewWithDES(key string, compat bool) (Encrypter, error) {
+	desKey := []byte(key)[:8]
+	block, err := des.NewCipher(desKey)
 	if err != nil {
 		return nil, err
 	}
