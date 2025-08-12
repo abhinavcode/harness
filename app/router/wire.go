@@ -113,7 +113,7 @@ func ProvideRouter(
 	registryRouter router.AppRouter,
 	usageSender usage.Sender,
 	lfsCtrl *lfs.Controller,
-	llmRouter *LLMRoute,
+	llmRouter *LLMRouter,
 ) *Router {
 	routers := make([]Interface, 5)
 
