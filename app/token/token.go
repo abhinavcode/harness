@@ -127,11 +127,6 @@ func GenerateIdentifier(prefix string) string {
 	return fmt.Sprintf("%s-%08x-%04x", prefix, time.Now().Unix(), r)
 }
 
-func GenerateIdentifierV1(prefix string) string {
-	r := rand.Intn(0x10000)
-	return fmt.Sprintf("%s-%08x-%04x", prefix, time.Now().Unix(), r)
-}
-
 func create(
 	ctx context.Context,
 	tokenStore store.TokenStore,

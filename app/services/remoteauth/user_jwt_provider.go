@@ -51,7 +51,6 @@ func (s LocalService) GenerateToken(
 	_ enum.PrincipalType,
 	_ string,
 ) (string, error) {
-	// Move to V1 identifier for JWT token
 	identifier := token.GenerateIdentifier("remoteAuth")
 
 	principal, err := s.principalStore.Find(ctx, principalID)
