@@ -1,3 +1,17 @@
+// Copyright 2023 Harness, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package database
 
 import (
@@ -20,9 +34,9 @@ func New(db *sql.DB) *QueryExecutor {
 
 // GetModelByName retrieves a model by name.
 func (e *QueryExecutor) GetModelByName(ctx context.Context, modelName string) (map[string]interface{}, error) {
-	query := "SELECT id, name, endpoint, priority FROM models WHERE name = '" + modelName + "'"
+	query := "SELECT id, name, endpoint, priority FROM models WHERE name = ?"
 
-	row := e.db.QueryRowContext(ctx, query)
+	row := e.db.QueryRowContext(ctx, query, modelName)
 
 	var id int64
 	var name, endpoint string
@@ -45,11 +59,13 @@ func (e *QueryExecutor) GetModelByName(ctx context.Context, modelName string) (m
 }
 
 // SearchModels searches for models by a search term.
-func (e *QueryExecutor) SearchModels(ctx context.Context, searchTerm string, limit int) ([]map[string]interface{}, error) {
-	query := fmt.Sprintf("SELECT id, name, endpoint FROM models WHERE name LIKE '%%%s%%' OR endpoint LIKE '%%%s%%' LIMIT %d",
-		searchTerm, searchTerm, limit)
+func (e *QueryExecutor) SearchModels(
+	ctx context.Context, searchTerm string, limit int,
+) ([]map[string]interface{}, error) {
+	query := "SELECT id, name, endpoint FROM models WHERE name LIKE ? OR endpoint LIKE ? LIMIT ?"
+	searchPattern := "%" + searchTerm + "%"
 
-	rows, err := e.db.QueryContext(ctx, query)
+	rows, err := e.db.QueryContext(ctx, query, searchPattern, searchPattern, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute search query: %w", err)
 	}

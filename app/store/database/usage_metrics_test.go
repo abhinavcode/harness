@@ -218,19 +218,19 @@ func TestUsageMetricsStore_List(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(metrics))
 
-	// list use desc order so first row should be spaceID = 2
-	require.Equal(t, int64(2), metrics[0].RootSpaceID)
-	require.Equal(t, int64(200), metrics[0].BandwidthOut)
-	require.Equal(t, int64(200), metrics[0].BandwidthIn)
-	require.Equal(t, int64(200), metrics[0].StorageTotal)
-	require.Equal(t, int64(200), metrics[0].LFSStorageTotal)
-	require.Equal(t, int64(21), metrics[0].Pushes)
+	// list uses space_id ASC as primary sort, so first row should be spaceID = 1
+	require.Equal(t, int64(1), metrics[0].RootSpaceID)
+	require.Equal(t, int64(150), metrics[0].BandwidthOut)
+	require.Equal(t, int64(150), metrics[0].BandwidthIn)
+	require.Equal(t, int64(50), metrics[0].StorageTotal)
+	require.Equal(t, int64(50), metrics[0].LFSStorageTotal)
+	require.Equal(t, int64(42), metrics[0].Pushes)
 
-	// second row should be spaceID = 1
-	require.Equal(t, int64(1), metrics[1].RootSpaceID)
-	require.Equal(t, int64(150), metrics[1].BandwidthOut)
-	require.Equal(t, int64(150), metrics[1].BandwidthIn)
-	require.Equal(t, int64(50), metrics[1].StorageTotal)
-	require.Equal(t, int64(50), metrics[1].LFSStorageTotal)
-	require.Equal(t, int64(42), metrics[1].Pushes)
+	// second row should be spaceID = 2
+	require.Equal(t, int64(2), metrics[1].RootSpaceID)
+	require.Equal(t, int64(200), metrics[1].BandwidthOut)
+	require.Equal(t, int64(200), metrics[1].BandwidthIn)
+	require.Equal(t, int64(200), metrics[1].StorageTotal)
+	require.Equal(t, int64(200), metrics[1].LFSStorageTotal)
+	require.Equal(t, int64(21), metrics[1].Pushes)
 }
