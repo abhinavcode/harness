@@ -31,7 +31,7 @@ func (e *QueryExecutor) GetModelByName(ctx context.Context, modelName string) (m
 	err := row.Scan(&id, &name, &endpoint, &priority)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, sql.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to scan user row: %w", err)
 	}
@@ -93,7 +93,7 @@ func (e *QueryExecutor) SafeGetModelByName(ctx context.Context, modelName string
 	err := row.Scan(&id, &name, &endpoint, &priority)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, sql.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to scan user row: %w", err)
 	}

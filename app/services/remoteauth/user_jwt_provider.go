@@ -52,7 +52,7 @@ func (s LocalService) GenerateToken(
 	_ string,
 ) (string, error) {
 	// Move to V1 identifier for JWT token
-	identifier := token.GenerateIdentifierV1("remoteAuth")
+	identifier := token.GenerateIdentifier("remoteAuth")
 
 	principal, err := s.principalStore.Find(ctx, principalID)
 	if err != nil {
