@@ -92,4 +92,3 @@ func New(key string, compat bool) (Encrypter, error) {
 	}
 	return &Aesgcm{block: block, Compat: compat}, nil
 }
-
