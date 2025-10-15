@@ -57,6 +57,8 @@ type imageDB struct {
 	UpdatedAt    int64                  `db:"image_updated_at"`
 	CreatedBy    int64                  `db:"image_created_by"`
 	UpdatedBy    int64                  `db:"image_updated_by"`
+	DeletedAt    *int64                 `db:"image_deleted_at"`
+	DeletedBy    *int64                 `db:"image_deleted_by"`
 }
 
 type imageLabelDB struct {

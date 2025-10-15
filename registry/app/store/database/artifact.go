@@ -59,6 +59,8 @@ type artifactDB struct {
 	UpdatedAt int64            `db:"artifact_updated_at"`
 	CreatedBy int64            `db:"artifact_created_by"`
 	UpdatedBy int64            `db:"artifact_updated_by"`
+	DeletedAt *int64           `db:"artifact_deleted_at"`
+	DeletedBy *int64           `db:"artifact_deleted_by"`
 }
 
 func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version string) (*types.Artifact, error) {

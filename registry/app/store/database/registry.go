@@ -73,6 +73,8 @@ type registryDB struct {
 	UpdatedAt       int64                 `db:"registry_updated_at"`
 	CreatedBy       int64                 `db:"registry_created_by"`
 	UpdatedBy       int64                 `db:"registry_updated_by"`
+	DeletedAt       *int64                `db:"registry_deleted_at"`
+	DeletedBy       *int64                `db:"registry_deleted_by"`
 }
 
 type registryNameID struct {
