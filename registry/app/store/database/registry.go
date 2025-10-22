@@ -519,6 +519,11 @@ func (r registryDao) Delete(ctx context.Context, parentID int64, name string) (e
 	return nil
 }
 
+// SoftDelete is not implemented in gitness (only in enterprise harness-code).
+func (r registryDao) SoftDelete(ctx context.Context, parentID int64, name string) error {
+	return fmt.Errorf("soft delete not implemented in open-source gitness")
+}
+
 func (r registryDao) Update(ctx context.Context, registry *types.Registry) (err error) {
 	var sqlQuery = " UPDATE registries SET " + util.GetSetDBKeys(registryDB{}, "registry_id") +
 		" WHERE registry_id = :registry_id "
