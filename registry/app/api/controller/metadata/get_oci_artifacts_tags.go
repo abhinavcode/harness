@@ -58,7 +58,7 @@ func (c *APIController) GetOciArtifactTags(
 	}
 
 	image := string(r.Artifact)
-	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, image)
+	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, image, false)
 	if err != nil {
 		return getOCIArtifacts404Error(ctx, fmt.Errorf("failed to get image by name: [%s], error: %w", image, err))
 	}

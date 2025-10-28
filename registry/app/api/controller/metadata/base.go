@@ -203,6 +203,7 @@ func (c *APIController) setUpstreamProxyIDs(
 		0,
 		"",
 		"",
+		nil,
 	)
 
 	if repos == nil || err != nil {
@@ -256,7 +257,7 @@ func (c *APIController) assertNoCycleOnAddHelper(ctx context.Context,
 }
 
 func (c *APIController) getUpstreamProxyIDs(ctx context.Context, registryID int64) ([]int64, error) {
-	registry, err := c.RegistryRepository.Get(ctx, registryID)
+	registry, err := c.RegistryRepository.Get(ctx, registryID, false)
 	if err != nil {
 		return nil, err
 	}

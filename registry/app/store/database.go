@@ -398,19 +398,19 @@ type RegistryMetadata struct {
 
 type RegistryRepository interface {
 	// Get the repository specified by ID
-	Get(ctx context.Context, id int64) (repository *types.Registry, err error)
+	Get(ctx context.Context, id int64, includeSoftDeleted bool) (repository *types.Registry, err error)
 	// GetByName gets the repository specified by name
 	GetByIDIn(
-		ctx context.Context, ids []int64,
+		ctx context.Context, ids []int64, includeSoftDeleted bool,
 	) (registries *[]types.Registry, err error)
 	// GetByName gets the repository specified by parent id and name
 	GetByParentIDAndName(
 		ctx context.Context, parentID int64,
-		name string,
+		name string, includeSoftDeleted bool,
 	) (registry *types.Registry, err error)
 	GetByRootParentIDAndName(
 		ctx context.Context, parentID int64,
-		name string,
+		name string, includeSoftDeleted bool,
 	) (registry *types.Registry, err error)
 	// Create a repository
 	Create(ctx context.Context, repository *types.Registry) (id int64, err error)
@@ -429,11 +429,12 @@ type RegistryRepository interface {
 		offset int,
 		search string,
 		repoType string,
+		filters *types.FilterParams,
 	) (repos *[]RegistryMetadata, err error)
 
 	CountAll(
 		ctx context.Context, parentIDs []int64, packageTypes []string,
-		search string, repoType string,
+		search string, repoType string, includeSoftDeleted bool,
 	) (count int64, err error)
 
 	FetchUpstreamProxyIDs(
@@ -468,16 +469,16 @@ type RegistryBlobRepository interface {
 
 type ImageRepository interface {
 	// Get an Artifact specified by ID
-	Get(ctx context.Context, id int64) (*types.Image, error)
+	Get(ctx context.Context, id int64, includeSoftDeleted bool) (*types.Image, error)
 	// Get an Artifact specified by Artifact Name
 	GetByName(
 		ctx context.Context, registryID int64,
-		name string,
+		name string, includeSoftDeleted bool,
 	) (*types.Image, error)
 
 	GetByNameAndType(
 		ctx context.Context, registryID int64,
-		name string, artifactType *artifact.ArtifactType,
+		name string, artifactType *artifact.ArtifactType, includeSoftDeleted bool,
 	) (*types.Image, error)
 
 	// Get the Labels specified by Parent ID and Repo
@@ -494,7 +495,7 @@ type ImageRepository interface {
 	// Get an Artifact specified by Artifact Name
 	GetByRepoAndName(
 		ctx context.Context, parentID int64,
-		repo string, name string,
+		repo string, name string, includeSoftDeleted bool,
 	) (*types.Image, error)
 	// Create an Image
 	CreateOrUpdate(ctx context.Context, image *types.Image) error
@@ -509,10 +510,10 @@ type ImageRepository interface {
 
 type ArtifactRepository interface {
 	// Get an Artifact specified by ID
-	GetByName(ctx context.Context, imageID int64, version string) (*types.Artifact, error)
+	GetByName(ctx context.Context, imageID int64, version string, includeSoftDeleted bool) (*types.Artifact, error)
 	// Get an Artifact specified by RegistryID, image name and version
 	GetByRegistryImageAndVersion(
-		ctx context.Context, registryID int64, image string, version string,
+		ctx context.Context, registryID int64, image string, version string, includeSoftDeleted bool,
 	) (*types.Artifact, error)
 	// Create an Artifact
 	CreateOrUpdate(ctx context.Context, artifact *types.Artifact) (int64, error)

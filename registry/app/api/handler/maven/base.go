@@ -97,7 +97,7 @@ func (h *Handler) GetArtifactInfo(r *http.Request, remoteSupport bool) (pkg.Mave
 		return pkg.MavenArtifactInfo{}, errcode.ErrCodeRootNotFound.WithDetail(err)
 	}
 
-	registry, err := h.Controller.DBStore.RegistryDao.GetByRootParentIDAndName(ctx, rootSpace.ID, registryIdentifier)
+	registry, err := h.Controller.DBStore.RegistryDao.GetByRootParentIDAndName(ctx, rootSpace.ID, registryIdentifier, false)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(
 			"registry %s not found for root: %s. Reason: %s", registryIdentifier, rootSpace.Identifier, err,

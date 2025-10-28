@@ -105,7 +105,7 @@ func (c *localRegistry) GetPackageMetadata(
 	ctx context.Context,
 	info pythontype.ArtifactInfo,
 ) (pythontype.PackageMetadata, error) {
-	registry, err := c.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier)
+	registry, err := c.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, false)
 	packageMetadata := pythontype.PackageMetadata{}
 	packageMetadata.Name = info.Image
 	packageMetadata.Files = []pythontype.File{}

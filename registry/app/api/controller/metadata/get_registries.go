@@ -148,6 +148,7 @@ func (c *APIController) GetAllRegistries(
 		regInfo.offset,
 		regInfo.searchTerm,
 		repoType,
+		nil,
 	)
 	count, _ = c.RegistryRepository.CountAll(
 		ctx,

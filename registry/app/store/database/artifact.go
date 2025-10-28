@@ -63,10 +63,15 @@ type artifactDB struct {
 	DeletedBy *int64           `db:"artifact_deleted_by"`
 }
 
-func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version string) (*types.Artifact, error) {
+func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version string, includeSoftDeleted bool) (*types.Artifact, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts").
-		Where("artifact_image_id = ? AND artifact_version = ?", imageID, version)
+		Where("artifact_image_id = ?", imageID).
+		Where("artifact_version = ?", version)
+
+	if !includeSoftDeleted {
+		q = q.Where("artifact_deleted_at IS NULL")
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -83,14 +88,16 @@ func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version strin
 }
 
 func (a ArtifactDao) GetByRegistryImageAndVersion(
-	ctx context.Context, registryID int64, image string, version string,
+	ctx context.Context, registryID int64, image string, version string, includeSoftDeleted bool,
 ) (*types.Artifact, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Where("i.image_registry_id = ?", registryID).
-		Where("i.image_name = ?", image).
-		Where("a.artifact_version = ?", version)
+		Where("i.image_registry_id = ? AND i.image_name = ? AND a.artifact_version = ?", registryID, image, version)
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL")
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {

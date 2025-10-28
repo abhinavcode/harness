@@ -73,7 +73,7 @@ func (c *APIController) GetDockerArtifactDetails(
 	version := string(r.Version)
 	manifestDigest := string(r.Params.Digest)
 
-	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier)
+	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
 
 	if err != nil {
 		return artifact.GetDockerArtifactDetails500JSONResponse{

@@ -1678,7 +1678,7 @@ func (r *LocalRegistry) dbMountBlob(
 ) error {
 	log.Ctx(ctx).Debug().Msgf("cross repository blob mounting")
 
-	destRepo, err := r.registryDao.GetByParentIDAndName(ctx, info.ParentID, toRepo)
+	destRepo, err := r.registryDao.GetByParentIDAndName(ctx, info.ParentID, toRepo, false)
 	if err != nil {
 		return err
 	}
@@ -1704,7 +1704,7 @@ func (r *LocalRegistry) dbMountBlob(
 		)
 	}
 
-	sourceRepo, err := r.registryDao.GetByParentIDAndName(ctx, info.ParentID, fromRepo)
+	sourceRepo, err := r.registryDao.GetByParentIDAndName(ctx, info.ParentID, fromRepo, false)
 	if err != nil {
 		return err
 	}

@@ -198,7 +198,7 @@ func (l *localBase) MoveTempFileAndCreateArtifact(
 		return responseHeaders, fileSha256, 0, true, nil
 	}
 
-	registry, err := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier)
+	registry, err := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, false)
 	if err != nil {
 		return responseHeaders, "", 0, false, errcode.ErrCodeUnknown.WithDetail(err)
 	}
@@ -265,7 +265,7 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 					info.Image, err)
 			}
 
-			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
+			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, false)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				log.Ctx(ctx).Error().Msgf("Failed to fetch artifact : [%s] with error: %v", version, err)
@@ -371,7 +371,7 @@ func (l *localBase) uploadInternal(
 		}
 	}
 
-	registry, err := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier)
+	registry, err := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, false)
 	if err != nil {
 		return responseHeaders, "", errcode.ErrCodeUnknown.WithDetail(err)
 	}
@@ -410,7 +410,7 @@ func (l *localBase) postUploadArtifact(
 				return fmt.Errorf("failed to create image for artifact: [%s], error: %w", info.Image, err)
 			}
 
-			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
+			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, false)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				return fmt.Errorf("failed to fetch artifact : [%s] with error: %w", info.Image, err)
@@ -455,7 +455,7 @@ func (l *localBase) Download(
 	}
 
 	path := "/" + info.Image + "/" + version + "/" + fileName
-	reg, _ := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier)
+	reg, _ := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, false)
 
 	fileReader, _, redirectURL, err := l.fileManager.DownloadFile(ctx, path, reg.ID,
 		info.RegIdentifier, info.RootIdentifier, true)
@@ -530,7 +530,7 @@ func (l *localBase) ExistsByFilePath(ctx context.Context, registryID int64, file
 
 func (l *localBase) CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error) {
 	_, err := l.artifactDao.GetByRegistryImageAndVersion(ctx,
-		info.BaseArtifactInfo().RegistryID, info.BaseArtifactInfo().Image, info.GetVersion())
+		info.BaseArtifactInfo().RegistryID, info.BaseArtifactInfo().Image, info.GetVersion(), false)
 	if err != nil {
 		return false, err
 	}
@@ -615,7 +615,7 @@ func (l *localBase) CheckIfFileAlreadyExist(
 	fileName string,
 	path string,
 ) error {
-	image, err := l.imageDao.GetByName(ctx, info.RegistryID, info.Image)
+	image, err := l.imageDao.GetByName(ctx, info.RegistryID, info.Image, false)
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch the image for artifact : [%s] with registry : [%s]", info.Image,
 			info.RegIdentifier)
@@ -624,7 +624,7 @@ func (l *localBase) CheckIfFileAlreadyExist(
 		return nil
 	}
 
-	dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
+	dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, false)
 
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch artifact : [%s] with registry : [%s]", info.Image, info.RegIdentifier)

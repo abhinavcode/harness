@@ -70,7 +70,7 @@ func (c *APIController) GetHelmArtifactDetails(
 	image := string(r.Artifact)
 	version := string(r.Version)
 
-	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier)
+	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
 
 	if err != nil {
 		return artifact.GetHelmArtifactDetails500JSONResponse{

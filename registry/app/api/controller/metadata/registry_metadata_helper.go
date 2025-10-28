@@ -109,7 +109,7 @@ func (r *GitnessRegistryMetadataHelper) GetRegistryRequestBaseInfo(
 	if !commons.IsEmpty(regRef) {
 		_, regIdentifier, _ := paths.DisectLeaf(regRef)
 
-		reg, getRegistryErr := r.registryRepository.GetByParentIDAndName(ctx, parentID, regIdentifier)
+		reg, getRegistryErr := r.registryRepository.GetByParentIDAndName(ctx, parentID, regIdentifier, false)
 		if getRegistryErr != nil {
 			return nil, fmt.Errorf("registry not found: %w", err)
 		}

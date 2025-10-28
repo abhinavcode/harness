@@ -64,7 +64,7 @@ func (c *APIController) GetArtifactSummary(
 	}
 
 	image := string(r.Artifact)
-	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID)
+	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, false)
 
 	if err != nil {
 		return artifact.GetArtifactSummary500JSONResponse{
@@ -102,7 +102,7 @@ func (c *APIController) getImageMetadata(
 	ctx context.Context, registry *types.Registry, image string,
 	artifactType *artifact.ArtifactType,
 ) (*types.ImageMetadata, error) {
-	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType)
+	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, false)
 	if err != nil {
 		return nil, err
 	}

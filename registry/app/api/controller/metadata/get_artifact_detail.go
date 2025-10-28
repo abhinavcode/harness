@@ -67,7 +67,7 @@ func (c *APIController) GetArtifactDetails(
 	image := string(r.Artifact)
 	version := string(r.Version)
 
-	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier)
+	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
 
 	if err != nil {
 		return artifact.GetArtifactDetails500JSONResponse{
@@ -87,7 +87,7 @@ func (c *APIController) GetArtifactDetails(
 			}, nil
 		}
 	}
-	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, image, artifactType)
+	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, image, artifactType, false)
 
 	if err != nil {
 		return artifact.GetArtifactDetails500JSONResponse{
@@ -96,7 +96,7 @@ func (c *APIController) GetArtifactDetails(
 			),
 		}, nil
 	}
-	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version)
+	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, false)
 
 	if err != nil {
 		return artifact.GetArtifactDetails500JSONResponse{

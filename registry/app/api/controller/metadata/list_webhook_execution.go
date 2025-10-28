@@ -64,7 +64,7 @@ func (c *APIController) ListWebhookExecutions(
 	size := GetOffset(r.Params.Size, r.Params.Page)
 	limit := GetPageLimit(r.Params.Size)
 	pageNumber := GetPageNumber(r.Params.Page)
-	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier)
+	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier, false)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(listWebhooksErrMsg, regInfo.RegistryRef, r.WebhookIdentifier, err)
 		return listWebhooksExecutionsInternalErrorResponse(fmt.Errorf("failed to find registry: %w", err))

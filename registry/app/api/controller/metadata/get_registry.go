@@ -60,7 +60,7 @@ func (c *APIController) GetRegistry(
 			),
 		}, nil
 	}
-	repoEntity, _ := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier)
+	repoEntity, _ := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
 	if string(repoEntity.Type) == string(artifact.RegistryTypeVIRTUAL) {
 		cleanupPolicies, err := c.CleanupPolicyStore.GetByRegistryID(ctx, repoEntity.ID)
 		if err != nil {
