@@ -125,6 +125,16 @@ func (i ImageDao) DeleteByImageNameIfNoLinkedArtifacts(
 	return nil
 }
 
+// SoftDeleteByImageNameAndRegID is not implemented in gitness (only in enterprise harness-code).
+func (i ImageDao) SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) error {
+	return errors.New("soft delete not implemented in open-source gitness")
+}
+
+// SoftDeleteByImageNameIfNoLinkedArtifacts is not implemented in gitness (only in enterprise harness-code).
+func (i ImageDao) SoftDeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, regID int64, image string) error {
+	return errors.New("soft delete not implemented in open-source gitness")
+}
+
 func (i ImageDao) GetByName(ctx context.Context, registryID int64, name string) (*types.Image, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images").

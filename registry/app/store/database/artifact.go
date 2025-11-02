@@ -281,6 +281,18 @@ func (a ArtifactDao) DeleteByVersionAndImageName(
 	return nil
 }
 
+// SoftDeleteByImageNameAndRegistryID is not implemented in gitness (only in enterprise harness-code).
+func (a ArtifactDao) SoftDeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) error {
+	return errors.New("soft delete not implemented in open-source gitness")
+}
+
+// SoftDeleteByVersionAndImageName is not implemented in gitness (only in enterprise harness-code).
+func (a ArtifactDao) SoftDeleteByVersionAndImageName(
+	ctx context.Context, image string, version string, regID int64,
+) error {
+	return errors.New("soft delete not implemented in open-source gitness")
+}
+
 func (a ArtifactDao) mapToInternalArtifact(ctx context.Context, in *types.Artifact) *artifactDB {
 	session, _ := request.AuthSessionFrom(ctx)
 
