@@ -511,7 +511,6 @@ type ImageRepository interface {
 
 	// Soft delete methods (enterprise only - not implemented in gitness)
 	SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
-	SoftDeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, regID int64, image string) (err error)
 }
 
 type ArtifactRepository interface {

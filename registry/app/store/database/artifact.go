@@ -281,16 +281,67 @@ func (a ArtifactDao) DeleteByVersionAndImageName(
 	return nil
 }
 
-// SoftDeleteByImageNameAndRegistryID is not implemented in gitness (only in enterprise harness-code).
+// SoftDeleteByImageNameAndRegistryID marks image as deleted.
 func (a ArtifactDao) SoftDeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) error {
-	return errors.New("soft delete not implemented in open-source gitness")
+	session, _ := request.AuthSessionFrom(ctx)
+	now := time.Now().UnixMilli()
+	userID := session.Principal.ID
+
+	stmt := databaseg.Builder.
+		Update("artifacts").
+		Set("artifact_deleted_at", now).
+		Set("artifact_deleted_by", userID).
+		Where("artifact_image_id = (SELECT image_id FROM images WHERE image_registry_id = ? AND image_name = ?) AND artifact_deleted_at IS NULL", regID, image)
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build soft delete query")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	_, err = db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to soft delete artifacts")
+	}
+
+	return nil
 }
 
-// SoftDeleteByVersionAndImageName is not implemented in gitness (only in enterprise harness-code).
+// SoftDeleteByVersionAndImageName marks a specific artifact version as deleted.
 func (a ArtifactDao) SoftDeleteByVersionAndImageName(
 	ctx context.Context, image string, version string, regID int64,
 ) error {
-	return errors.New("soft delete not implemented in open-source gitness")
+	session, _ := request.AuthSessionFrom(ctx)
+	now := time.Now().UnixMilli()
+	userID := session.Principal.ID
+
+	stmt := databaseg.Builder.
+		Update("artifacts").
+		Set("artifact_deleted_at", now).
+		Set("artifact_deleted_by", userID).
+		Where("artifact_image_id = (SELECT image_id FROM images WHERE image_registry_id = ? AND image_name = ?) AND artifact_version = ? AND artifact_deleted_at IS NULL", regID, image, version)
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build soft delete query")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to soft delete artifact version")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "Artifact version not found or already deleted")
+	}
+
+	return nil
 }
 
 func (a ArtifactDao) mapToInternalArtifact(ctx context.Context, in *types.Artifact) *artifactDB {

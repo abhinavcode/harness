@@ -267,24 +267,6 @@ func (_m *ImageRepository) SoftDeleteByImageNameAndRegID(ctx context.Context, re
 	return r0
 }
 
-// SoftDeleteByImageNameIfNoLinkedArtifacts provides a mock function with given fields: ctx, regID, image
-func (_m *ImageRepository) SoftDeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, regID int64, image string) error {
-	ret := _m.Called(ctx, regID, image)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SoftDeleteByImageNameIfNoLinkedArtifacts")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
-		r0 = rf(ctx, regID, image)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *ImageRepository) Update(ctx context.Context, _a1 *types.Image) error {
 	ret := _m.Called(ctx, _a1)
