@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -134,6 +135,9 @@ func (c *APIController) ModifyRegistry(
 	}
 	if registry.PackageType == artifact.PackageTypeRPM {
 		c.PostProcessingReporter.BuildRegistryIndex(ctx, registry.ID, make([]types.SourceRef, 0))
+	} else {
+		err = c.PackageWrapper.ReportBuildRegistryIndexEvent(ctx, registry.ID, make([]types.SourceRef, 0))
+		log.Error().Err(err).Msg("failed to report build registry index event")
 	}
 	ref := space.Path + "/" + upstreamproxyEntity.RepoKey
 	jsonResponse, err := c.CreateUpstreamProxyResponseJSONResponse(ctx, modifiedRepoEntity, ref)
@@ -184,6 +188,9 @@ func (c *APIController) updateVirtualRegistry(
 	}
 	if registry.PackageType == artifact.PackageTypeRPM {
 		c.PostProcessingReporter.BuildRegistryIndex(ctx, registry.ID, make([]types.SourceRef, 0))
+	} else {
+		err = c.PackageWrapper.ReportBuildRegistryIndexEvent(ctx, registry.ID, make([]types.SourceRef, 0))
+		log.Error().Err(err).Msg("failed to report build registry index event")
 	}
 	err = c.updateRegistryWithAudit(ctx, repoEntity, registry, session.Principal, regInfo.ParentRef)
 
@@ -278,7 +285,7 @@ func (c *APIController) updateRegistryWithAudit(
 	ctx context.Context, oldRegistry *types.Registry,
 	newRegistry *types.Registry, principal types2.Principal, parentRef string,
 ) error {
-	err := c.updatePublicAccess(ctx, parentRef, newRegistry)
+	err := c.updatePublicAccess(ctx, parentRef, newRegistry, oldRegistry)
 	if err != nil {
 		return err
 	}
@@ -307,6 +314,7 @@ func (c *APIController) updatePublicAccess(
 	ctx context.Context,
 	parentRef string,
 	newRegistry *types.Registry,
+	oldRegistry *types.Registry,
 ) error {
 	space, err := c.SpaceFinder.FindByRef(ctx, parentRef)
 	if err != nil {
@@ -338,18 +346,17 @@ func (c *APIController) updatePublicAccess(
 				return err
 			}
 		}
-		if newRegistry.Type == artifact.RegistryTypeVIRTUAL &&
-			newRegistry.IsPublic &&
-			len(newRegistry.UpstreamProxies) > 0 {
-			err := c.checkIfVirtualHasPrivateUpstreams(ctx, newRegistry.Name, newRegistry.UpstreamProxies)
-			if err != nil {
-				return err
-			}
-		}
 
 		if err = c.PublicAccess.Set(ctx,
 			gitnessenum.PublicResourceTypeRegistry, ref, newRegistry.IsPublic); err != nil {
 			return fmt.Errorf("failed to update artiafct registry public access: %w", err)
+		}
+	}
+	if newRegistry.Type == artifact.RegistryTypeVIRTUAL &&
+		newRegistry.IsPublic && !reflect.DeepEqual(newRegistry.UpstreamProxies, oldRegistry.UpstreamProxies) {
+		err := c.checkIfVirtualHasPrivateUpstreams(ctx, newRegistry.Name, newRegistry.UpstreamProxies)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -467,8 +474,9 @@ func (c *APIController) UpdateUpstreamProxyEntity(
 	if u.ID != -1 {
 		upstreamProxyConfigEntity.ID = u.ID
 	}
-	switch {
-	case config.AuthType == artifact.AuthTypeUserPassword:
+	//nolint:exhaustive
+	switch config.AuthType {
+	case artifact.AuthTypeUserPassword:
 		res, err := config.Auth.AsUserPassword()
 		if err != nil {
 			return nil, nil, err
@@ -488,7 +496,7 @@ func (c *APIController) UpdateUpstreamProxyEntity(
 			upstreamProxyConfigEntity.SecretSpaceID = *res.SecretSpaceId
 		}
 		upstreamProxyConfigEntity.SecretIdentifier = *res.SecretIdentifier
-	case config.AuthType == artifact.AuthTypeAccessKeySecretKey:
+	case artifact.AuthTypeAccessKeySecretKey:
 		res, err := config.Auth.AsAccessKeySecretKey()
 		if err != nil {
 			return nil, nil, err

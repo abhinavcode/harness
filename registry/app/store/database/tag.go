@@ -409,9 +409,10 @@ func (t tagDao) GetAllArtifactsByParentID(
 
 	// Apply sorting based on provided field
 	sortField := "modified_at"
-	if sortByField == downloadCount {
+	switch sortByField {
+	case downloadCount:
 		sortField = "download_count"
-	} else if sortByField == imageName {
+	case imageName:
 		sortField = "name"
 	}
 
@@ -617,7 +618,7 @@ func (t tagDao) getArtifactEnrichmentData(ctx context.Context, artifactIDs []int
 
 	// Build placeholders for the 3 IN clauses
 	var placeholders1, placeholders2, placeholders3 string
-	args := make([]interface{}, 0, len(artifactIDs)*3)
+	args := make([]any, 0, len(artifactIDs)*3)
 	const placeholderSeparator = ", ?"
 
 	// nolint:nestif
@@ -670,7 +671,7 @@ func (t tagDao) getArtifactEnrichmentData(ctx context.Context, artifactIDs []int
 	}
 
 	// Arguments: artifactIDs repeated 3 times for the 3 IN clauses
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		for _, id := range artifactIDs {
 			args = append(args, id)
 		}
@@ -1464,9 +1465,10 @@ func (t tagDao) GetAllOciVersionsByRepoAndImage(
 		" m.manifest_payload, mt.mt_media_type, m.manifest_digest")
 
 	var sortField string
-	if sortByField == "size" {
+	switch sortByField {
+	case "size":
 		sortField = "m.manifest_total_size"
-	} else if sortByField == "updated_at" {
+	case "updated_at":
 		sortField = "m.manifest_created_at"
 	}
 	if sortField != "" {

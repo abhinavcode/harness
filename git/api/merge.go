@@ -17,7 +17,9 @@ package api
 import (
 	"bytes"
 	"context"
+	"strings"
 
+	"github.com/harness/gitness/errors"
 	"github.com/harness/gitness/git/command"
 	"github.com/harness/gitness/git/sha"
 )
@@ -34,6 +36,7 @@ func (g *Git) GetMergeBase(
 	remote string,
 	base string,
 	head string,
+	allowMultipleMergeBases bool,
 ) (sha.SHA, string, error) {
 	if repoPath == "" {
 		return sha.None, "", ErrRepositoryPathEmpty
@@ -60,6 +63,13 @@ func (g *Git) GetMergeBase(
 		command.WithArg(base, head),
 	)
 
+	// If the two commits (base and head) have more than one merge-base (a very rare case):
+	// * If allowMultipleMergeBases=true only the first merge base would be returned.
+	// * If allowMultipleMergeBases=false an invalid argument error would be returned.
+	if !allowMultipleMergeBases {
+		cmd = cmd.Add(command.WithFlag("--all"))
+	}
+
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	err := cmd.Run(ctx,
 		command.WithDir(repoPath),
@@ -79,7 +89,14 @@ func (g *Git) GetMergeBase(
 		return sha.None, "", processGitErrorf(err, "failed to get merge-base [%s, %s]", base, head)
 	}
 
-	result, err := sha.New(stdout.String())
+	mergeBase := strings.TrimSpace(stdout.String())
+	if count := strings.Count(mergeBase, "\n") + 1; count > 1 {
+		return sha.None, "",
+			errors.InvalidArgumentf("The commits %s and %s have %d merge bases. This is not supported.",
+				base, head, count)
+	}
+
+	result, err := sha.New(mergeBase)
 	if err != nil {
 		return sha.None, "", err
 	}

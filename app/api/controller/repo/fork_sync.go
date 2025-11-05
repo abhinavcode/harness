@@ -17,6 +17,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/harness/gitness/app/api/controller"
@@ -36,7 +37,10 @@ type ForkSyncInput struct {
 	BranchUpstream string `json:"branch_upstream"` // Can be omitted, defaults to the value of Branch
 }
 
-func (in *ForkSyncInput) validate() error {
+func (in *ForkSyncInput) sanitize() error {
+	in.Branch = strings.TrimSpace(in.Branch)
+	in.BranchUpstream = strings.TrimSpace(in.BranchUpstream)
+
 	if in.Branch == "" {
 		return errors.InvalidArgument("Branch name must be provided")
 	}
@@ -55,12 +59,12 @@ func (c *Controller) ForkSync(
 	repoRef string,
 	in *ForkSyncInput,
 ) (*types.ForkSyncOutput, error) {
-	if err := in.validate(); err != nil {
+	repoForkCore, err := c.getRepoCheckAccess(ctx, session, repoRef, enum.PermissionRepoPush)
+	if err != nil {
 		return nil, err
 	}
 
-	repoForkCore, err := c.getRepoCheckAccess(ctx, session, repoRef, enum.PermissionRepoPush)
-	if err != nil {
+	if err := in.sanitize(); err != nil {
 		return nil, err
 	}
 
@@ -79,7 +83,7 @@ func (c *Controller) ForkSync(
 	}
 
 	if !branchForkInfo.SHA.Equal(in.BranchCommitSHA) {
-		return nil, errors.InvalidArgument("The commit %s isn't the latest commit on the branch %s",
+		return nil, errors.InvalidArgumentf("The commit %s isn't the latest commit on the branch %s",
 			in.BranchCommitSHA, in.Branch)
 	}
 
