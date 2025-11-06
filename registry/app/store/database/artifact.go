@@ -293,6 +293,89 @@ func (a ArtifactDao) SoftDeleteByVersionAndImageName(
 	return errors.New("soft delete not implemented in open-source gitness")
 }
 
+// RestoreByImageNameAndRegistryID restores all soft-deleted artifacts for an image.
+func (a ArtifactDao) RestoreByImageNameAndRegistryID(ctx context.Context, regID int64, image string) error {
+	session, _ := request.AuthSessionFrom(ctx)
+	userID := session.Principal.ID
+
+	// Enterprise uses PostgreSQL only
+	stmt := databaseg.Builder.Update("artifacts a").
+		Set("artifact_deleted_at", nil).
+		Set("artifact_deleted_by", nil).
+		Set("artifact_updated_at", time.Now().UnixMilli()).
+		Set("artifact_updated_by", userID).
+		From("images i").
+		Where("a.artifact_image_id = i.image_id").
+		Where("i.image_registry_id = ?", regID).
+		Where("i.image_name = ?", image).
+		Where("a.artifact_deleted_at IS NOT NULL")
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore artifacts")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "Artifacts not found or not deleted")
+	}
+
+	return nil
+}
+
+// RestoreByVersionAndImageName restores a specific soft-deleted artifact version.
+func (a ArtifactDao) RestoreByVersionAndImageName(
+	ctx context.Context, image string, version string, regID int64,
+) error {
+	session, _ := request.AuthSessionFrom(ctx)
+	userID := session.Principal.ID
+
+	// Enterprise uses PostgreSQL only
+	stmt := databaseg.Builder.Update("artifacts a").
+		Set("artifact_deleted_at", nil).
+		Set("artifact_deleted_by", nil).
+		Set("artifact_updated_at", time.Now().UnixMilli()).
+		Set("artifact_updated_by", userID).
+		From("images i").
+		Where("a.artifact_image_id = i.image_id").
+		Where("i.image_registry_id = ?", regID).
+		Where("i.image_name = ?", image).
+		Where("a.artifact_name = ?", version).
+		Where("a.artifact_deleted_at IS NOT NULL")
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore artifact")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "Artifact not found or not deleted")
+	}
+
+	return nil
+}
+
 func (a ArtifactDao) mapToInternalArtifact(ctx context.Context, in *types.Artifact) *artifactDB {
 	session, _ := request.AuthSessionFrom(ctx)
 

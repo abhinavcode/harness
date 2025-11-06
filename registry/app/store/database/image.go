@@ -135,6 +135,42 @@ func (i ImageDao) SoftDeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, 
 	return errors.New("soft delete not implemented in open-source gitness")
 }
 
+// RestoreByImageNameAndRegID restores a soft-deleted image.
+func (i ImageDao) RestoreByImageNameAndRegID(ctx context.Context, regID int64, image string) error {
+	session, _ := request.AuthSessionFrom(ctx)
+	userID := session.Principal.ID
+
+	stmt := databaseg.Builder.
+		Update("images").
+		Set("image_deleted_at", nil).
+		Set("image_deleted_by", nil).
+		Set("image_updated_at", time.Now().UnixMilli()).
+		Set("image_updated_by", userID).
+		Where("image_registry_id = ? AND image_name = ? AND image_deleted_at IS NOT NULL", regID, image)
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
+	}
+
+	db := dbtx.GetAccessor(ctx, i.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore image")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "Image not found or not deleted")
+	}
+
+	return nil
+}
+
 func (i ImageDao) GetByName(ctx context.Context, registryID int64, name string) (*types.Image, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images").

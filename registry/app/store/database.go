@@ -418,6 +418,8 @@ type RegistryRepository interface {
 	Delete(ctx context.Context, parentID int64, name string) (err error)
 	// SoftDelete performs soft delete by setting deleted_at (enterprise only - not implemented in gitness)
 	SoftDelete(ctx context.Context, parentID int64, name string) (err error)
+	// Restore restores a soft-deleted registry (enterprise only - not implemented in gitness)
+	Restore(ctx context.Context, parentID int64, name string) (err error)
 	// Update updates the repository. Only the properties specified by "props" will be updated if it is set
 	Update(ctx context.Context, repository *types.Registry) (err error)
 
@@ -512,6 +514,9 @@ type ImageRepository interface {
 	// Soft delete methods (enterprise only - not implemented in gitness)
 	SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
 	SoftDeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, regID int64, image string) (err error)
+
+	// Restore methods (enterprise only - not implemented in gitness)
+	RestoreByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
 }
 
 type ArtifactRepository interface {
@@ -576,6 +581,10 @@ type ArtifactRepository interface {
 	// Soft delete methods (enterprise only - not implemented in gitness)
 	SoftDeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) (err error)
 	SoftDeleteByVersionAndImageName(ctx context.Context, image string, version string, regID int64) (err error)
+
+	// Restore methods (enterprise only - not implemented in gitness)
+	RestoreByImageNameAndRegistryID(ctx context.Context, regID int64, image string) (err error)
+	RestoreByVersionAndImageName(ctx context.Context, image string, version string, regID int64) (err error)
 
 	GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error)
 
