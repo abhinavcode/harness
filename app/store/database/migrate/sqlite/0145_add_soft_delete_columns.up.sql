@@ -1,15 +1,15 @@
 
--- For registry table
-ALTER TABLE registry ADD COLUMN deleted_at BIGINT;
-ALTER TABLE registry ADD COLUMN deleted_by BIGINT;
-CREATE INDEX IF NOT EXISTS idx_registry_deleted_at ON registry(deleted_at);
+-- For registries table
+ALTER TABLE registries ADD COLUMN registry_deleted_at BIGINT;
+ALTER TABLE registries ADD COLUMN registry_deleted_by BIGINT;
+CREATE INDEX IF NOT EXISTS idx_registries_deleted_at ON registries(registry_deleted_at);
 
--- For image table
-ALTER TABLE image ADD COLUMN deleted_at BIGINT;
-ALTER TABLE image ADD COLUMN deleted_by BIGINT;
-CREATE INDEX IF NOT EXISTS idx_image_deleted_at ON image(deleted_at);
+-- For images table
+ALTER TABLE images ADD COLUMN image_deleted_at BIGINT;
+ALTER TABLE images ADD COLUMN image_deleted_by BIGINT;
+CREATE INDEX IF NOT EXISTS idx_images_deleted_at ON images(image_deleted_at);
 
--- For artifact table
-ALTER TABLE artifact ADD COLUMN deleted_at BIGINT;
-ALTER TABLE artifact ADD COLUMN deleted_by BIGINT;
-CREATE INDEX IF NOT EXISTS idx_artifact_deleted_at ON artifact(deleted_at);
+-- For artifacts table
+ALTER TABLE artifacts ADD COLUMN artifact_deleted_at BIGINT;
+ALTER TABLE artifacts ADD COLUMN artifact_deleted_by BIGINT;
+CREATE INDEX IF NOT EXISTS idx_artifacts_deleted_at ON artifacts(artifact_deleted_at);

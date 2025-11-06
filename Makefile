@@ -118,6 +118,10 @@ format: tools # Format go code and error if any changes are made
 	@gci write --skip-generated --custom-order -s standard -s "prefix(github.com/harness/gitness)" -s default -s blank -s dot .
 	@echo "Formatting complete"
 
+modernize:
+	@echo "Modernizing ..."
+	@go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test ./...
+
 sec:
 	@echo "Vulnerability detection $(1)"
 	@govulncheck ./...
@@ -168,7 +172,7 @@ delete-tools: ## Delete the tools
 # Install golangci-lint
 $(GOBIN)/golangci-lint:
 	@echo "🔘 Installing golangci-lint... (`date '+%H:%M:%S'`)"
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.64.5
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v2.4.0
 
 # Install goimports to format code
 $(GOBIN)/goimports:

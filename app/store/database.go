@@ -315,6 +315,12 @@ type (
 
 		// ListSizeInfos returns a list of all active repo sizes.
 		ListSizeInfos(ctx context.Context) ([]*types.RepositorySizeInfo, error)
+
+		// UpdateNumForks increases or decreases number of forks of the repository.
+		UpdateNumForks(ctx context.Context, repoID int64, delta int64) error
+
+		// ClearForkID clears fork ID of all repositories that have this fork ID.
+		ClearForkID(ctx context.Context, repoUpstreamID int64) error
 	}
 
 	// SettingsStore defines the settings storage.
@@ -1489,5 +1495,13 @@ type (
 			resourceIDs []int64,
 		) (map[int64]bool, error)
 		Delete(ctx context.Context, principalID int64, in *types.FavoriteResource) error
+	}
+
+	AITaskStore interface {
+		Create(ctx context.Context, in *types.AITask) error
+		Update(ctx context.Context, in *types.AITask) error
+		Find(ctx context.Context, id int64) (*types.AITask, error)
+		FindByIdentifier(ctx context.Context, identifier string) (*types.AITask, error)
+		List(ctx context.Context, filter *types.AITaskFilter) ([]*types.AITask, error)
 	}
 )

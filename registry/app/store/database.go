@@ -513,7 +513,6 @@ type ImageRepository interface {
 
 	// Soft delete methods (enterprise only - not implemented in gitness)
 	SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
-	SoftDeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, regID int64, image string) (err error)
 
 	// Restore methods (enterprise only - not implemented in gitness)
 	RestoreByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
@@ -588,6 +587,12 @@ type ArtifactRepository interface {
 
 	GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error)
 
+	// get latest artifacts from all images under repo
+	GetLatestArtifactsByRepo(
+		ctx context.Context, registryID int64, batchSize int, artifactID int64,
+	) (*[]types.ArtifactMetadata, error)
+
+	// get all artifacts from all images under repo
 	GetAllArtifactsByRepo(
 		ctx context.Context, registryID int64, batchSize int, artifactID int64,
 	) (*[]types.ArtifactMetadata, error)

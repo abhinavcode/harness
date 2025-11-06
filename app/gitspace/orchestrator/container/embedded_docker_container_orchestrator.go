@@ -61,7 +61,7 @@ type step struct {
 
 type LifecycleHookStep struct {
 	Source        string                 `json:"source,omitempty"`
-	Command       types.LifecycleCommand `json:"command,omitempty"`
+	Command       types.LifecycleCommand `json:"command,omitzero"`
 	ActionType    PostAction             `json:"action_type,omitempty"`
 	StopOnFailure bool                   `json:"stop_on_failure,omitempty"`
 }
@@ -247,7 +247,7 @@ func (e *EmbeddedDockerOrchestrator) startStoppedGitspace(
 	}
 
 	// Run IDE setup
-	runIDEArgs := make(map[gitspaceTypes.IDEArg]interface{})
+	runIDEArgs := make(map[gitspaceTypes.IDEArg]any)
 	runIDEArgs[gitspaceTypes.IDERepoNameArg] = resolvedRepoDetails.RepoName
 	runIDEArgs = AddIDEDirNameArg(ideService, runIDEArgs)
 	if err = ideService.Run(ctx, exec, runIDEArgs, logStreamInstance); err != nil {
@@ -676,6 +676,17 @@ func (e *EmbeddedDockerOrchestrator) buildSetupSteps(
 			StopOnFailure: true,
 		},
 		{
+			Name: "Install AI agents",
+			Execute: func(
+				ctx context.Context,
+				exec *devcontainer.Exec,
+				gitspaceLogger gitspaceTypes.GitspaceLogger,
+			) error {
+				return utils.InstallAIAgents(ctx, exec, gitspaceLogger, gitspaceConfig.AIAgents)
+			},
+			StopOnFailure: true,
+		},
+		{
 			Name: "Setup IDE",
 			Execute: func(
 				ctx context.Context,
@@ -683,7 +694,7 @@ func (e *EmbeddedDockerOrchestrator) buildSetupSteps(
 				gitspaceLogger gitspaceTypes.GitspaceLogger,
 			) error {
 				// Run IDE setup
-				args := make(map[gitspaceTypes.IDEArg]interface{})
+				args := make(map[gitspaceTypes.IDEArg]any)
 				args = AddIDECustomizationsArg(ideService, resolvedRepoDetails.DevcontainerConfig, args)
 				args[gitspaceTypes.IDERepoNameArg] = resolvedRepoDetails.RepoName
 				args = AddIDEDownloadURLArg(ideService, args)
@@ -700,7 +711,7 @@ func (e *EmbeddedDockerOrchestrator) buildSetupSteps(
 				exec *devcontainer.Exec,
 				gitspaceLogger gitspaceTypes.GitspaceLogger,
 			) error {
-				args := make(map[gitspaceTypes.IDEArg]interface{})
+				args := make(map[gitspaceTypes.IDEArg]any)
 				args[gitspaceTypes.IDERepoNameArg] = resolvedRepoDetails.RepoName
 				args = AddIDEDirNameArg(ideService, args)
 				return ideService.Run(ctx, exec, args, gitspaceLogger)

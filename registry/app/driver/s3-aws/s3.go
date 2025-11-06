@@ -153,7 +153,7 @@ func init() {
 	}
 
 	// Add the default Cloudflare R2 regions
-	for _, region := range strings.Split(r2Regions, ",") {
+	for region := range strings.SplitSeq(r2Regions, ",") {
 		validRegions[strings.TrimSpace(region)] = struct{}{}
 	}
 	for _, objectACL := range []string{
@@ -180,7 +180,7 @@ func Register() {
 // s3DriverFactory implements the factory.StorageDriverFactory interface.
 type s3DriverFactory struct{}
 
-func (factory *s3DriverFactory) Create(parameters map[string]interface{}) (storagedriver.StorageDriver, error) {
+func (factory *s3DriverFactory) Create(parameters map[string]any) (storagedriver.StorageDriver, error) {
 	return FromParameters(parameters)
 }
 
@@ -202,21 +202,123 @@ type driver struct {
 }
 
 func (d *driver) CopyObject(ctx context.Context, srcKey, destBucket, destKey string) error {
-	copySource := fmt.Sprintf("/%s%s", d.Bucket, srcKey)
-
-	_, err := d.S3.CopyObjectWithContext(ctx, &s3.CopyObjectInput{
-		Bucket:     aws.String(destBucket),
-		CopySource: aws.String(copySource),
-		Key:        aws.String(destKey),
-	})
+	// Get source object info to determine size
+	srcPath := strings.TrimPrefix(srcKey, "/")
+	fileInfo, err := d.Stat(ctx, srcPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get source object info: %w", err)
 	}
 
+	// For objects <= threshold size, use simple copy
+	if fileInfo.Size() <= d.MultipartCopyThresholdSize {
+		copySource := fmt.Sprintf("/%s%s", d.Bucket, srcKey)
+		_, err := d.S3.CopyObjectWithContext(ctx, &s3.CopyObjectInput{
+			Bucket:     aws.String(destBucket),
+			CopySource: aws.String(copySource),
+			Key:        aws.String(destKey),
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		// For large objects, use multipart copy
+		err = d.performMultipartCopy(ctx, d.Bucket, srcKey, destBucket, destKey, fileInfo.Size())
+		if err != nil {
+			return err
+		}
+	}
+
+	// Verify the destination object exists
 	_, err = d.S3.HeadObjectWithContext(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(destBucket),
 		Key:    aws.String(destKey),
 	})
+	return err
+}
+
+// performMultipartCopy performs multipart copy for large objects across buckets.
+func (d *driver) performMultipartCopy(
+	ctx context.Context, srcBucket, srcKey, destBucket, destKey string, objectSize int64,
+) error {
+	log.Ctx(ctx).Trace().Msgf("[AWS] CreateMultipartUpload: %s/%s -> %s/%s", srcBucket, srcKey, destBucket, destKey)
+
+	// Create multipart upload
+	createResp, err := d.S3.CreateMultipartUploadWithContext(
+		ctx, &s3.CreateMultipartUploadInput{
+			Bucket:               aws.String(destBucket),
+			Key:                  aws.String(destKey),
+			ContentType:          d.getContentType(),
+			ACL:                  d.getACL(),
+			SSEKMSKeyId:          d.getSSEKMSKeyID(),
+			ServerSideEncryption: d.getEncryptionMode(),
+			StorageClass:         d.getStorageClass(),
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	numParts := (objectSize + d.MultipartCopyChunkSize - 1) / d.MultipartCopyChunkSize
+	completedParts := make([]*s3.CompletedPart, numParts)
+	errChan := make(chan error, numParts)
+	limiter := make(chan struct{}, d.MultipartCopyMaxConcurrency)
+
+	for i := range completedParts {
+		i := int64(i)
+		go func() {
+			limiter <- struct{}{}
+			firstByte := i * d.MultipartCopyChunkSize
+			lastByte := firstByte + d.MultipartCopyChunkSize - 1
+			if lastByte >= objectSize {
+				lastByte = objectSize - 1
+			}
+			log.Ctx(ctx).Trace().Msgf("[AWS] [%d] UploadPartCopy: %s/%s -> %s/%s", i, srcBucket, srcKey, destBucket, destKey)
+			uploadResp, err := d.S3.UploadPartCopyWithContext(
+				ctx, &s3.UploadPartCopyInput{
+					Bucket:          aws.String(destBucket),
+					CopySource:      aws.String(srcBucket + "/" + strings.TrimPrefix(srcKey, "/")),
+					Key:             aws.String(destKey),
+					PartNumber:      aws.Int64(i + 1),
+					UploadId:        createResp.UploadId,
+					CopySourceRange: aws.String(fmt.Sprintf("bytes=%d-%d", firstByte, lastByte)),
+				},
+			)
+			if err == nil {
+				completedParts[i] = &s3.CompletedPart{
+					ETag:       uploadResp.CopyPartResult.ETag,
+					PartNumber: aws.Int64(i + 1),
+				}
+			}
+			errChan <- err
+			<-limiter
+		}()
+	}
+
+	for range completedParts {
+		err := <-errChan
+		if err != nil {
+			// Abort the multipart upload on error
+			_, abortErr := d.S3.AbortMultipartUploadWithContext(ctx, &s3.AbortMultipartUploadInput{
+				Bucket:   aws.String(destBucket),
+				Key:      aws.String(destKey),
+				UploadId: createResp.UploadId,
+			})
+			if abortErr != nil {
+				log.Ctx(ctx).Error().Err(abortErr).Msg("Failed to abort multipart upload")
+			}
+			return err
+		}
+	}
+
+	log.Ctx(ctx).Trace().Msgf("[AWS] CompleteMultipartUpload: %s/%s", destBucket, destKey)
+	_, err = d.S3.CompleteMultipartUploadWithContext(
+		ctx, &s3.CompleteMultipartUploadInput{
+			Bucket:          aws.String(destBucket),
+			Key:             aws.String(destKey),
+			UploadId:        createResp.UploadId,
+			MultipartUpload: &s3.CompletedMultipartUpload{Parts: completedParts},
+		},
+	)
 	return err
 }
 
@@ -286,7 +388,7 @@ type Driver struct {
 // - encrypt.
 //
 //nolint:gocognit
-func FromParameters(parameters map[string]interface{}) (*Driver, error) {
+func FromParameters(parameters map[string]any) (*Driver, error) {
 	// Providing no values for these is valid in case the user is authenticating
 	// with an IAM on an ec2 instance (in which case the instance credentials will
 	// be summoned when GetAuth is called).
@@ -577,7 +679,7 @@ func FromParameters(parameters map[string]interface{}) (*Driver, error) {
 	return New(params)
 }
 
-func getS3LogLevelFromParam(param interface{}) aws.LogLevelType {
+func getS3LogLevelFromParam(param any) aws.LogLevelType {
 	if param == nil {
 		return aws.LogOff
 	}
@@ -610,7 +712,7 @@ func getS3LogLevelFromParam(param interface{}) aws.LogLevelType {
 // getParameterAsInt64 converts parameters[name] to an int64 value (using
 // defaultt if nil), verifies it is no smaller than min, and returns it.
 func getParameterAsInt64(
-	parameters map[string]interface{},
+	parameters map[string]any,
 	name string,
 	defaultt int64,
 	minSize int64,
@@ -723,7 +825,7 @@ func New(params DriverParameters) (*Driver, error) {
 		StorageClass:                params.StorageClass,
 		ObjectACL:                   params.ObjectACL,
 		pool: &sync.Pool{
-			New: func() interface{} {
+			New: func() any {
 				return &buffer{
 					data: make([]byte, 0, params.ChunkSize),
 				}
