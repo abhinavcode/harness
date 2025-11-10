@@ -30,6 +30,7 @@ import (
 	databaseg "github.com/harness/gitness/store/database"
 	"github.com/harness/gitness/store/database/dbtx"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -138,7 +139,11 @@ func (i ImageDao) SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64
 		Update("images").
 		Set("image_deleted_at", now).
 		Set("image_deleted_by", userID).
-		Where("image_registry_id = ? AND image_name = ? AND image_deleted_at IS NULL", regID, image)
+		Where(sq.Eq{
+			"image_registry_id": regID,
+			"image_name":        image,
+		}).
+		Where("image_deleted_at IS NULL")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {

@@ -529,7 +529,11 @@ func (r registryDao) SoftDelete(ctx context.Context, parentID int64, name string
 		Update("registries").
 		Set("registry_deleted_at", now).
 		Set("registry_deleted_by", userID).
-		Where("registry_parent_id = ? AND registry_name = ? AND registry_deleted_at IS NULL", parentID, name)
+		Where(sq.Eq{
+			"registry_parent_id": parentID,
+			"registry_name":      name,
+		}).
+		Where("registry_deleted_at IS NULL")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {

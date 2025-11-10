@@ -287,11 +287,18 @@ func (a ArtifactDao) SoftDeleteByImageNameAndRegistryID(ctx context.Context, reg
 	now := time.Now().UnixMilli()
 	userID := session.Principal.ID
 
+	// Build subquery using Squirrel
+	subQuery := databaseg.Builder.
+		Select("image_id").
+		From("images").
+		Where(sq.Eq{"image_registry_id": regID, "image_name": image})
+
 	stmt := databaseg.Builder.
 		Update("artifacts").
 		Set("artifact_deleted_at", now).
 		Set("artifact_deleted_by", userID).
-		Where("artifact_image_id = (SELECT image_id FROM images WHERE image_registry_id = ? AND image_name = ?) AND artifact_deleted_at IS NULL", regID, image)
+		Where(sq.Eq{"artifact_image_id": subQuery}).
+		Where("artifact_deleted_at IS NULL")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {
@@ -315,11 +322,21 @@ func (a ArtifactDao) SoftDeleteByVersionAndImageName(
 	now := time.Now().UnixMilli()
 	userID := session.Principal.ID
 
+	// Build subquery using Squirrel
+	subQuery := databaseg.Builder.
+		Select("image_id").
+		From("images").
+		Where(sq.Eq{"image_registry_id": regID, "image_name": image})
+
 	stmt := databaseg.Builder.
 		Update("artifacts").
 		Set("artifact_deleted_at", now).
 		Set("artifact_deleted_by", userID).
-		Where("artifact_image_id = (SELECT image_id FROM images WHERE image_registry_id = ? AND image_name = ?) AND artifact_version = ? AND artifact_deleted_at IS NULL", regID, image, version)
+		Where(sq.Eq{
+			"artifact_image_id": subQuery,
+			"artifact_version":  version,
+		}).
+		Where("artifact_deleted_at IS NULL")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {
