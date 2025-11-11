@@ -452,6 +452,12 @@ type RegistryRepository interface {
 
 	FetchUpstreamProxyKeys(ctx context.Context, ids []int64) (repokeys []string, err error)
 	Count(ctx context.Context) (int64, error)
+
+	// GetDistinctAccountIDs returns a list of distinct account identifiers that have registries
+	GetDistinctAccountIDs(ctx context.Context) ([]string, error)
+
+	// Purge permanently deletes soft-deleted registries older than the given timestamp for a specific account
+	Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error)
 }
 
 type RegistryBlobRepository interface {
@@ -516,6 +522,9 @@ type ImageRepository interface {
 
 	// Restore methods (enterprise only - not implemented in gitness)
 	RestoreByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
+
+	// Purge permanently deletes soft-deleted images older than the given timestamp for a specific account
+	Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error)
 }
 
 type ArtifactRepository interface {
@@ -617,6 +626,9 @@ type ArtifactRepository interface {
 	CountByImageName(
 		ctx context.Context, regID int64, name string,
 	) (int64, error)
+
+	// Purge permanently deletes soft-deleted artifacts older than the given timestamp for a specific account
+	Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error)
 }
 
 type DownloadStatRepository interface {

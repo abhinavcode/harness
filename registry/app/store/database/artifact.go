@@ -1371,3 +1371,33 @@ type downloadCountResult struct {
 	ArtifactID    string `db:"download_stat_artifact_id"`
 	DownloadCount int64  `db:"download_count"`
 }
+
+// Purge permanently deletes soft-deleted artifacts older than the given timestamp.
+// Returns the number of artifacts deleted.
+func (a ArtifactDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
+	// Delete artifacts that belong to registries of the specified account
+	// Using JOINs for better performance with large datasets
+	sql := `DELETE FROM artifacts
+		WHERE artifact_id IN (
+			SELECT a.artifact_id 
+			FROM artifacts a
+			INNER JOIN images i ON a.artifact_image_id = i.image_id
+			INNER JOIN registries r ON i.image_registry_id = r.registry_id
+			WHERE r.registry_account_identifier = $1
+			  AND a.artifact_deleted_at IS NOT NULL
+			  AND a.artifact_deleted_at <= $2
+		)`
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	result, err := db.ExecContext(ctx, sql, accountID, deletedBeforeOrAt)
+	if err != nil {
+		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge artifacts")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	return rowsAffected, nil
+}
