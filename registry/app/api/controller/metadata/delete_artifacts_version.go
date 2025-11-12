@@ -253,7 +253,7 @@ func (c *APIController) deleteVersion(
 ) error {
 	_, err := c.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName)
 	if err != nil {
-		return fmt.Errorf("version doesn't exist with for image %v: %w", imageInfo.Name, err)
+		return fmt.Errorf("version doesn't exist for image %v: %w", imageInfo.Name, err)
 	}
 
 	// get the file path based on package type
