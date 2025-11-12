@@ -37,6 +37,7 @@ import (
 	"github.com/harness/gitness/app/services/pullreq"
 	"github.com/harness/gitness/app/services/refcache"
 	"github.com/harness/gitness/app/services/rules"
+	"github.com/harness/gitness/app/services/space"
 	"github.com/harness/gitness/app/sse"
 	"github.com/harness/gitness/app/store"
 	"github.com/harness/gitness/app/url"
@@ -92,7 +93,7 @@ type Controller struct {
 	membershipStore     store.MembershipStore
 	prListService       *pullreq.ListService
 	spaceFinder         refcache.SpaceFinder
-	importer            *importer.Repository
+	importer            *importer.JobRepository
 	exporter            *exporter.Repository
 	resourceLimiter     limiter.ResourceLimiter
 	publicAccess        publicaccess.Service
@@ -106,6 +107,7 @@ type Controller struct {
 	repoIdentifierCheck check.RepoIdentifier
 	infraProviderSvc    *infraprovider.Service
 	favoriteStore       store.FavoriteStore
+	spaceSvc            *space.Service
 }
 
 func NewController(config *types.Config, tx dbtx.Transactor, urlProvider url.Provider,
@@ -115,12 +117,12 @@ func NewController(config *types.Config, tx dbtx.Transactor, urlProvider url.Pro
 	repoStore store.RepoStore, principalStore store.PrincipalStore, repoCtrl *repo.Controller,
 	membershipStore store.MembershipStore, prListService *pullreq.ListService,
 	spaceFinder refcache.SpaceFinder,
-	importer *importer.Repository, exporter *exporter.Repository,
+	importer *importer.JobRepository, exporter *exporter.Repository,
 	limiter limiter.ResourceLimiter, publicAccess publicaccess.Service, auditService audit.Service,
 	gitspaceSvc *gitspace.Service, labelSvc *label.Service,
 	instrumentation instrument.Service, executionStore store.ExecutionStore,
 	rulesSvc *rules.Service, usageMetricStore store.UsageMetricStore, repoIdentifierCheck check.RepoIdentifier,
-	infraProviderSvc *infraprovider.Service, favoriteStore store.FavoriteStore,
+	infraProviderSvc *infraprovider.Service, favoriteStore store.FavoriteStore, spaceSvc *space.Service,
 ) *Controller {
 	return &Controller{
 		nestedSpacesEnabled: config.NestedSpacesEnabled,
@@ -155,6 +157,7 @@ func NewController(config *types.Config, tx dbtx.Transactor, urlProvider url.Pro
 		repoIdentifierCheck: repoIdentifierCheck,
 		infraProviderSvc:    infraProviderSvc,
 		favoriteStore:       favoriteStore,
+		spaceSvc:            spaceSvc,
 	}
 }
 
