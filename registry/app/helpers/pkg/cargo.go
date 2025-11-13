@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/harness/gitness/app/api/request"
@@ -85,21 +86,11 @@ func (c *cargoPackageType) GetPathPackageType() string {
 }
 
 func (c *cargoPackageType) IsValidRepoType(repoType string) bool {
-	for _, validRepoType := range c.validRepoTypes {
-		if validRepoType == repoType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.validRepoTypes, repoType)
 }
 
 func (c *cargoPackageType) IsValidUpstreamSource(upstreamSource string) bool {
-	for _, validUpstreamSource := range c.validUpstreamSources {
-		if validUpstreamSource == upstreamSource {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.validUpstreamSources, upstreamSource)
 }
 
 func (c *cargoPackageType) IsURLRequiredForUpstreamSource(upstreamSource string) bool {
@@ -160,7 +151,10 @@ func (c *cargoPackageType) DeleteVersion(ctx context.Context,
 	artifactName string,
 	versionName string,
 ) error {
-	err := c.registryHelper.DeleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
+	err := c.registryHelper.DeleteVersion(
+		ctx, regInfo, imageInfo, artifactName, versionName,
+		c.GetFilePath(artifactName, versionName),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to delete cargo artifact version: %w", err)
 	}
@@ -257,7 +251,7 @@ func (c *cargoPackageType) GetArtifactDetail(
 	art *types.Artifact,
 	downloadCount int64,
 ) (*artifact.ArtifactDetail, error) {
-	var result map[string]interface{}
+	var result map[string]any
 	err := json.Unmarshal(art.Metadata, &result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)

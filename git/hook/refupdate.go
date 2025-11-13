@@ -200,7 +200,7 @@ func (u *RefUpdater) Pre(ctx context.Context, alternateDirs ...string) error {
 		log.Ctx(ctx).Debug().
 			Str("err", *out.Error).
 			Msgf("Pre-receive blocked ref update\nMessages\n%v", out.Messages)
-		return errors.PreconditionFailed("pre-receive hook blocked reference update: %q", *out.Error)
+		return errors.PreconditionFailedf("pre-receive hook blocked reference update: %q", *out.Error)
 	}
 
 	u.state = stateUpdate
@@ -224,11 +224,11 @@ func (u *RefUpdater) UpdateRef(ctx context.Context) error {
 	for _, ref := range u.refs {
 		switch {
 		case ref.New.IsNil():
-			_, _ = input.WriteString(fmt.Sprintf("delete %s\000%s\000", ref.Ref, ref.Old))
+			_, _ = fmt.Fprintf(input, "delete %s\000%s\000", ref.Ref, ref.Old)
 		case ref.Old.IsNil():
-			_, _ = input.WriteString(fmt.Sprintf("create %s\000%s\000", ref.Ref, ref.New))
+			_, _ = fmt.Fprintf(input, "create %s\000%s\000", ref.Ref, ref.New)
 		default:
-			_, _ = input.WriteString(fmt.Sprintf("update %s\000%s\000%s\000", ref.Ref, ref.New, ref.Old))
+			_, _ = fmt.Fprintf(input, "update %s\000%s\000%s\000", ref.Ref, ref.New, ref.Old)
 		}
 	}
 
@@ -288,7 +288,7 @@ func (u *RefUpdater) getRef(ctx context.Context, ref string) (sha.SHA, error) {
 	output := &bytes.Buffer{}
 	err := cmd.Run(ctx, command.WithDir(u.repoPath), command.WithStdout(output))
 	if cErr := command.AsError(err); cErr != nil && cErr.IsExitCode(128) && cErr.IsInvalidRefErr() {
-		return sha.None, errors.NotFound("reference %q not found", ref)
+		return sha.None, errors.NotFoundf("reference %q not found", ref)
 	}
 
 	if err != nil {

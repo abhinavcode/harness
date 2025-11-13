@@ -227,6 +227,23 @@ func (a ArtifactDao) Count(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
+func (a ArtifactDao) DuplicateArtifact(
+	ctx context.Context, sourceArtifact *types.Artifact, targetImageID int64,
+) (*types.Artifact, error) {
+	targetArtifact := &types.Artifact{
+		ImageID:  targetImageID,
+		Version:  sourceArtifact.Version,
+		Metadata: sourceArtifact.Metadata,
+	}
+
+	_, err := a.CreateOrUpdate(ctx, targetArtifact)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to duplicate artifact")
+	}
+
+	return targetArtifact, nil
+}
+
 func (a ArtifactDao) DeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) (err error) {
 	var delStmt sq.DeleteBuilder
 	switch a.db.DriverName() {
@@ -416,8 +433,10 @@ func (a ArtifactDao) CountLatestByName(
 	return count, nil
 }
 
-func (a ArtifactDao) SearchByImageName(ctx context.Context, regID int64, name string, limit int,
-	offset int) (*[]types.ArtifactMetadata, error) {
+func (a ArtifactDao) SearchByImageName(
+	ctx context.Context, regID int64, name string, limit int,
+	offset int,
+) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`i.image_name as name,
         a.artifact_id as artifact_id, a.artifact_version as version, a.artifact_metadata as metadata`,
@@ -601,9 +620,11 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 	return count, nil
 }
 
-func (a ArtifactDao) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string,
+func (a ArtifactDao) GetArtifactsByRepo(
+	ctx context.Context, parentID int64, repoKey string, sortByField string,
 	sortByOrder string, limit int, offset int, search string, labels []string,
-	artifactType *artifact.ArtifactType) (*[]types.ArtifactMetadata, error) {
+	artifactType *artifact.ArtifactType,
+) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, i.image_name as name, 
 		r.registry_package_type as package_type, a.artifact_version as latest_version, 
@@ -650,9 +671,10 @@ func (a ArtifactDao) GetArtifactsByRepo(ctx context.Context, parentID int64, rep
 
 	// nolint:goconst
 	sortField := "image_" + sortByField
-	if sortByField == downloadCount {
+	switch sortByField {
+	case downloadCount:
 		sortField = downloadCount
-	} else if sortByField == imageName {
+	case imageName:
 		sortField = name
 	}
 	q = q.OrderBy(sortField + " " + sortByOrder).Limit(util.SafeIntToUInt64(limit)).Offset(util.SafeIntToUInt64(offset))
@@ -672,8 +694,10 @@ func (a ArtifactDao) GetArtifactsByRepo(ctx context.Context, parentID int64, rep
 }
 
 // nolint:goconst
-func (a ArtifactDao) CountArtifactsByRepo(ctx context.Context, parentID int64, repoKey, search string, labels []string,
-	artifactType *artifact.ArtifactType) (int64, error) {
+func (a ArtifactDao) CountArtifactsByRepo(
+	ctx context.Context, parentID int64, repoKey, search string, labels []string,
+	artifactType *artifact.ArtifactType,
+) (int64, error) {
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
 		Join(
@@ -823,9 +847,11 @@ func (a ArtifactDao) mapToArtifactMetadataList(
 	return &artifacts, nil
 }
 
-func (a ArtifactDao) GetAllVersionsByRepoAndImage(ctx context.Context, regID int64, image string,
+func (a ArtifactDao) GetAllVersionsByRepoAndImage(
+	ctx context.Context, regID int64, image string,
 	sortByField string, sortByOrder string, limit int, offset int, search string,
-	artifactType *artifact.ArtifactType) (*[]types.NonOCIArtifactMetadata, error) {
+	artifactType *artifact.ArtifactType,
+) (*[]types.NonOCIArtifactMetadata, error) {
 	// Build the main query
 	q := databaseg.Builder.
 		Select(`
@@ -886,7 +912,7 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(ctx context.Context, regID int
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing custom list query")
 	}
 
-	artifactIDs := make([]interface{}, 0, len(dst))
+	artifactIDs := make([]any, 0, len(dst))
 	for _, art := range dst {
 		artifactIDs = append(artifactIDs, art.ID)
 	}
@@ -897,8 +923,10 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(ctx context.Context, regID int
 	return a.mapToNonOCIMetadataList(dst)
 }
 
-func (a ArtifactDao) fetchDownloadStatsForArtifacts(ctx context.Context,
-	artifactIDs []interface{}, dst []*nonOCIArtifactMetadataDB, sortByDownloadCount bool, sortOrder string) error {
+func (a ArtifactDao) fetchDownloadStatsForArtifacts(
+	ctx context.Context,
+	artifactIDs []any, dst []*nonOCIArtifactMetadataDB, sortByDownloadCount bool, sortOrder string,
+) error {
 	if len(artifactIDs) == 0 {
 		return nil
 	}
@@ -945,8 +973,10 @@ func (a ArtifactDao) fetchDownloadStatsForArtifacts(ctx context.Context,
 	return nil
 }
 
-func (a ArtifactDao) CountAllVersionsByRepoAndImage(ctx context.Context, parentID int64, repoKey string, image string,
-	search string, artifactType *artifact.ArtifactType) (int64, error) {
+func (a ArtifactDao) CountAllVersionsByRepoAndImage(
+	ctx context.Context, parentID int64, repoKey string, image string,
+	search string, artifactType *artifact.ArtifactType,
+) (int64, error) {
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON i.image_id = a.artifact_image_id").
@@ -979,8 +1009,10 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(ctx context.Context, parentI
 	return count, nil
 }
 
-func (a ArtifactDao) GetArtifactMetadata(ctx context.Context, id int64, identifier string, image string, version string,
-	artifactType *artifact.ArtifactType) (*types.ArtifactMetadata, error) {
+func (a ArtifactDao) GetArtifactMetadata(
+	ctx context.Context, id int64, identifier string, image string, version string,
+	artifactType *artifact.ArtifactType,
+) (*types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		"r.registry_package_type as package_type, a.artifact_version as name,"+
 			"a.artifact_updated_at as modified_at, "+
@@ -1051,6 +1083,44 @@ func (a ArtifactDao) UpdateArtifactMetadata(
 	}
 
 	return nil
+}
+
+func (a ArtifactDao) GetLatestArtifactsByRepo(
+	ctx context.Context, registryID int64, batchSize int, artifactID int64,
+) (*[]types.ArtifactMetadata, error) {
+	q := databaseg.Builder.Select(
+		`r.registry_name as repo_name, i.image_name as name,
+		a.artifact_id as artifact_id, a.artifact_version as version, a.artifact_metadata as metadata`,
+	).
+		From("artifacts a").
+		Join("images i ON i.image_id = a.artifact_image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Join(
+			`(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
+			ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
+			JOIN images i ON t.artifact_image_id = i.image_id
+			JOIN registries r ON i.image_registry_id = r.registry_id
+			WHERE r.registry_id = ? ) AS a1 
+			ON a.artifact_id = a1.id`, registryID,
+		).
+		Where("a.artifact_id > ? AND r.registry_id = ?", artifactID, registryID).
+		Where("a1.rank = 1").
+		OrderBy("a.artifact_id ASC").
+		Limit(util.SafeIntToUInt64(batchSize))
+
+	sql, args, err := q.ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to convert query to sql")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+
+	var dst []*artifactMetadataDB
+	if err = db.SelectContext(ctx, &dst, sql, args...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing GetLatestArtifactsByRepo query")
+	}
+
+	return a.mapToArtifactMetadataList(dst)
 }
 
 func (a ArtifactDao) GetAllArtifactsByRepo(

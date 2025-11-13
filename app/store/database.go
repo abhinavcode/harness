@@ -315,6 +315,15 @@ type (
 
 		// ListSizeInfos returns a list of all active repo sizes.
 		ListSizeInfos(ctx context.Context) ([]*types.RepositorySizeInfo, error)
+
+		// UpdateNumForks increases or decreases number of forks of the repository.
+		UpdateNumForks(ctx context.Context, repoID int64, delta int64) error
+
+		// ClearForkID clears fork ID of all repositories that have this fork ID.
+		ClearForkID(ctx context.Context, repoUpstreamID int64) error
+
+		// UpdateParent updates parent_id for all repos with currentParentID to newParentID.
+		UpdateParent(ctx context.Context, currentParentID, newParentID int64) (int64, error)
 	}
 
 	// SettingsStore defines the settings storage.
@@ -605,6 +614,9 @@ type (
 			repoID int64,
 			ruleTypes ...enum.RuleType,
 		) ([]types.RuleInfoInternal, error)
+
+		// UpdateParentSpace updates the parent space of rules.
+		UpdateParentSpace(ctx context.Context, srcParentSpaceID int64, targetParentSpaceID int64) (int64, error)
 	}
 
 	// WebhookStore defines the webhook data storage.
@@ -651,6 +663,9 @@ type (
 			parents []types.WebhookParentInfo,
 			opts *types.WebhookFilter,
 		) ([]*types.Webhook, error)
+
+		// UpdateParentSpace updates the parent space of webhooks.
+		UpdateParentSpace(ctx context.Context, srcParentSpaceID int64, targetParentSpaceID int64) (int64, error)
 	}
 
 	// WebhookExecutionStore defines the webhook execution data storage.
@@ -1315,6 +1330,9 @@ type (
 			spaceIDs []int64,
 			filter *types.LabelFilter,
 		) (int64, error)
+
+		// UpdateParentSpace updates the parent space of labels.
+		UpdateParentSpace(ctx context.Context, srcParentSpaceID int64, targetParentSpaceID int64) (int64, error)
 	}
 
 	LabelValueStore interface {
@@ -1489,5 +1507,13 @@ type (
 			resourceIDs []int64,
 		) (map[int64]bool, error)
 		Delete(ctx context.Context, principalID int64, in *types.FavoriteResource) error
+	}
+
+	AITaskStore interface {
+		Create(ctx context.Context, in *types.AITask) error
+		Update(ctx context.Context, in *types.AITask) error
+		Find(ctx context.Context, id int64) (*types.AITask, error)
+		FindByIdentifier(ctx context.Context, identifier string) (*types.AITask, error)
+		List(ctx context.Context, filter *types.AITaskFilter) ([]*types.AITask, error)
 	}
 )

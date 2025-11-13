@@ -19,6 +19,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/harness/gitness/app/api/controller/limiter"
@@ -44,6 +45,22 @@ type CreateForkInput struct {
 	IsPublic   *bool  `json:"is_public"`
 }
 
+func (in *CreateForkInput) sanitize() error {
+	in.ParentRef = strings.TrimSpace(in.ParentRef)
+	in.Identifier = strings.TrimSpace(in.Identifier)
+	in.ForkBranch = strings.TrimSpace(in.ForkBranch)
+
+	if in.ParentRef == "" {
+		return errors.InvalidArgument("Parent space is mandatory.")
+	}
+
+	if in.Identifier == "" {
+		return errors.InvalidArgument("Identifier is mandatory.")
+	}
+
+	return nil
+}
+
 //nolint:gocognit
 func (c *Controller) CreateFork(
 	ctx context.Context,
@@ -53,6 +70,10 @@ func (c *Controller) CreateFork(
 ) (*RepositoryOutput, error) {
 	repoUpstreamCore, err := c.getRepoCheckAccess(ctx, session, repoRef, enum.PermissionRepoView)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := in.sanitize(); err != nil {
 		return nil, err
 	}
 
@@ -178,7 +199,7 @@ func (c *Controller) CreateFork(
 			LastGITPush:   now,
 			ForkID:        repoUpstream.ID,
 			DefaultBranch: defaultBranch,
-			IsEmpty:       true,
+			IsEmpty:       false,
 			State:         enum.RepoStateGitImport,
 			Tags:          json.RawMessage(`{}`),
 		}
@@ -188,10 +209,9 @@ func (c *Controller) CreateFork(
 			return fmt.Errorf("failed to create fork repository: %w", err)
 		}
 
-		repoUpstream.NumForks++
-		err = c.repoStore.Update(ctx, repoUpstream)
+		err = c.repoStore.UpdateNumForks(ctx, repoUpstream.ID, 1)
 		if err != nil {
-			return fmt.Errorf("failed to update upstream repository: %w", err)
+			return fmt.Errorf("failed to increment number of forks in upstream repository: %w", err)
 		}
 
 		return nil

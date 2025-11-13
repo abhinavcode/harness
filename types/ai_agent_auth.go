@@ -12,23 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package importer
+package types
 
-import (
-	"strconv"
-	"strings"
-)
+import "github.com/harness/gitness/types/enum"
 
-const jobIDPrefix = "import-repo-"
-
-func JobIDFromRepoID(repoID int64) string {
-	return jobIDPrefix + strconv.FormatInt(repoID, 10)
+type AIAgentAuth struct {
+	AuthType enum.AIAgentAuth `json:"type"`
+	APIKey   APIKey           `json:"api_key,omitempty"`
 }
 
-func RepoIDFromJobID(jobID string) int64 {
-	if !strings.HasPrefix(jobID, jobIDPrefix) {
-		return 0
-	}
-	repoID, _ := strconv.ParseInt(jobID[len(jobIDPrefix):], 10, 64)
-	return repoID
+type APIKey struct {
+	Value *MaskSecret `json:"value"`
 }

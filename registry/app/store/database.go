@@ -506,6 +506,8 @@ type ImageRepository interface {
 
 	DeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
 	DeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, regID int64, image string) (err error)
+
+	DuplicateImage(ctx context.Context, sourceImage *types.Image, targetRegistryID int64) (*types.Image, error)
 }
 
 type ArtifactRepository interface {
@@ -568,6 +570,12 @@ type ArtifactRepository interface {
 	DeleteByVersionAndImageName(ctx context.Context, image string, version string, regID int64) (err error)
 	GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error)
 
+	// get latest artifacts from all images under repo
+	GetLatestArtifactsByRepo(
+		ctx context.Context, registryID int64, batchSize int, artifactID int64,
+	) (*[]types.ArtifactMetadata, error)
+
+	// get all artifacts from all images under repo
 	GetAllArtifactsByRepo(
 		ctx context.Context, registryID int64, batchSize int, artifactID int64,
 	) (*[]types.ArtifactMetadata, error)
@@ -592,6 +600,11 @@ type ArtifactRepository interface {
 	CountByImageName(
 		ctx context.Context, regID int64, name string,
 	) (int64, error)
+
+	// DuplicateArtifact creates a copy of an artifact with a different image ID and created by user
+	DuplicateArtifact(
+		ctx context.Context, sourceArtifact *types.Artifact, targetImageID int64,
+	) (*types.Artifact, error)
 }
 
 type DownloadStatRepository interface {
@@ -690,6 +703,10 @@ type NodesRepository interface {
 
 	DeleteByNodePathAndRegistryID(ctx context.Context, nodePath string, regID int64) (err error)
 	DeleteByLeafNodePathAndRegistryID(ctx context.Context, nodePath string, regID int64) (err error)
+
+	GetAllFileNodesByPathPrefixAndRegistryID(
+		ctx context.Context, registryID int64, pathPrefix string,
+	) (*[]types.Node, error)
 }
 
 type GenericBlobRepository interface {

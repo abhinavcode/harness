@@ -15,6 +15,7 @@
 package gitspaceservice
 
 import (
+	"github.com/harness/gitness/app/services/aitaskevent"
 	"github.com/harness/gitness/app/services/gitspace"
 	"github.com/harness/gitness/app/services/gitspaceinfraevent"
 	"github.com/harness/gitness/app/services/gitspaceoperationsevent"
@@ -28,4 +29,5 @@ var WireSet = wire.NewSet(
 	gitspaceinfraevent.WireSet,
 	infraprovider.WireSet,
 	gitspaceoperationsevent.WireSet,
+	aitaskevent.WireSet,
 )

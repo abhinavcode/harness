@@ -120,7 +120,7 @@ func (c *localRegistry) GetPackageMetadata(
 	}
 
 	if len(*artifacts) == 0 {
-		return packageMetadata, errors.NotFound("no artifacts found for registry %s and image %s", info.RegIdentifier,
+		return packageMetadata, errors.NotFoundf("no artifacts found for registry %s and image %s", info.RegIdentifier,
 			info.Image)
 	}
 
@@ -132,12 +132,16 @@ func (c *localRegistry) GetPackageMetadata(
 		}
 
 		for _, file := range metadata.Files {
+			pkgURL := c.urlProvider.PackageURL(
+				ctx,
+				info.RootIdentifier+"/"+info.RegIdentifier,
+				"python",
+			)
 			fileInfo := pythontype.File{
 				Name: file.Filename,
-				FileURL: c.urlProvider.RegistryURL(ctx) + fmt.Sprintf(
-					"/pkg/%s/%s/python/files/%s/%s/%s",
-					info.RootIdentifier,
-					info.RegIdentifier,
+				FileURL: fmt.Sprintf(
+					"%s/files/%s/%s/%s",
+					pkgURL,
 					info.Image,
 					artifact.Version,
 					file.Filename,

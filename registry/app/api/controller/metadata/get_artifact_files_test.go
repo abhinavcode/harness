@@ -53,7 +53,7 @@ func TestGetArtifactFiles(t *testing.T) {
 		name         string
 		packageType  artifact.PackageType
 		setupMocks   func() *metadata.APIController
-		expectedResp interface{}
+		expectedResp any
 	}{
 		{
 			name:        "maven_files_success",
@@ -246,7 +246,7 @@ func setupFilesController(_ *testing.T, packageType artifact.PackageType) *metad
 	mockSpaceFinder := new(mocks.SpaceFinder)
 	mockAuthorizer := new(mocks.Authorizer)
 	mockImageStore := new(mocks.ImageRepository)
-	mockArtifactStore := new(mocks.MockArtifactRepository)
+	mockArtifactStore := new(mocks.ArtifactRepository)
 	mockGenericBlobRepo := new(mocks.GenericBlobRepository)
 	mockTransactor := new(mocks.Transactor)
 	mockURLProvider := new(mocks.Provider)
@@ -431,7 +431,7 @@ func verifyFilesSnapshot(t *testing.T, name string, actual artifact.FileDetailRe
 	require.NoError(t, err, "Failed to read snapshot file")
 
 	// Compare JSON
-	var expected, actualParsed interface{}
+	var expected, actualParsed any
 	require.NoError(t, json.Unmarshal(expectedJSON, &expected), "Failed to unmarshal expected JSON")
 	require.NoError(t, json.Unmarshal(actualJSON, &actualParsed), "Failed to unmarshal actual JSON")
 

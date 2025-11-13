@@ -53,6 +53,7 @@ import (
 	"github.com/harness/gitness/app/auth/authz"
 	"github.com/harness/gitness/app/bootstrap"
 	connectorservice "github.com/harness/gitness/app/connector"
+	aitaskevent "github.com/harness/gitness/app/events/aitask"
 	checkevents "github.com/harness/gitness/app/events/check"
 	gitevents "github.com/harness/gitness/app/events/git"
 	gitspaceevents "github.com/harness/gitness/app/events/gitspace"
@@ -71,6 +72,7 @@ import (
 	"github.com/harness/gitness/app/gitspace/orchestrator/ide"
 	"github.com/harness/gitness/app/gitspace/orchestrator/runarg"
 	"github.com/harness/gitness/app/gitspace/platformconnector"
+	"github.com/harness/gitness/app/gitspace/platformsecret"
 	"github.com/harness/gitness/app/gitspace/scm"
 	gitspacesecret "github.com/harness/gitness/app/gitspace/secret"
 	"github.com/harness/gitness/app/pipeline/canceler"
@@ -114,6 +116,7 @@ import (
 	"github.com/harness/gitness/app/services/rules"
 	secretservice "github.com/harness/gitness/app/services/secret"
 	"github.com/harness/gitness/app/services/settings"
+	spaceSvc "github.com/harness/gitness/app/services/space"
 	"github.com/harness/gitness/app/services/tokengenerator"
 	"github.com/harness/gitness/app/services/trigger"
 	"github.com/harness/gitness/app/services/usage"
@@ -175,6 +178,7 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		services.ProvideGitspaceServices,
 		server.WireSet,
 		url.WireSet,
+		spaceSvc.WireSet,
 		space.WireSet,
 		limiter.WireSet,
 		publicaccess.WireSet,
@@ -279,6 +283,7 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		migrate.WireSet,
 		scm.WireSet,
 		platformconnector.WireSet,
+		platformsecret.WireSet,
 		gitspacesecret.WireSet,
 		orchestrator.WireSet,
 		containerorchestrator.WireSet,
@@ -290,6 +295,7 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		cliserver.ProvideGitspaceOrchestratorConfig,
 		ide.WireSet,
 		gitspaceinfraevents.WireSet,
+		aitaskevent.WireSet,
 		gitspaceservice.WireSet,
 		gitspacesettings.WireSet,
 		gitspaceoperationsevents.WireSet,
