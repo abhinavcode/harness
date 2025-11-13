@@ -255,11 +255,11 @@ func (c *Controller) GetOrderedRepos(
 	artInfo pkg.BaseInfo,
 ) ([]registrytypes.Registry, error) {
 	var result []registrytypes.Registry
-	if registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, artInfo.ParentID, repoKey); err == nil {
+	if registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, artInfo.ParentID, repoKey, false); err == nil {
 		result = append(result, *registry)
 		proxies := registry.UpstreamProxies
 		if len(proxies) > 0 {
-			upstreamRepos, err := c.DBStore.RegistryDao.GetByIDIn(ctx, proxies)
+			upstreamRepos, err := c.DBStore.RegistryDao.GetByIDIn(ctx, proxies, false)
 			if err != nil {
 				return result, err
 			}

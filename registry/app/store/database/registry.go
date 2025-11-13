@@ -82,11 +82,15 @@ type registryNameID struct {
 	Name string `db:"registry_name"`
 }
 
-func (r registryDao) Get(ctx context.Context, id int64) (*types.Registry, error) {
+func (r registryDao) Get(ctx context.Context, id int64, includeSoftDeleted bool) (*types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_id = ?", id)
+
+	if !includeSoftDeleted {
+		stmt = stmt.Where("registry_deleted_at IS NULL")
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 
@@ -105,13 +109,17 @@ func (r registryDao) Get(ctx context.Context, id int64) (*types.Registry, error)
 
 func (r registryDao) GetByParentIDAndName(
 	ctx context.Context, parentID int64,
-	name string,
+	name string, includeSoftDeleted bool,
 ) (*types.Registry, error) {
 	log.Info().Msgf("GetByParentIDAndName: parentID: %d, name: %s", parentID, name)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_parent_id = ? AND registry_name = ?", parentID, name)
+
+	if !includeSoftDeleted {
+		stmt = stmt.Where("registry_deleted_at IS NULL")
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 
@@ -130,12 +138,16 @@ func (r registryDao) GetByParentIDAndName(
 
 func (r registryDao) GetByRootParentIDAndName(
 	ctx context.Context, parentID int64,
-	name string,
+	name string, includeSoftDeleted bool,
 ) (*types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_root_parent_id = ? AND registry_name = ?", parentID, name)
+
+	if !includeSoftDeleted {
+		stmt = stmt.Where("registry_deleted_at IS NULL")
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 
@@ -169,6 +181,49 @@ func (r registryDao) Count(ctx context.Context) (int64, error) {
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
 	}
 	return count, nil
+}
+
+func (r registryDao) CountAll(
+	ctx context.Context,
+	parentIDs []int64,
+	packageTypes []string,
+	search string,
+	repoType string,
+	includeSoftDeleted bool,
+) (count int64, err error) {
+	stmt := databaseg.Builder.Select("COUNT(*)").
+		From("registries").
+		Where(sq.Eq{"registry_parent_id": parentIDs})
+
+	if !includeSoftDeleted {
+		stmt = stmt.Where("registry_deleted_at IS NULL")
+	}
+
+	if !commons.IsEmpty(search) {
+		stmt = stmt.Where("registry_name LIKE ?", "%"+search+"%")
+	}
+
+	if len(packageTypes) > 0 {
+		stmt = stmt.Where(sq.Eq{"registry_package_type": packageTypes})
+	}
+
+	if repoType != "" {
+		stmt = stmt.Where("registry_type = ?", repoType)
+	}
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return -1, errors.Wrap(err, "Failed to convert query to sql")
+	}
+
+	db := dbtx.GetAccessor(ctx, r.db)
+
+	var countResult int64
+	err = db.QueryRowContext(ctx, sql, args...).Scan(&countResult)
+	if err != nil {
+		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
+	}
+	return countResult, nil
 }
 
 func (r registryDao) FetchUpstreamProxyKeys(
@@ -217,11 +272,15 @@ func (r registryDao) FetchUpstreamProxyKeys(
 	return orderedRepoKeys, nil
 }
 
-func (r registryDao) GetByIDIn(ctx context.Context, ids []int64) (*[]types.Registry, error) {
+func (r registryDao) GetByIDIn(ctx context.Context, ids []int64, includeSoftDeleted bool) (*[]types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where(sq.Eq{"registry_id": ids})
+
+	if !includeSoftDeleted {
+		stmt = stmt.Where("registry_deleted_at IS NULL")
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 
@@ -263,6 +322,7 @@ func (r registryDao) GetAll(
 	offset int,
 	search string,
 	repoType string,
+	filters *types.FilterParams,
 ) (repos *[]store.RegistryMetadata, err error) {
 	if limit < 0 || offset < 0 {
 		return nil, fmt.Errorf("limit and offset must be non-negative")
@@ -286,12 +346,22 @@ func (r registryDao) GetAll(
 	`
 
 	// Subqueries with optimizations for reduced joins and grouping
-	artifactCountSubquery := `
-		SELECT image_registry_id, COUNT(image_id) AS count
-		FROM images
-		WHERE image_enabled = TRUE
-		GROUP BY 1
-	`
+	// Conditionally filter by image_enabled based on IncludeSoftDeleted flag
+	var artifactCountSubquery string
+	if filters != nil && filters.IncludeSoftDeleted {
+		artifactCountSubquery = `
+			SELECT image_registry_id, COUNT(image_id) AS count
+			FROM images
+			GROUP BY 1
+		`
+	} else {
+		artifactCountSubquery = `
+			SELECT image_registry_id, COUNT(image_id) AS count
+			FROM images
+			WHERE image_enabled = TRUE
+			GROUP BY 1
+		`
+	}
 
 	blobSizesSubquery := `
 		SELECT rblob_registry_id AS rblob_registry_id, SUM(b.blob_size) AS total_size
@@ -306,14 +376,26 @@ func (r registryDao) GetAll(
 		JOIN generic_blobs gb ON  n.node_is_file = TRUE AND gb.generic_blob_id = n.node_generic_blob_id
 		GROUP BY 1
 	`
-	downloadStatsSubquery := `
-		SELECT i.image_registry_id AS registry_id, COUNT(d.download_stat_id) AS download_count
-		FROM download_stats d
-		JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
-		JOIN images i ON a.artifact_image_id = i.image_id
-		WHERE i.image_enabled = TRUE
-		GROUP BY 1
-	`
+	// Conditionally filter download stats by image_enabled based on IncludeSoftDeleted flag
+	var downloadStatsSubquery string
+	if filters != nil && filters.IncludeSoftDeleted {
+		downloadStatsSubquery = `
+			SELECT i.image_registry_id AS registry_id, COUNT(d.download_stat_id) AS download_count
+			FROM download_stats d
+			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
+			JOIN images i ON a.artifact_image_id = i.image_id
+			GROUP BY 1
+		`
+	} else {
+		downloadStatsSubquery = `
+			SELECT i.image_registry_id AS registry_id, COUNT(d.download_stat_id) AS download_count
+			FROM download_stats d
+			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
+			JOIN images i ON a.artifact_image_id = i.image_id
+			WHERE i.image_enabled = TRUE
+			GROUP BY 1
+		`
+	}
 
 	var query sq.SelectBuilder
 	query = databaseg.Builder.
@@ -330,6 +412,12 @@ func (r registryDao) GetAll(
 		LeftJoin(fmt.Sprintf("(%s) AS download_stats ON r.registry_id = download_stats.registry_id",
 			downloadStatsSubquery)).
 		Where(sq.Eq{"r.registry_parent_id": parentIDs})
+
+	// Apply soft delete filter for registries
+	if filters == nil || !filters.IncludeSoftDeleted {
+		query = query.Where("r.registry_deleted_at IS NULL")
+	}
+
 	// Apply search filter
 	if search != "" {
 		query = query.Where("r.registry_name LIKE ?", "%"+search+"%")
@@ -379,41 +467,6 @@ func (r registryDao) GetAll(
 
 	// Map results to response type
 	return r.mapToRegistryMetadataList(ctx, dst)
-}
-
-func (r registryDao) CountAll(
-	ctx context.Context, parentIDs []int64,
-	packageTypes []string, search string, repoType string,
-) (int64, error) {
-	stmt := databaseg.Builder.Select("COUNT(*)").
-		From("registries").
-		Where(sq.Eq{"registry_parent_id": parentIDs})
-
-	if !commons.IsEmpty(search) {
-		stmt = stmt.Where("registry_name LIKE ?", "%"+search+"%")
-	}
-
-	if len(packageTypes) > 0 {
-		stmt = stmt.Where(sq.Eq{"registry_package_type": packageTypes})
-	}
-
-	if repoType != "" {
-		stmt = stmt.Where("registry_type = ?", repoType)
-	}
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return -1, errors.Wrap(err, "Failed to convert query to sql")
-	}
-
-	db := dbtx.GetAccessor(ctx, r.db)
-
-	var count int64
-	err = db.QueryRowContext(ctx, sql, args...).Scan(&count)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
-	}
-	return count, nil
 }
 
 func (r registryDao) Create(ctx context.Context, registry *types.Registry) (id int64, err error) {

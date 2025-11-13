@@ -74,7 +74,7 @@ func (c *APIController) GetAllArtifactsByRegistry(
 		}, nil
 	}
 
-	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier)
+	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier, false)
 	if err != nil {
 		return artifact.GetAllArtifactsByRegistry500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(

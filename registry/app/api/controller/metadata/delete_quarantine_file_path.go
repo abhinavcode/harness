@@ -73,7 +73,7 @@ func (c *APIController) DeleteQuarantineFilePath(
 	version := r.Params.Version
 	filePath := r.Params.FilePath
 
-	img, err := c.ImageStore.GetByName(ctx, regInfo.RegistryID, string(*artifactName))
+	img, err := c.ImageStore.GetByName(ctx, regInfo.RegistryID, string(*artifactName), false)
 
 	if err != nil {
 		return artifact.DeleteQuarantineFilePath500JSONResponse{
@@ -109,7 +109,7 @@ func (c *APIController) DeleteQuarantineFilePath(
 			digestVal := typesDigest.String()
 			parsedVersion = digestVal
 		}
-		art, err := c.ArtifactStore.GetByName(ctx, img.ID, parsedVersion)
+		art, err := c.ArtifactStore.GetByName(ctx, img.ID, parsedVersion, false)
 		if err != nil {
 			return artifact.DeleteQuarantineFilePath500JSONResponse{
 				InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(

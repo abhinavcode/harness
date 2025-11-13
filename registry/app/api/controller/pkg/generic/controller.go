@@ -142,7 +142,7 @@ func (c Controller) UploadArtifact(
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
 
-			dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
+			dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, false)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				return fmt.Errorf("failed to fetch artifact : [%s] with "+
@@ -248,7 +248,7 @@ func (c Controller) PullArtifact(ctx context.Context, info pkg.GenericArtifactIn
 }
 
 func (c Controller) CheckIfFileAlreadyExist(ctx context.Context, info pkg.GenericArtifactInfo) error {
-	image, err := c.DBStore.ImageDao.GetByName(ctx, info.RegistryID, info.Image)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, info.RegistryID, info.Image, false)
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch the image for artifact : [%s] with "+
 			regNameFormat, info.Image, info.RegIdentifier)
@@ -257,7 +257,7 @@ func (c Controller) CheckIfFileAlreadyExist(ctx context.Context, info pkg.Generi
 		return nil
 	}
 
-	dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
+	dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, false)
 
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch artifact : [%s] with "+

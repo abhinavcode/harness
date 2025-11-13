@@ -92,7 +92,7 @@ func (r *registryHelper) DeleteVersion(ctx context.Context,
 	artifactName string,
 	versionName string,
 	filePath string) error {
-	_, err := r.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName)
+	_, err := r.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName, false)
 	if err != nil {
 		return fmt.Errorf("version doesn't exist for image %v: %w", imageInfo.Name, err)
 	}
@@ -251,6 +251,7 @@ func (r *registryHelper) GetFileMetadata(
 		CreatedAt:       fmt.Sprint(file.CreatedAt),
 		Name:            filename,
 		DownloadCommand: downloadCommand,
+		Path:            file.Path,
 	}
 }
 

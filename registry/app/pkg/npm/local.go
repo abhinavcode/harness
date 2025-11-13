@@ -327,11 +327,11 @@ func (c *localRegistry) ListTags(ctx context.Context, info npm.ArtifactInfo) (ma
 }
 
 func (c *localRegistry) AddTag(ctx context.Context, info npm.ArtifactInfo) (map[string]string, error) {
-	image, err := c.imageDao.GetByRepoAndName(ctx, info.ParentID, info.RegIdentifier, info.Image)
+	image, err := c.imageDao.GetByRepoAndName(ctx, info.ParentID, info.RegIdentifier, info.Image, false)
 	if err != nil {
 		return nil, err
 	}
-	version, err := c.artifactDao.GetByName(ctx, image.ID, info.Version)
+	version, err := c.artifactDao.GetByName(ctx, image.ID, info.Version, false)
 
 	if err != nil {
 		return nil, err

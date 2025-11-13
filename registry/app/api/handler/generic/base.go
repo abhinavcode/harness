@@ -130,7 +130,7 @@ func (h *Handler) GetGenericArtifactInfo(r *http.Request) (
 		return pkg.GenericArtifactInfo{}, errcode.ErrCodeRootNotFound.WithDetail(err)
 	}
 
-	registry, err := h.Controller.DBStore.RegistryDao.GetByRootParentIDAndName(ctx, rootSpace.ID, registryIdentifier)
+	registry, err := h.Controller.DBStore.RegistryDao.GetByRootParentIDAndName(ctx, rootSpace.ID, registryIdentifier, false)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(
 			"registry %s not found for root: %s. Reason: %s", registryIdentifier, rootSpace.Identifier, err,

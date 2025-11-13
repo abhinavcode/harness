@@ -65,7 +65,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 		}, nil
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifact404JSONResponse{
@@ -76,7 +76,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 	}
 
 	artifactName := string(r.Artifact)
-	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, artifactName)
+	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, artifactName, false)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifact404JSONResponse{

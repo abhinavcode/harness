@@ -210,17 +210,17 @@ func dbBandwidthStatForGenericArtifact(
 	info pkg.GenericArtifactInfo,
 	bandwidthType types.BandwidthType,
 ) errcode.Error {
-	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier)
+	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, false)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, false)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	art, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
+	art, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, false)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
@@ -255,12 +255,12 @@ func dbBandwidthStatForMavenArtifact(
 	bandwidthType types.BandwidthType,
 ) errcode.Error {
 	imageName := info.GroupID + ":" + info.ArtifactID
-	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier)
+	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, false)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, imageName)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, imageName, false)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
 	}
@@ -268,7 +268,7 @@ func dbBandwidthStatForMavenArtifact(
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	art, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
+	art, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, false)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
@@ -313,7 +313,7 @@ func dbBandwidthStat(
 		return err
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, false)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getImageFromUpstreamProxy(ctx, c, info)
 	}
@@ -340,7 +340,7 @@ func getImageFromUpstreamProxy(ctx context.Context, c *docker.Controller, info p
 	}
 	for _, registry := range repos {
 		log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
-		image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
+		image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, false)
 		if err == nil && image != nil {
 			return image, nil
 		}
@@ -359,7 +359,7 @@ func getMavenArtifactFromUpstreamProxy(
 	}
 	for _, registry := range repos {
 		log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
-		image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.GroupID+":"+info.ArtifactID)
+		image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.GroupID+":"+info.ArtifactID, false)
 		if err == nil && image != nil {
 			return image, nil
 		}

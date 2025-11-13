@@ -72,7 +72,7 @@ func (c *APIController) ModifyRegistry(
 		}, err
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
 	if err != nil {
 		return throwModifyRegistry500Error(err), err
 	}
@@ -201,7 +201,7 @@ func (c *APIController) updateVirtualRegistry(
 	if err != nil {
 		return throwModifyRegistry500Error(err), nil
 	}
-	modifiedRepoEntity, err := c.RegistryRepository.Get(ctx, registry.ID)
+	modifiedRepoEntity, err := c.RegistryRepository.Get(ctx, registry.ID, false)
 	if err != nil {
 		return throwModifyRegistry500Error(err), nil
 	}
@@ -558,7 +558,7 @@ func (c *APIController) checkIfUpstreamIsUsedInPublicRegistries(
 	}
 	//nolint:nestif
 	if len(registryIDs) > 0 {
-		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs)
+		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, false)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("failed to fetch registries: %s", err)
 			return fmt.Errorf("failed to fetch registries: %w", err)
@@ -600,7 +600,7 @@ func (c *APIController) checkIfVirtualHasPrivateUpstreams(
 ) error {
 	//nolint:nestif
 	if len(registryIDs) > 0 {
-		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs)
+		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, false)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("failed to fetch registries: %s", err)
 			return fmt.Errorf("failed to fetch registries: %w", err)

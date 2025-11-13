@@ -67,10 +67,14 @@ type imageLabelDB struct {
 	Labels sql.NullString `db:"labels"`
 }
 
-func (i ImageDao) Get(ctx context.Context, id int64) (*types.Image, error) {
+func (i ImageDao) Get(ctx context.Context, id int64, includeSoftDeleted bool) (*types.Image, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images").
 		Where("image_id = ?", id)
+
+	if !includeSoftDeleted {
+		q = q.Where("image_enabled = ?", true)
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -209,10 +213,15 @@ func (i ImageDao) RestoreByImageNameAndRegID(ctx context.Context, regID int64, i
 	return nil
 }
 
-func (i ImageDao) GetByName(ctx context.Context, registryID int64, name string) (*types.Image, error) {
+func (i ImageDao) GetByName(ctx context.Context, registryID int64, name string, includeSoftDeleted bool) (*types.Image, error) {
+
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images").
 		Where("image_registry_id = ? AND image_name = ? AND image_type IS NULL", registryID, name)
+
+	if !includeSoftDeleted {
+		q = q.Where("image_enabled = ?", true)
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -229,17 +238,21 @@ func (i ImageDao) GetByName(ctx context.Context, registryID int64, name string) 
 }
 
 func (i ImageDao) GetByNameAndType(
-	ctx context.Context, registryID int64, name string,
-	artifactType *artifact.ArtifactType,
+	ctx context.Context, registryID int64,
+	name string, artifactType *artifact.ArtifactType, includeSoftDeleted bool,
 ) (*types.Image, error) {
-	if artifactType == nil || *artifactType == "" {
-		return i.GetByName(ctx, registryID, name)
+	if artifactType == nil {
+		return i.GetByName(ctx, registryID, name, includeSoftDeleted)
 	}
 
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images").
 		Where("image_registry_id = ? AND image_name = ?", registryID, name).
 		Where("image_type = ?", *artifactType)
+
+	if !includeSoftDeleted {
+		q = q.Where("image_enabled = ?", true)
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -367,15 +380,18 @@ func (i ImageDao) CountLabelsByParentIDAndRepo(
 
 func (i ImageDao) GetByRepoAndName(
 	ctx context.Context, parentID int64,
-	repo string, name string,
+	repo string, name string, includeSoftDeleted bool,
 ) (*types.Image, error) {
-	q := databaseg.Builder.Select("a.image_id, a.image_name, "+
-		" a.image_registry_id, a.image_labels, a.image_created_at, "+
-		" a.image_updated_at, a.image_created_by, a.image_updated_by").
+	q := databaseg.Builder.Select("a.image_id, a.image_name, a.image_type, a.image_registry_id, a.image_labels,"+
+		" a.image_created_at, a.image_updated_at, a.image_created_by, a.image_updated_by").
 		From("images a").
 		Join(" registries r ON r.registry_id = a.image_registry_id").
 		Where("r.registry_parent_id = ? AND r.registry_name = ? AND a.image_name = ?",
 			parentID, repo, name)
+
+	if !includeSoftDeleted {
+		q = q.Where("a.image_enabled = ?", true)
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {

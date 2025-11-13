@@ -68,7 +68,7 @@ func (c *APIController) GetClientSetupDetails(
 		}, nil
 	}
 
-	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier)
+	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
 	if err != nil {
 		return artifact.GetClientSetupDetails404JSONResponse{
 			NotFoundJSONResponse: artifact.NotFoundJSONResponse(

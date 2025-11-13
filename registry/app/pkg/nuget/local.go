@@ -202,12 +202,12 @@ func (c *localRegistry) GetPackageVersionMetadataV2(
 	info nugettype.ArtifactInfo,
 ) (*nugettype.FeedEntryResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image)
+	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image, false)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get image for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
-	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version)
+	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version, false)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -220,12 +220,12 @@ func (c *localRegistry) GetPackageVersionMetadata(
 	info nugettype.ArtifactInfo,
 ) (*nugettype.RegistrationLeafResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image)
+	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image, false)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get image for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
-	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version)
+	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version, false)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
