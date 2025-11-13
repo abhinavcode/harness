@@ -732,3 +732,75 @@ func NewArtifactRepository(t interface {
 
 	return mock
 }
+
+// RestoreByImageNameAndRegistryID provides a mock function with given fields: ctx, regID, image
+func (_m *ArtifactRepository) RestoreByImageNameAndRegistryID(ctx context.Context, regID int64, image string) error {
+	ret := _m.Called(ctx, regID, image)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RestoreByImageNameAndRegistryID")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
+		r0 = rf(ctx, regID, image)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RestoreByVersionAndImageName provides a mock function with given fields: ctx, image, version, regID
+func (_m *ArtifactRepository) RestoreByVersionAndImageName(ctx context.Context, image string, version string, regID int64) error {
+	ret := _m.Called(ctx, image, version, regID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RestoreByVersionAndImageName")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
+		r0 = rf(ctx, image, version, regID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SoftDeleteByImageNameAndRegistryID provides a mock function with given fields: ctx, regID, image
+func (_m *ArtifactRepository) SoftDeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) error {
+	ret := _m.Called(ctx, regID, image)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SoftDeleteByImageNameAndRegistryID")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
+		r0 = rf(ctx, regID, image)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SoftDeleteByVersionAndImageName provides a mock function with given fields: ctx, image, version, regID
+func (_m *ArtifactRepository) SoftDeleteByVersionAndImageName(ctx context.Context, image string, version string, regID int64) error {
+	ret := _m.Called(ctx, image, version, regID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SoftDeleteByVersionAndImageName")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
+		r0 = rf(ctx, image, version, regID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
