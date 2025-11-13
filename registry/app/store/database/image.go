@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"time"
 
@@ -565,4 +566,33 @@ func (i ImageDao) mapToImageLabel(
 		}
 	}
 	return elements, res
+}
+
+// Purge permanently deletes soft-deleted images older than the given timestamp.
+// Returns the number of images deleted.
+func (i ImageDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
+	// Delete images that belong to registries of the specified account
+	// Using JOIN for better performance with large datasets
+	sql := `DELETE FROM images
+		WHERE image_id IN (
+			SELECT i.image_id 
+			FROM images i
+			INNER JOIN registries r ON i.image_registry_id = r.registry_id
+			WHERE r.registry_account_identifier = $1
+			  AND i.image_deleted_at IS NOT NULL
+			  AND i.image_deleted_at <= $2
+		)`
+
+	db := dbtx.GetAccessor(ctx, i.db)
+	result, err := db.ExecContext(ctx, sql, accountID, deletedBeforeOrAt)
+	if err != nil {
+		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge images")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	return rowsAffected, nil
 }

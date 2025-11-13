@@ -255,6 +255,9 @@ func (m *mockImageDAO) RestoreByImageNameAndRegID(context.Context, int64, string
 func (m *mockImageDAO) SoftDeleteByImageNameAndRegID(context.Context, int64, string) error {
 	return nil
 }
+func (m *mockImageDAO) Purge(context.Context, string, int64) (int64, error) {
+	return 0, nil
+}
 
 type mockArtifactDAO struct {
 	getByName               func(ctx context.Context, imageID int64, version string) (*types.Artifact, error)
@@ -410,6 +413,9 @@ func (m *mockArtifactDAO) SearchByImageName(
 	return &[]types.ArtifactMetadata{}, nil
 }
 func (m *mockArtifactDAO) CountByImageName(context.Context, int64, string) (int64, error) {
+	return 0, nil
+}
+func (m *mockArtifactDAO) Purge(context.Context, string, int64) (int64, error) {
 	return 0, nil
 }
 

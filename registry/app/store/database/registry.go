@@ -804,3 +804,54 @@ func (r registryDao) mapToRegistryMetadata(_ context.Context, dst *RegistryMetad
 		Labels:        util.StringToArr(dst.Labels.String),
 	}
 }
+
+// Purge permanently deletes soft-deleted registries older than the given timestamp.
+// Returns the number of registries deleted.
+func (r registryDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
+	stmt := databaseg.Builder.
+		Delete("registries").
+		Where(sq.And{
+			sq.Eq{"registry_account_identifier": accountID},
+			sq.NotEq{"registry_deleted_at": nil},
+			sq.LtOrEq{"registry_deleted_at": deletedBeforeOrAt},
+		})
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert purge registries query to sql: %w", err)
+	}
+
+	db := dbtx.GetAccessor(ctx, r.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge registries")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	return rowsAffected, nil
+}
+
+// GetDistinctAccountIDs returns a list of distinct account identifiers that have registries.
+func (r registryDao) GetDistinctAccountIDs(ctx context.Context) ([]string, error) {
+	stmt := databaseg.Builder.
+		Select("DISTINCT registry_account_identifier").
+		From("registries").
+		Where(sq.NotEq{"registry_account_identifier": nil})
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert get distinct account IDs query to sql: %w", err)
+	}
+
+	db := dbtx.GetAccessor(ctx, r.db)
+	var accountIDs []string
+	if err = db.SelectContext(ctx, &accountIDs, sql, args...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "failed to get distinct account IDs")
+	}
+
+	return accountIDs, nil
+}
