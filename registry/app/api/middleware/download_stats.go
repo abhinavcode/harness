@@ -103,7 +103,7 @@ func dbDownloadStat(
 		return err
 	}
 
-	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, dgst.String(, false))
+	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, dgst.String(), false)
 	if err != nil {
 		return err
 	}

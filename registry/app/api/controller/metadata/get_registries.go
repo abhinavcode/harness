@@ -156,6 +156,7 @@ func (c *APIController) GetAllRegistries(
 		regInfo.packageTypes,
 		regInfo.searchTerm,
 		repoType,
+		false,
 	)
 	if err != nil {
 		return artifact.GetAllRegistries500JSONResponse{
