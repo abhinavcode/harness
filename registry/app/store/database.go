@@ -540,23 +540,25 @@ type ArtifactRepository interface {
 	CreateOrUpdate(ctx context.Context, artifact *types.Artifact) (int64, error)
 	Count(ctx context.Context) (int64, error)
 	GetAllArtifactsByParentID(
-		ctx context.Context, id int64,
-		i *[]string, field string, order string,
-		limit int, offset int, term string,
-		version bool, packageTypes []string,
+		ctx context.Context, parentID int64,
+		registryIDs *[]string, search string, latestVersion bool, packageTypes []string, limit int, offset int, includeSoftDeleted bool,
 	) (*[]types.ArtifactMetadata, error)
+
 	CountAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
-		registryIDs *[]string, search string, latestVersion bool, packageTypes []string,
+		registryIDs *[]string, search string, latestVersion bool, packageTypes []string, includeSoftDeleted bool,
 	) (int64, error)
+
 	GetArtifactsByRepo(
-		ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string,
-		limit int, offset int, search string, labels []string,
-		artifactType *artifact.ArtifactType,
+		ctx context.Context, parentID int64,
+		repoKey, search string, labels []string, latestVersion bool,
+		limit int, offset int, sortByField string, sortByOrder string,
+		artifactType *artifact.ArtifactType, includeSoftDeleted bool,
 	) (*[]types.ArtifactMetadata, error)
+
 	CountArtifactsByRepo(
 		ctx context.Context, parentID int64, repoKey, search string, labels []string,
-		artifactType *artifact.ArtifactType,
+		artifactType *artifact.ArtifactType, includeSoftDeleted bool,
 	) (int64, error)
 	GetLatestArtifactMetadata(
 		ctx context.Context, id int64, identifier string,
@@ -579,7 +581,7 @@ type ArtifactRepository interface {
 		artifactID int64,
 	) (err error)
 
-	GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string) (
+	GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, includeSoftDeleted bool) (
 		*[]types.Artifact,
 		error,
 	)
@@ -613,20 +615,20 @@ type ArtifactRepository interface {
 	) (*[]types.ArtifactMetadata, error)
 
 	SearchLatestByName(
-		ctx context.Context, regID int64, name string, limit int, offset int,
+		ctx context.Context, regID int64, name string, limit int, offset int, includeSoftDeleted bool,
 	) (*[]types.Artifact, error)
 
 	CountLatestByName(
-		ctx context.Context, regID int64, name string,
+		ctx context.Context, regID int64, name string, includeSoftDeleted bool,
 	) (int64, error)
 
 	SearchByImageName(
 		ctx context.Context, regID int64, name string,
-		limit int, offset int,
+		limit int, offset int, includeSoftDeleted bool,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountByImageName(
-		ctx context.Context, regID int64, name string,
+		ctx context.Context, regID int64, name string, includeSoftDeleted bool,
 	) (int64, error)
 
 	// DuplicateArtifact creates a copy of an artifact with a different image ID and created by user

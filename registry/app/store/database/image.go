@@ -74,7 +74,7 @@ func (i ImageDao) Get(ctx context.Context, id int64, includeSoftDeleted bool) (*
 		Where("image_id = ?", id)
 
 	if !includeSoftDeleted {
-		q = q.Where("image_enabled = ?", true)
+		q = q.Where("image_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()
@@ -221,7 +221,7 @@ func (i ImageDao) GetByName(ctx context.Context, registryID int64, name string, 
 		Where("image_registry_id = ? AND image_name = ? AND image_type IS NULL", registryID, name)
 
 	if !includeSoftDeleted {
-		q = q.Where("image_enabled = ?", true)
+		q = q.Where("image_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()
@@ -252,7 +252,7 @@ func (i ImageDao) GetByNameAndType(
 		Where("image_type = ?", *artifactType)
 
 	if !includeSoftDeleted {
-		q = q.Where("image_enabled = ?", true)
+		q = q.Where("image_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()
@@ -391,7 +391,8 @@ func (i ImageDao) GetByRepoAndName(
 			parentID, repo, name)
 
 	if !includeSoftDeleted {
-		q = q.Where("a.image_enabled = ?", true)
+		q = q.Where("a.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()

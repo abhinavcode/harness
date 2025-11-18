@@ -97,6 +97,7 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 
 	if !includeSoftDeleted {
 		q = q.Where("a.artifact_deleted_at IS NULL")
+		q = q.Where("i.image_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()
@@ -113,15 +114,21 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 	return a.mapToArtifact(ctx, dst)
 }
 
-func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string) (
+func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, includeSoftDeleted bool) (
 	*[]types.Artifact,
 	error,
 ) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Where("i.image_registry_id = ? AND i.image_name = ?", registryID, image).
-		OrderBy("a.artifact_created_at DESC")
+		Where("i.image_registry_id = ? AND i.image_name = ?", registryID, image)
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL")
+	}
+
+	q = q.OrderBy("a.artifact_created_at DESC")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -523,7 +530,7 @@ func (a ArtifactDao) mapToArtifact(_ context.Context, dst *artifactDB) (*types.A
 }
 
 func (a ArtifactDao) SearchLatestByName(
-	ctx context.Context, regID int64, name string, limit int, offset int,
+	ctx context.Context, regID int64, name string, limit int, offset int, includeSoftDeleted bool,
 ) (*[]types.Artifact, error) {
 	subQuery := `
 	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
@@ -535,12 +542,20 @@ func (a ArtifactDao) SearchLatestByName(
 			"a.artifact_created_at").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
 		Join(fmt.Sprintf(`(%s) latest
 	ON a.artifact_image_id = latest.artifact_image_id
 	AND a.artifact_created_at = latest.max_created_at
 `, subQuery)).
-		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID).
-		Limit(util.SafeIntToUInt64(limit)).
+		Where("i.image_name LIKE ? AND r.registry_id = ?", "%"+name+"%", regID)
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
+	}
+
+	q = q.Limit(util.SafeIntToUInt64(limit)).
 		Offset(util.SafeIntToUInt64(offset))
 
 	sql, args, err := q.ToSql()
@@ -563,7 +578,7 @@ func (a ArtifactDao) SearchLatestByName(
 }
 
 func (a ArtifactDao) CountLatestByName(
-	ctx context.Context, regID int64, name string,
+	ctx context.Context, regID int64, name string, includeSoftDeleted bool,
 ) (int64, error) {
 	subQuery := `
 	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
@@ -575,11 +590,18 @@ func (a ArtifactDao) CountLatestByName(
 		Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
 		Join(fmt.Sprintf(`(%s) latest
 	ON a.artifact_image_id = latest.artifact_image_id
 	AND a.artifact_created_at = latest.max_created_at
 `, subQuery)).
-		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID)
+		Where("i.image_name LIKE ? AND r.registry_id = ?", "%"+name+"%", regID)
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -597,8 +619,8 @@ func (a ArtifactDao) CountLatestByName(
 }
 
 func (a ArtifactDao) SearchByImageName(
-	ctx context.Context, regID int64, name string, limit int,
-	offset int,
+	ctx context.Context, regID int64, name string,
+	limit int, offset int, includeSoftDeleted bool,
 ) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`i.image_name as name,
@@ -606,10 +628,18 @@ func (a ArtifactDao) SearchByImageName(
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Where("i.image_registry_id = ?", regID)
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("r.registry_id = ?", regID)
 	if name != "" {
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
 	}
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
+	}
+
 	q = q.OrderBy("i.image_name ASC, a.artifact_version ASC").
 		Limit(util.SafeIntToUInt64(limit)).
 		Offset(util.SafeIntToUInt64(offset))
@@ -629,15 +659,22 @@ func (a ArtifactDao) SearchByImageName(
 }
 
 func (a ArtifactDao) CountByImageName(
-	ctx context.Context, regID int64, name string,
+	ctx context.Context, regID int64, name string, includeSoftDeleted bool,
 ) (int64, error) {
 	q := databaseg.Builder.
 		Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Where("i.image_registry_id = ?", regID)
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("r.registry_id = ?", regID)
 	if name != "" {
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
+	}
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()
@@ -659,13 +696,12 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	ctx context.Context,
 	parentID int64,
 	registryIDs *[]string,
-	sortByField string,
-	sortByOrder string,
-	limit int,
-	offset int,
 	search string,
 	latestVersion bool,
 	packageTypes []string,
+	limit int,
+	offset int,
+	includeSoftDeleted bool,
 ) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, 
@@ -715,11 +751,14 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	if search != "" {
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(search))
 	}
-	sortField := "i." + sortByField
-	if sortByField == downloadCount {
-		sortField = downloadCount
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	}
-	q = q.OrderBy(sortField + " " + sortByOrder).Limit(util.SafeIntToUInt64(limit)).Offset(util.SafeIntToUInt64(offset))
+
+	q = q.OrderBy("i.image_name ASC").Limit(util.SafeIntToUInt64(limit)).Offset(util.SafeIntToUInt64(offset))
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -730,14 +769,14 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 
 	dst := []*artifactMetadataDB{}
 	if err = db.SelectContext(ctx, &dst, sql, args...); err != nil {
-		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing custom list query")
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact metadata")
 	}
 	return a.mapToArtifactMetadataList(dst)
 }
 
 func (a ArtifactDao) CountAllArtifactsByParentID(
 	ctx context.Context, parentID int64,
-	registryIDs *[]string, search string, latestVersion bool, packageTypes []string,
+	registryIDs *[]string, search string, latestVersion bool, packageTypes []string, includeSoftDeleted bool,
 ) (int64, error) {
 	// nolint:goconst
 	q := databaseg.Builder.Select("COUNT(*)").
@@ -757,21 +796,28 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 		).
 			Where("a1.rank = 1")
 	}
+
 	if len(*registryIDs) > 0 {
 		q = q.Where(sq.Eq{"r.registry_name": registryIDs})
 	}
 
 	if search != "" {
-		q = q.Where("image_name LIKE ?", sqlPartialMatch(search))
+		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(search))
 	}
 
 	if len(packageTypes) > 0 {
-		q = q.Where(sq.Eq{"registry_package_type": packageTypes})
+		q = q.Where(sq.Eq{"r.registry_package_type": packageTypes})
+	}
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {
-		return -1, errors.Wrap(err, "Failed to convert query to sql")
+		return 0, errors.Wrap(err, "Failed to convert query to sql")
 	}
 	db := dbtx.GetAccessor(ctx, a.db)
 
@@ -784,9 +830,9 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 }
 
 func (a ArtifactDao) GetArtifactsByRepo(
-	ctx context.Context, parentID int64, repoKey string, sortByField string,
-	sortByOrder string, limit int, offset int, search string, labels []string,
-	artifactType *artifact.ArtifactType,
+	ctx context.Context, parentID int64, repoKey, search string, labels []string, latestVersion bool,
+	limit int, offset int, sortByField string, sortByOrder string,
+	artifactType *artifact.ArtifactType, includeSoftDeleted bool,
 ) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, i.image_name as name, 
@@ -832,6 +878,12 @@ func (a ArtifactDao) GetArtifactsByRepo(
 		q = q.Where("'^_' || i.image_labels || '^_' LIKE ?", labelsVal)
 	}
 
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
+	}
+
 	// nolint:goconst
 	sortField := "image_" + sortByField
 	switch sortByField {
@@ -859,7 +911,7 @@ func (a ArtifactDao) GetArtifactsByRepo(
 // nolint:goconst
 func (a ArtifactDao) CountArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey, search string, labels []string,
-	artifactType *artifact.ArtifactType,
+	artifactType *artifact.ArtifactType, includeSoftDeleted bool,
 ) (int64, error) {
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
@@ -879,6 +931,12 @@ func (a ArtifactDao) CountArtifactsByRepo(
 		labelsVal := util.GetEmptySQLString(util.ArrToString(labels))
 		labelsVal.String = labelSeparatorStart + labelsVal.String + labelSeparatorEnd
 		q = q.Where("'^_' || i.image_labels || '^_' LIKE ?", labelsVal)
+	}
+
+	if !includeSoftDeleted {
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	}
 
 	sql, args, err := q.ToSql()

@@ -115,12 +115,12 @@ func (c *APIController) GetAllArtifactsByRegistry(
 		}
 	} else {
 		artifacts, err = c.ArtifactStore.GetArtifactsByRepo(
-			ctx, regInfo.ParentID, regInfo.RegistryIdentifier,
-			regInfo.sortByField, regInfo.sortByOrder, regInfo.limit, regInfo.offset, regInfo.searchTerm, regInfo.labels,
-			artifactType)
+			ctx, regInfo.ParentID, regInfo.RegistryIdentifier, regInfo.searchTerm, regInfo.labels, true,
+			regInfo.limit, regInfo.offset, regInfo.sortByField, regInfo.sortByOrder,
+			artifactType, false)
 		count, _ = c.ArtifactStore.CountArtifactsByRepo(
 			ctx, regInfo.ParentID, regInfo.RegistryIdentifier,
-			regInfo.searchTerm, regInfo.labels, artifactType)
+			regInfo.searchTerm, regInfo.labels, artifactType, false)
 		if err != nil {
 			return artifact.GetAllArtifactsByRegistry500JSONResponse{
 				InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(

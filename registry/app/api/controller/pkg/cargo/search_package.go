@@ -62,15 +62,14 @@ func (c *controller) SearchPackage(
 		registryList = append(registryList, repoKeys...)
 	}
 	artifacts, err := c.artifactDao.GetAllArtifactsByParentID(
-		ctx, info.ParentID, &registryList, requestInfo.SortField, requestInfo.SortOrder,
-		requestInfo.Limit, requestInfo.Offset, requestInfo.SearchTerm, true, []string{},
+		ctx, info.ParentID, &registryList, requestInfo.SearchTerm, true, []string{}, requestInfo.Limit, requestInfo.Offset, false,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artifacts %s: %w", info.RegIdentifier, err)
 	}
 
 	count, err := c.artifactDao.CountAllArtifactsByParentID(
-		ctx, info.ParentID, &registryList, requestInfo.SearchTerm, true, []string{},
+		ctx, info.ParentID, &registryList, requestInfo.SearchTerm, true, []string{}, false,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artifacts count %s: %w", info.RegIdentifier, err)
