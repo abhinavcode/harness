@@ -26,5 +26,5 @@ type FilterParams struct {
 	MaxEntries          int
 	IncludeReferrers    bool
 	ReferrerTypes       []string
-	IncludeSoftDeleted  bool
+	IncludeSoftDeleted  SoftDeleteFilter
 }

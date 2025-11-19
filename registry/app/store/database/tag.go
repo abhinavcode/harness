@@ -383,9 +383,9 @@ func (t tagDao) GetAllArtifactsByParentID(
 	latestVersion bool,
 	packageTypes []string,
 ) (*[]types.ArtifactMetadata, error) {
-	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(parentID, latestVersion, registryIDs, packageTypes, search, false)
+	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(parentID, latestVersion, registryIDs, packageTypes, search, false, types.SoftDeleteFilterExcludeDeleted)
 
-	q2 := t.GetAllArtifactsQueryByParentIDForOCI(parentID, latestVersion, registryIDs, packageTypes, search)
+	q2 := t.GetAllArtifactsQueryByParentIDForOCI(parentID, latestVersion, registryIDs, packageTypes, search, types.SoftDeleteFilterExcludeDeleted)
 
 	q1SQL, q1Args, err := q1.ToSql()
 	if err != nil {
@@ -432,7 +432,7 @@ func (t tagDao) GetAllArtifactsByParentID(
 
 func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 	parentID int64, latestVersion bool, registryIDs *[]string,
-	packageTypes []string, search string,
+	packageTypes []string, search string, softDeleteFilter types.SoftDeleteFilter,
 ) sq.SelectBuilder {
 	q2 := databaseg.Builder.Select(
 		`r.registry_name as repo_name, 
@@ -486,6 +486,17 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 	if search != "" {
 		q2 = q2.Where("t.tag_image_name LIKE ?", sqlPartialMatch(search))
 	}
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		q2 = q2.Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q2 = q2.Where("(i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
+	}
+
 	return q2
 }
 
@@ -733,7 +744,7 @@ func (t tagDao) getArtifactEnrichmentData(ctx context.Context, artifactIDs []int
 
 func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 	parentID int64, latestVersion bool, registryIDs *[]string,
-	packageTypes []string, search string, queryTags bool,
+	packageTypes []string, search string, queryTags bool, softDeleteFilter types.SoftDeleteFilter,
 ) sq.SelectBuilder {
 	suffix := " "
 	if queryTags {
@@ -793,6 +804,20 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 	if search != "" {
 		q1 = q1.Where("i.image_name LIKE ?", sqlPartialMatch(search))
 	}
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		// Only non-soft-deleted entities
+		q1 = q1.Where("ar.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		// Only soft-deleted entities (entity itself OR any parent)
+		q1 = q1.Where("(ar.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering - return everything
+	}
+
 	return q1
 }
 

@@ -157,7 +157,7 @@ func GetOrderedRepos(
 	upstream bool,
 ) ([]registrytypes.Registry, error) {
 	var result []registrytypes.Registry
-	registry, err := registryDao.GetByParentIDAndName(ctx, parentID, repoKey, false)
+	registry, err := registryDao.GetByParentIDAndName(ctx, parentID, repoKey, registrytypes.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return result, errors.NotFoundf("registry %s not found", repoKey)
 	}
@@ -167,7 +167,7 @@ func GetOrderedRepos(
 	}
 	proxies := registry.UpstreamProxies
 	if len(proxies) > 0 {
-		upstreamRepos, err2 := registryDao.GetByIDIn(ctx, proxies, false)
+		upstreamRepos, err2 := registryDao.GetByIDIn(ctx, proxies, registrytypes.SoftDeleteFilterExcludeDeleted)
 		if err2 != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to get upstream proxies for %s: %v", repoKey, err2)
 			return result, err2

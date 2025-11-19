@@ -160,7 +160,7 @@ func (_m *ImageRepository) Get(ctx context.Context, id int64, includeSoftDeleted
 }
 
 // GetByName provides a mock function with given fields: ctx, registryID, name, includeSoftDeleted
-func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name string, includeSoftDeleted bool) (*types.Image, error) {
+func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name string, includeSoftDeleted types.SoftDeleteFilter) (*types.Image, error) {
 	ret := _m.Called(ctx, registryID, name, includeSoftDeleted)
 
 	if len(ret) == 0 {
@@ -169,10 +169,10 @@ func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, bool) (*types.Image, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) (*types.Image, error)); ok {
 		return rf(ctx, registryID, name, includeSoftDeleted)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, bool) *types.Image); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) *types.Image); ok {
 		r0 = rf(ctx, registryID, name, includeSoftDeleted)
 	} else {
 		if ret.Get(0) != nil {
@@ -180,7 +180,7 @@ func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, types.SoftDeleteFilter) error); ok {
 		r1 = rf(ctx, registryID, name, includeSoftDeleted)
 	} else {
 		r1 = ret.Error(1)
@@ -190,7 +190,7 @@ func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name
 }
 
 // GetByNameAndType provides a mock function with given fields: ctx, registryID, name, artifactType, includeSoftDeleted
-func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int64, name string, artifactType *artifact.ArtifactType, includeSoftDeleted bool) (*types.Image, error) {
+func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int64, name string, artifactType *artifact.ArtifactType, includeSoftDeleted types.SoftDeleteFilter) (*types.Image, error) {
 	ret := _m.Called(ctx, registryID, name, artifactType, includeSoftDeleted)
 
 	if len(ret) == 0 {
@@ -199,10 +199,10 @@ func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int6
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, *artifact.ArtifactType, bool) (*types.Image, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, *artifact.ArtifactType, types.SoftDeleteFilter) (*types.Image, error)); ok {
 		return rf(ctx, registryID, name, artifactType, includeSoftDeleted)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, *artifact.ArtifactType, bool) *types.Image); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, *artifact.ArtifactType, types.SoftDeleteFilter) *types.Image); ok {
 		r0 = rf(ctx, registryID, name, artifactType, includeSoftDeleted)
 	} else {
 		if ret.Get(0) != nil {
@@ -210,7 +210,7 @@ func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int6
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, *artifact.ArtifactType, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, *artifact.ArtifactType, types.SoftDeleteFilter) error); ok {
 		r1 = rf(ctx, registryID, name, artifactType, includeSoftDeleted)
 	} else {
 		r1 = ret.Error(1)

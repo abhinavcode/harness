@@ -22,6 +22,7 @@ import (
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
 	api "github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	"github.com/harness/gitness/registry/types"
 	gitnesstypes "github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
 
@@ -64,7 +65,7 @@ func (c *APIController) ListWebhookExecutions(
 	size := GetOffset(r.Params.Size, r.Params.Page)
 	limit := GetPageLimit(r.Params.Size)
 	pageNumber := GetPageNumber(r.Params.Page)
-	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier, false)
+	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(listWebhooksErrMsg, regInfo.RegistryRef, r.WebhookIdentifier, err)
 		return listWebhooksExecutionsInternalErrorResponse(fmt.Errorf("failed to find registry: %w", err))

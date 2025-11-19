@@ -25,6 +25,7 @@ import (
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/store"
+	registryTypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types/enum"
 
 	"github.com/gotidy/ptr"
@@ -156,7 +157,7 @@ func (c *APIController) GetAllRegistries(
 		regInfo.packageTypes,
 		regInfo.searchTerm,
 		repoType,
-		false,
+		registryTypes.SoftDeleteFilterAll,
 	)
 	if err != nil {
 		return artifact.GetAllRegistries500JSONResponse{

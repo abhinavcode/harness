@@ -81,7 +81,7 @@ func (c *APIController) GetAllArtifactVersions(
 
 	image := string(r.Artifact)
 
-	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, false)
+	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterAll)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetAllArtifactVersions404JSONResponse{
@@ -104,7 +104,7 @@ func (c *APIController) GetAllArtifactVersions(
 		}
 	}
 
-	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, false)
+	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, types.SoftDeleteFilterAll)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetAllArtifactVersions404JSONResponse{

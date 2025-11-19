@@ -183,7 +183,7 @@ func (c *APIController) createVirtualRegistry(
 		}
 		return throwCreateRegistry400Error(err), nil
 	}
-	repoEntity, err := c.RegistryRepository.Get(ctx, id, false)
+	repoEntity, err := c.RegistryRepository.Get(ctx, id, registrytypes.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return throwCreateRegistry400Error(err), nil
 	}
@@ -448,7 +448,7 @@ func isDuplicateKeyError(err error) bool {
 }
 
 func (c *APIController) handleDuplicateRegistryError(ctx context.Context, registry *registrytypes.Registry) error {
-	registryData, err := c.RegistryRepository.GetByRootParentIDAndName(ctx, registry.RootParentID, registry.Name, false)
+	registryData, err := c.RegistryRepository.GetByRootParentIDAndName(ctx, registry.RootParentID, registry.Name, registrytypes.SoftDeleteFilterAll)
 	if err != nil {
 		return fmt.Errorf("failed to fetch existing registry details: %w", err)
 	}

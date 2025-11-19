@@ -23,6 +23,7 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/registry/app/api/utils"
 	registryTypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types/enum"
@@ -65,7 +66,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 		}, nil
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifact404JSONResponse{
@@ -76,7 +77,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 	}
 
 	artifactName := string(r.Artifact)
-	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, artifactName, false)
+	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, artifactName, types.SoftDeleteFilterAll)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifact404JSONResponse{

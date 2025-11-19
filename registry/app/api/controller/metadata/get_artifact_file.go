@@ -23,6 +23,7 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/api/utils"
+	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types/enum"
 )
 
@@ -69,7 +70,7 @@ func (c *APIController) GetArtifactFile(
 	version := string(r.Version)
 	file := string(r.FileName)
 
-	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
+	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
 
 	if err != nil {
 		return artifact.GetArtifactFile500JSONResponse{
@@ -90,7 +91,7 @@ func (c *APIController) GetArtifactFile(
 			}, nil
 		}
 	}
-	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, image, artifactType, false)
+	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, image, artifactType, types.SoftDeleteFilterAll)
 
 	if err != nil {
 		return artifact.GetArtifactFile500JSONResponse{
@@ -99,7 +100,7 @@ func (c *APIController) GetArtifactFile(
 			),
 		}, nil
 	}
-	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, false)
+	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, types.SoftDeleteFilterAll)
 
 	if err != nil {
 		return artifact.GetArtifactFile500JSONResponse{

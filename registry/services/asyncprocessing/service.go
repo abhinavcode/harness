@@ -219,7 +219,7 @@ func (s *Service) handleBuildRegistryIndex(ctx context.Context, task *types.Task
 		log.Ctx(ctx).Error().Msgf("failed to unmarshal task payload for task [%s]: %v", task.Key, err)
 		return fmt.Errorf("failed to unmarshal task payload: %w", err)
 	}
-	registry, err := s.registryDao.Get(ctx, payload.RegistryID, false)
+	registry, err := s.registryDao.Get(ctx, payload.RegistryID, types.SoftDeleteFilterAll)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("failed to get registry [%d] for registry build index event: %s, err: %v",
 			payload.RegistryID, eventID, err)
@@ -268,7 +268,7 @@ func (s *Service) handleBuildPackageIndex(
 		log.Ctx(ctx).Error().Msgf("failed to unmarshal task payload for task [%s]: %v", task.Key, err)
 		return fmt.Errorf("failed to unmarshal task payload: %w", err)
 	}
-	registry, err := s.registryDao.Get(ctx, payload.RegistryID, false)
+	registry, err := s.registryDao.Get(ctx, payload.RegistryID, types.SoftDeleteFilterAll)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("failed to get registry [%d] for registry build index event: %s, err: %v",
 			payload.RegistryID, eventID, err)
@@ -312,7 +312,7 @@ func (s *Service) handleBuildPackageMetadata(
 		},
 	})
 	// Get registry
-	registry, err := s.registryDao.Get(ctx2, payload.RegistryID, false)
+	registry, err := s.registryDao.Get(ctx2, payload.RegistryID, types.SoftDeleteFilterAll)
 	if err != nil {
 		log.Ctx(ctx2).Error().Msgf("failed to get registry [%d] for registry build index event: %s, err: %v",
 			payload.RegistryID, eventID, err)

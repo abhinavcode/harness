@@ -257,7 +257,7 @@ func (c *APIController) assertNoCycleOnAddHelper(ctx context.Context,
 }
 
 func (c *APIController) getUpstreamProxyIDs(ctx context.Context, registryID int64) ([]int64, error) {
-	registry, err := c.RegistryRepository.Get(ctx, registryID, false)
+	registry, err := c.RegistryRepository.Get(ctx, registryID, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return nil, err
 	}

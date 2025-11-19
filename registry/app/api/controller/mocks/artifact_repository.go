@@ -465,7 +465,7 @@ func (_m *ArtifactRepository) GetArtifactsByRepoAndImageBatch(ctx context.Contex
 }
 
 // GetByName provides a mock function with given fields: ctx, imageID, version, includeSoftDeleted
-func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, version string, includeSoftDeleted bool) (*types.Artifact, error) {
+func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, version string, includeSoftDeleted types.SoftDeleteFilter) (*types.Artifact, error) {
 	ret := _m.Called(ctx, imageID, version, includeSoftDeleted)
 
 	if len(ret) == 0 {
@@ -474,10 +474,10 @@ func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, vers
 
 	var r0 *types.Artifact
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, bool) (*types.Artifact, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) (*types.Artifact, error)); ok {
 		return rf(ctx, imageID, version, includeSoftDeleted)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, bool) *types.Artifact); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) *types.Artifact); ok {
 		r0 = rf(ctx, imageID, version, includeSoftDeleted)
 	} else {
 		if ret.Get(0) != nil {
@@ -485,7 +485,7 @@ func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, vers
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, types.SoftDeleteFilter) error); ok {
 		r1 = rf(ctx, imageID, version, includeSoftDeleted)
 	} else {
 		r1 = ret.Error(1)

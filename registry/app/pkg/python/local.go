@@ -35,6 +35,7 @@ import (
 	"github.com/harness/gitness/registry/app/remote/adapter/commons/pypi"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
+	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store/database/dbtx"
 
 	"github.com/rs/zerolog/log"
@@ -105,7 +106,7 @@ func (c *localRegistry) GetPackageMetadata(
 	ctx context.Context,
 	info pythontype.ArtifactInfo,
 ) (pythontype.PackageMetadata, error) {
-	registry, err := c.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, false)
+	registry, err := c.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, registrytypes.SoftDeleteFilterAll)
 	packageMetadata := pythontype.PackageMetadata{}
 	packageMetadata.Name = info.Image
 	packageMetadata.Files = []pythontype.File{}
@@ -114,7 +115,7 @@ func (c *localRegistry) GetPackageMetadata(
 		return packageMetadata, err
 	}
 
-	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(ctx, registry.ID, info.Image, false)
+	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(ctx, registry.ID, info.Image, registrytypes.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return packageMetadata, err
 	}

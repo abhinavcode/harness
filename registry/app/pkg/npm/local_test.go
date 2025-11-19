@@ -371,13 +371,13 @@ func (m *mockArtifactDAO) GetArtifactsByRepoAndImageBatch(
 }
 
 func (m *mockArtifactDAO) SearchLatestByName(
-	ctx context.Context, regID int64, name string, limit int, offset int, includeSoftDeleted bool,
+	ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.Artifact, error) {
 	return m.searchLatestByName(ctx, regID, name, limit, offset)
 }
 
 func (m *mockArtifactDAO) CountLatestByName(
-	ctx context.Context, regID int64, name string, includeSoftDeleted bool,
+	ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter,
 ) (int64, error) {
 	return m.countLatestByName(ctx, regID, name)
 }

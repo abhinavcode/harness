@@ -72,7 +72,7 @@ func (c *APIController) DeleteRegistry(
 		}, nil
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, registrytypes.SoftDeleteFilterAll)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteRegistry404JSONResponse{
@@ -135,7 +135,7 @@ func (c *APIController) checkIfRegistryUsedAsUpstream(
 		return fmt.Errorf("failed to fetch registryIDs IDs: %w", err)
 	}
 	if len(registryIDs) > 0 {
-		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, false)
+		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, registrytypes.SoftDeleteFilterAll)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("failed to fetch registries: %s", err)
 			return fmt.Errorf("failed to fetch registries: %w", err)

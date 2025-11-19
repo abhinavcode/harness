@@ -23,6 +23,7 @@ import (
 
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
+	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/app/auth"
 	"github.com/harness/gitness/app/paths"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
@@ -68,7 +69,7 @@ func (c *APIController) GetClientSetupDetails(
 		}, nil
 	}
 
-	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, false)
+	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
 	if err != nil {
 		return artifact.GetClientSetupDetails404JSONResponse{
 			NotFoundJSONResponse: artifact.NotFoundJSONResponse(

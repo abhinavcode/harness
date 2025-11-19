@@ -63,14 +63,19 @@ type artifactDB struct {
 	DeletedBy *int64           `db:"artifact_deleted_by"`
 }
 
-func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version string, includeSoftDeleted bool) (*types.Artifact, error) {
+func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version string, softDeleteFilter types.SoftDeleteFilter) (*types.Artifact, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts").
 		Where("artifact_image_id = ?", imageID).
 		Where("artifact_version = ?", version)
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("artifact_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("artifact_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -88,16 +93,21 @@ func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version strin
 }
 
 func (a ArtifactDao) GetByRegistryImageAndVersion(
-	ctx context.Context, registryID int64, image string, version string, includeSoftDeleted bool,
+	ctx context.Context, registryID int64, image string, version string, softDeleteFilter types.SoftDeleteFilter,
 ) (*types.Artifact, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
 		Where("i.image_registry_id = ? AND i.image_name = ? AND a.artifact_version = ?", registryID, image, version)
 
-	if !includeSoftDeleted {
-		q = q.Where("a.artifact_deleted_at IS NULL")
-		q = q.Where("i.image_deleted_at IS NULL")
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -114,7 +124,7 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 	return a.mapToArtifact(ctx, dst)
 }
 
-func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, includeSoftDeleted bool) (
+func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, softDeleteFilter types.SoftDeleteFilter) (
 	*[]types.Artifact,
 	error,
 ) {
@@ -123,9 +133,14 @@ func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int
 		Join("images i ON a.artifact_image_id = i.image_id").
 		Where("i.image_registry_id = ? AND i.image_name = ?", registryID, image)
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	q = q.OrderBy("a.artifact_created_at DESC")
@@ -530,7 +545,7 @@ func (a ArtifactDao) mapToArtifact(_ context.Context, dst *artifactDB) (*types.A
 }
 
 func (a ArtifactDao) SearchLatestByName(
-	ctx context.Context, regID int64, name string, limit int, offset int, includeSoftDeleted bool,
+	ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.Artifact, error) {
 	subQuery := `
 	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
@@ -549,10 +564,15 @@ func (a ArtifactDao) SearchLatestByName(
 `, subQuery)).
 		Where("i.image_name LIKE ? AND r.registry_id = ?", "%"+name+"%", regID)
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	q = q.Limit(util.SafeIntToUInt64(limit)).
@@ -578,7 +598,7 @@ func (a ArtifactDao) SearchLatestByName(
 }
 
 func (a ArtifactDao) CountLatestByName(
-	ctx context.Context, regID int64, name string, includeSoftDeleted bool,
+	ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter,
 ) (int64, error) {
 	subQuery := `
 	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
@@ -597,10 +617,15 @@ func (a ArtifactDao) CountLatestByName(
 `, subQuery)).
 		Where("i.image_name LIKE ? AND r.registry_id = ?", "%"+name+"%", regID)
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -620,7 +645,7 @@ func (a ArtifactDao) CountLatestByName(
 
 func (a ArtifactDao) SearchByImageName(
 	ctx context.Context, regID int64, name string,
-	limit int, offset int, includeSoftDeleted bool,
+	limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`i.image_name as name,
@@ -634,10 +659,15 @@ func (a ArtifactDao) SearchByImageName(
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
 	}
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	q = q.OrderBy("i.image_name ASC, a.artifact_version ASC").
@@ -659,7 +689,7 @@ func (a ArtifactDao) SearchByImageName(
 }
 
 func (a ArtifactDao) CountByImageName(
-	ctx context.Context, regID int64, name string, includeSoftDeleted bool,
+	ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter,
 ) (int64, error) {
 	q := databaseg.Builder.
 		Select("COUNT(*)").
@@ -671,10 +701,15 @@ func (a ArtifactDao) CountByImageName(
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
 	}
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -701,7 +736,7 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	packageTypes []string,
 	limit int,
 	offset int,
-	includeSoftDeleted bool,
+	softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, 
@@ -752,10 +787,15 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(search))
 	}
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	q = q.OrderBy("i.image_name ASC").Limit(util.SafeIntToUInt64(limit)).Offset(util.SafeIntToUInt64(offset))
@@ -776,7 +816,7 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 
 func (a ArtifactDao) CountAllArtifactsByParentID(
 	ctx context.Context, parentID int64,
-	registryIDs *[]string, search string, latestVersion bool, packageTypes []string, includeSoftDeleted bool,
+	registryIDs *[]string, search string, latestVersion bool, packageTypes []string, softDeleteFilter types.SoftDeleteFilter,
 ) (int64, error) {
 	// nolint:goconst
 	q := databaseg.Builder.Select("COUNT(*)").
@@ -809,10 +849,15 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 		q = q.Where(sq.Eq{"r.registry_package_type": packageTypes})
 	}
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -832,7 +877,7 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 func (a ArtifactDao) GetArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey, search string, labels []string, latestVersion bool,
 	limit int, offset int, sortByField string, sortByOrder string,
-	artifactType *artifact.ArtifactType, includeSoftDeleted bool,
+	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, i.image_name as name, 
@@ -878,10 +923,15 @@ func (a ArtifactDao) GetArtifactsByRepo(
 		q = q.Where("'^_' || i.image_labels || '^_' LIKE ?", labelsVal)
 	}
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	// nolint:goconst
@@ -911,7 +961,7 @@ func (a ArtifactDao) GetArtifactsByRepo(
 // nolint:goconst
 func (a ArtifactDao) CountArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey, search string, labels []string,
-	artifactType *artifact.ArtifactType, includeSoftDeleted bool,
+	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 ) (int64, error) {
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
@@ -933,10 +983,15 @@ func (a ArtifactDao) CountArtifactsByRepo(
 		q = q.Where("'^_' || i.image_labels || '^_' LIKE ?", labelsVal)
 	}
 
-	if !includeSoftDeleted {
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()

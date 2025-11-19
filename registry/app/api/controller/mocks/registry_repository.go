@@ -298,9 +298,9 @@ func (_m *RegistryRepository) GetByIDIn(ctx context.Context, ids []int64) (*[]ty
 	return r0, r1
 }
 
-// GetByParentIDAndName provides a mock function with given fields: ctx, parentID, name
-func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID int64, name string) (*types.Registry, error) {
-	ret := _m.Called(ctx, parentID, name)
+// GetByParentIDAndName provides a mock function with given fields: ctx, parentID, name, includeSoftDeleted
+func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID int64, name string, includeSoftDeleted types.SoftDeleteFilter) (*types.Registry, error) {
+	ret := _m.Called(ctx, parentID, name, includeSoftDeleted)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByParentIDAndName")
@@ -308,19 +308,19 @@ func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID
 
 	var r0 *types.Registry
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (*types.Registry, error)); ok {
-		return rf(ctx, parentID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) (*types.Registry, error)); ok {
+		return rf(ctx, parentID, name, includeSoftDeleted)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) *types.Registry); ok {
-		r0 = rf(ctx, parentID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) *types.Registry); ok {
+		r0 = rf(ctx, parentID, name, includeSoftDeleted)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Registry)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
-		r1 = rf(ctx, parentID, name)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, name, includeSoftDeleted)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -328,9 +328,9 @@ func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID
 	return r0, r1
 }
 
-// GetByRootParentIDAndName provides a mock function with given fields: ctx, parentID, name
-func (_m *RegistryRepository) GetByRootParentIDAndName(ctx context.Context, parentID int64, name string) (*types.Registry, error) {
-	ret := _m.Called(ctx, parentID, name)
+// GetByRootParentIDAndName provides a mock function with given fields: ctx, parentID, name, includeSoftDeleted
+func (_m *RegistryRepository) GetByRootParentIDAndName(ctx context.Context, parentID int64, name string, includeSoftDeleted types.SoftDeleteFilter) (*types.Registry, error) {
+	ret := _m.Called(ctx, parentID, name, includeSoftDeleted)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRootParentIDAndName")
@@ -338,19 +338,19 @@ func (_m *RegistryRepository) GetByRootParentIDAndName(ctx context.Context, pare
 
 	var r0 *types.Registry
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (*types.Registry, error)); ok {
-		return rf(ctx, parentID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) (*types.Registry, error)); ok {
+		return rf(ctx, parentID, name, includeSoftDeleted)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) *types.Registry); ok {
-		r0 = rf(ctx, parentID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) *types.Registry); ok {
+		r0 = rf(ctx, parentID, name, includeSoftDeleted)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Registry)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
-		r1 = rf(ctx, parentID, name)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, name, includeSoftDeleted)
 	} else {
 		r1 = ret.Error(1)
 	}
