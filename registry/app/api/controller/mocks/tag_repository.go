@@ -39,8 +39,8 @@ func (_m *MockTagRepository) EXPECT() *MockTagRepository_Expecter {
 }
 
 // CountAllArtifactsByParentID provides a mock function for the type MockTagRepository
-func (_mock *MockTagRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool) (int64, error) {
-	ret := _mock.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
+func (_mock *MockTagRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _mock.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAllArtifactsByParentID")
@@ -48,16 +48,16 @@ func (_mock *MockTagRepository) CountAllArtifactsByParentID(ctx context.Context,
 
 	var r0 int64
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool) (int64, error)); ok {
-		return returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool, types.SoftDeleteFilter) (int64, error)); ok {
+		return returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, softDeleteFilter)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool) int64); ok {
-		r0 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool, types.SoftDeleteFilter) int64); ok {
+		r0 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, bool) error); ok {
-		r1 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, bool, types.SoftDeleteFilter) error); ok {
+		r1 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -77,11 +77,12 @@ type MockTagRepository_CountAllArtifactsByParentID_Call struct {
 //   - latestVersion bool
 //   - packageTypes []string
 //   - untaggedImagesEnabled bool
-func (_e *MockTagRepository_Expecter) CountAllArtifactsByParentID(ctx interface{}, parentID interface{}, registryIDs interface{}, search interface{}, latestVersion interface{}, packageTypes interface{}, untaggedImagesEnabled interface{}) *MockTagRepository_CountAllArtifactsByParentID_Call {
-	return &MockTagRepository_CountAllArtifactsByParentID_Call{Call: _e.mock.On("CountAllArtifactsByParentID", ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)}
+//   - softDeleteFilter types.SoftDeleteFilter
+func (_e *MockTagRepository_Expecter) CountAllArtifactsByParentID(ctx interface{}, parentID interface{}, registryIDs interface{}, search interface{}, latestVersion interface{}, packageTypes interface{}, untaggedImagesEnabled interface{}, softDeleteFilter interface{}) *MockTagRepository_CountAllArtifactsByParentID_Call {
+	return &MockTagRepository_CountAllArtifactsByParentID_Call{Call: _e.mock.On("CountAllArtifactsByParentID", ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, softDeleteFilter)}
 }
 
-func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool)) *MockTagRepository_CountAllArtifactsByParentID_Call {
+func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool, softDeleteFilter types.SoftDeleteFilter)) *MockTagRepository_CountAllArtifactsByParentID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -111,6 +112,10 @@ func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx c
 		if args[6] != nil {
 			arg6 = args[6].(bool)
 		}
+		var arg7 types.SoftDeleteFilter
+		if args[7] != nil {
+			arg7 = args[7].(types.SoftDeleteFilter)
+		}
 		run(
 			arg0,
 			arg1,
@@ -119,6 +124,7 @@ func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx c
 			arg4,
 			arg5,
 			arg6,
+			arg7,
 		)
 	})
 	return _c
@@ -129,7 +135,7 @@ func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Return(n int64, er
 	return _c
 }
 
-func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool) (int64, error)) *MockTagRepository_CountAllArtifactsByParentID_Call {
+func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool, softDeleteFilter types.SoftDeleteFilter) (int64, error)) *MockTagRepository_CountAllArtifactsByParentID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -916,8 +922,8 @@ func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) RunAndReturn(run fun
 }
 
 // GetAllArtifactsByParentIDUntagged provides a mock function for the type MockTagRepository
-func (_mock *MockTagRepository) GetAllArtifactsByParentIDUntagged(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string) (*[]types.ArtifactMetadata, error) {
-	ret := _mock.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
+func (_mock *MockTagRepository) GetAllArtifactsByParentIDUntagged(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error) {
+	ret := _mock.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllArtifactsByParentIDUntagged")
@@ -925,18 +931,18 @@ func (_mock *MockTagRepository) GetAllArtifactsByParentIDUntagged(ctx context.Co
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string) (*[]types.ArtifactMetadata, error)); ok {
-		return returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string, types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error)); ok {
+		return returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, softDeleteFilter)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string) *[]types.ArtifactMetadata); ok {
-		r0 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string, types.SoftDeleteFilter) *[]types.ArtifactMetadata); ok {
+		r0 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, []string) error); ok {
-		r1 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, []string, types.SoftDeleteFilter) error); ok {
+		r1 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -958,11 +964,12 @@ type MockTagRepository_GetAllArtifactsByParentIDUntagged_Call struct {
 //   - offset int
 //   - search string
 //   - packageTypes []string
-func (_e *MockTagRepository_Expecter) GetAllArtifactsByParentIDUntagged(ctx interface{}, parentID interface{}, registryIDs interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, packageTypes interface{}) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
-	return &MockTagRepository_GetAllArtifactsByParentIDUntagged_Call{Call: _e.mock.On("GetAllArtifactsByParentIDUntagged", ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)}
+//   - softDeleteFilter types.SoftDeleteFilter
+func (_e *MockTagRepository_Expecter) GetAllArtifactsByParentIDUntagged(ctx interface{}, parentID interface{}, registryIDs interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, packageTypes interface{}, softDeleteFilter interface{}) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
+	return &MockTagRepository_GetAllArtifactsByParentIDUntagged_Call{Call: _e.mock.On("GetAllArtifactsByParentIDUntagged", ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, softDeleteFilter)}
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
+func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string, softDeleteFilter types.SoftDeleteFilter)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1000,6 +1007,10 @@ func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func
 		if args[8] != nil {
 			arg8 = args[8].([]string)
 		}
+		var arg9 types.SoftDeleteFilter
+		if args[9] != nil {
+			arg9 = args[9].(types.SoftDeleteFilter)
+		}
 		run(
 			arg0,
 			arg1,
@@ -1010,6 +1021,7 @@ func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func
 			arg6,
 			arg7,
 			arg8,
+			arg9,
 		)
 	})
 	return _c
@@ -1020,7 +1032,7 @@ func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Return(artif
 	return _c
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
+func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
 	_c.Call.Return(run)
 	return _c
 }

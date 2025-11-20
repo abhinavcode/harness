@@ -211,12 +211,14 @@ type TagRepository interface {
 		registryIDs *[]string, sortByField string,
 		sortByOrder string, limit int, offset int, search string,
 		packageTypes []string,
+		softDeleteFilter types.SoftDeleteFilter,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
 		registryIDs *[]string, search string,
 		latestVersion bool, packageTypes []string, untaggedImagesEnabled bool,
+		softDeleteFilter types.SoftDeleteFilter,
 	) (int64, error)
 
 	GetAllArtifactsByRepo(

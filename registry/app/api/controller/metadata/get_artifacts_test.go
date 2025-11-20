@@ -330,16 +330,16 @@ func setupArtifactsSnapshotController(
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(artifacts, nil)
 	// GetAllArtifactsByParentIDUntagged: ctx, parentID, registryIDs, sortByField,
-	// sortByOrder, limit, offset, search, packageTypes (no latestVersion)
+	// sortByOrder, limit, offset, search, packageTypes, softDeleteFilter
 	mockTagStore.On("GetAllArtifactsByParentIDUntagged",
 		mock.Anything, int64(2), mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(artifacts, nil)
 	// CountAllArtifactsByParentID: ctx, parentID, registryIDs, search,
-	// latestVersion, packageTypes, untaggedImagesEnabled
+	// latestVersion, packageTypes, untaggedImagesEnabled, softDeleteFilter
 	mockTagStore.On("CountAllArtifactsByParentID",
 		mock.Anything, int64(2), mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything).
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(int64(len(*artifacts)), nil)
 	mockTagStore.On("GetQuarantineInfoForArtifacts", mock.Anything, mock.Anything, int64(2)).
 		Return(quarantineMap, nil)
