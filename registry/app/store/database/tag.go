@@ -382,10 +382,11 @@ func (t tagDao) GetAllArtifactsByParentID(
 	search string,
 	latestVersion bool,
 	packageTypes []string,
+	softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.ArtifactMetadata, error) {
-	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(parentID, latestVersion, registryIDs, packageTypes, search, false, types.SoftDeleteFilterExcludeDeleted)
+	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(parentID, latestVersion, registryIDs, packageTypes, search, false, softDeleteFilter)
 
-	q2 := t.GetAllArtifactsQueryByParentIDForOCI(parentID, latestVersion, registryIDs, packageTypes, search, types.SoftDeleteFilterExcludeDeleted)
+	q2 := t.GetAllArtifactsQueryByParentIDForOCI(parentID, latestVersion, registryIDs, packageTypes, search, softDeleteFilter)
 
 	q1SQL, q1Args, err := q1.ToSql()
 	if err != nil {

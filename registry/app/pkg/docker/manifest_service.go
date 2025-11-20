@@ -610,7 +610,7 @@ func (l *manifestService) AddManifestAssociation(
 	if err2 != nil {
 		return fmt.Errorf("failed to create digest: %s %w", childDigest, err2)
 	}
-	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterAll)
+	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return fmt.Errorf("failed to get registry: %s %w", repoKey, err)
 	}
@@ -894,7 +894,7 @@ func (l *manifestService) dbPutImageIndex(
 	headers *commons.ResponseHeaders,
 	info pkg.RegistryInfo,
 ) error {
-	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, types.SoftDeleteFilterAll)
+	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return err
 	}
@@ -1074,7 +1074,7 @@ func (l *manifestService) DeleteTag(
 	info pkg.RegistryInfo,
 ) (bool, error) {
 	// Fetch the registry by parent ID and name
-	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterAll)
+	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return false, err
 	}
@@ -1121,7 +1121,7 @@ func (l *manifestService) DeleteTagsByManifestID(
 	manifestID int64,
 	info pkg.RegistryInfo,
 ) (bool, error) {
-	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterAll)
+	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
 
 	if err != nil {
 		return false, err
@@ -1138,7 +1138,7 @@ func (l *manifestService) DeleteManifest(
 ) error {
 	log.Ctx(ctx).Debug().Msg("deleting manifest from repository in database")
 
-	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterAll)
+	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
 	imageName := info.Image
 
 	if registry == nil || err != nil {

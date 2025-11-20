@@ -70,7 +70,7 @@ func (c *APIController) GetArtifactFile(
 	version := string(r.Version)
 	file := string(r.FileName)
 
-	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
+	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterExcludeDeleted)
 
 	if err != nil {
 		return artifact.GetArtifactFile500JSONResponse{
@@ -91,7 +91,7 @@ func (c *APIController) GetArtifactFile(
 			}, nil
 		}
 	}
-	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, image, artifactType, types.SoftDeleteFilterAll)
+	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, image, artifactType, types.SoftDeleteFilterExcludeDeleted)
 
 	if err != nil {
 		return artifact.GetArtifactFile500JSONResponse{
@@ -100,7 +100,7 @@ func (c *APIController) GetArtifactFile(
 			),
 		}, nil
 	}
-	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, types.SoftDeleteFilterAll)
+	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, types.SoftDeleteFilterExcludeDeleted)
 
 	if err != nil {
 		return artifact.GetArtifactFile500JSONResponse{

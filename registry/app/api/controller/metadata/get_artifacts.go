@@ -84,16 +84,16 @@ func (c *APIController) GetAllArtifacts(
 		artifacts, err = c.TagStore.GetAllArtifactsByParentIDUntagged(
 			ctx, regInfo.ParentID, &regInfo.registryIDs,
 			regInfo.sortByField, regInfo.sortByOrder, regInfo.limit, regInfo.offset, regInfo.searchTerm,
-			regInfo.packageTypes, types.SoftDeleteFilterAll)
+			regInfo.packageTypes, types.SoftDeleteFilterExcludeDeleted)
 	} else {
 		artifacts, err = c.TagStore.GetAllArtifactsByParentID(
 			ctx, regInfo.ParentID, &regInfo.registryIDs,
 			regInfo.sortByField, regInfo.sortByOrder, regInfo.limit, regInfo.offset, regInfo.searchTerm,
-			latestVersion, regInfo.packageTypes)
+			latestVersion, regInfo.packageTypes, types.SoftDeleteFilterExcludeDeleted)
 	}
 	count, _ := c.TagStore.CountAllArtifactsByParentID(
 		ctx, regInfo.ParentID, &regInfo.registryIDs,
-		regInfo.searchTerm, latestVersion, regInfo.packageTypes, c.UntaggedImagesEnabled(ctx), types.SoftDeleteFilterAll)
+		regInfo.searchTerm, latestVersion, regInfo.packageTypes, c.UntaggedImagesEnabled(ctx), types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return artifact.GetAllArtifacts500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(

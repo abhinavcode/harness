@@ -89,7 +89,7 @@ func (c *APIController) FetchArtifactSummary(
 		artifactVersion = parsedDigest.String()
 	}
 
-	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterAll)
+	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return "", "", "", false, "", nil, err
 	}

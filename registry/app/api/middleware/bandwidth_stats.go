@@ -210,7 +210,7 @@ func dbBandwidthStatForGenericArtifact(
 	info pkg.GenericArtifactInfo,
 	bandwidthType types.BandwidthType,
 ) errcode.Error {
-	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, types.SoftDeleteFilterAll)
+	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
@@ -255,7 +255,7 @@ func dbBandwidthStatForMavenArtifact(
 	bandwidthType types.BandwidthType,
 ) errcode.Error {
 	imageName := info.GroupID + ":" + info.ArtifactID
-	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, types.SoftDeleteFilterAll)
+	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}

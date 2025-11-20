@@ -203,7 +203,7 @@ type TagRepository interface {
 		ctx context.Context, parentID int64,
 		registryIDs *[]string, sortByField string,
 		sortByOrder string, limit int, offset int, search string,
-		latestVersion bool, packageTypes []string,
+		latestVersion bool, packageTypes []string, softDeleteFilter types.SoftDeleteFilter,
 	) (*[]types.ArtifactMetadata, error)
 
 	GetAllArtifactsByParentIDUntagged(
@@ -435,6 +435,7 @@ type RegistryRepository interface {
 		offset int,
 		search string,
 		repoType string,
+		softDeleteFilter types.SoftDeleteFilter,
 		filters *types.FilterParams,
 	) (repos *[]RegistryMetadata, err error)
 

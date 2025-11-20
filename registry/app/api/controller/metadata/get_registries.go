@@ -157,7 +157,7 @@ func (c *APIController) GetAllRegistries(
 		regInfo.packageTypes,
 		regInfo.searchTerm,
 		repoType,
-		registryTypes.SoftDeleteFilterAll,
+		registryTypes.SoftDeleteFilterExcludeDeleted,
 	)
 	if err != nil {
 		return artifact.GetAllRegistries500JSONResponse{

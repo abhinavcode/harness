@@ -23,8 +23,7 @@ type FilterParams struct {
 	BeforeEntry        string
 	LastEntry          string
 	PublishedAt        string
-	MaxEntries         int
-	IncludeReferrers   bool
-	ReferrerTypes      []string
-	IncludeSoftDeleted SoftDeleteFilter
+	MaxEntries       int
+	IncludeReferrers bool
+	ReferrerTypes    []string
 }

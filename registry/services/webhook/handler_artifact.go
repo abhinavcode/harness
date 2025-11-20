@@ -155,7 +155,7 @@ func (s *Service) triggerForEventWithArtifact(
 	if err != nil {
 		return err
 	}
-	registry, err := s.registryRepository.Get(ctx, registryID, registrytypes.SoftDeleteFilterAll)
+	registry, err := s.registryRepository.Get(ctx, registryID, registrytypes.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (s *Service) getParentInfoRegistry(
 	})
 
 	if inherited {
-		registry, err := s.registryRepository.Get(ctx, registryID, registrytypes.SoftDeleteFilterAll)
+		registry, err := s.registryRepository.Get(ctx, registryID, registrytypes.SoftDeleteFilterExcludeDeleted)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get registry: %w", err)
 		}

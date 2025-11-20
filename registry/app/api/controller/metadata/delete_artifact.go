@@ -66,7 +66,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 		}, nil
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifact404JSONResponse{

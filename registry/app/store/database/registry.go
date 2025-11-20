@@ -347,6 +347,7 @@ func (r registryDao) GetAll(
 	offset int,
 	search string,
 	repoType string,
+	softDeleteFilter types.SoftDeleteFilter,
 	filters *types.FilterParams,
 ) (repos *[]store.RegistryMetadata, err error) {
 	if limit < 0 || offset < 0 {
@@ -371,9 +372,9 @@ func (r registryDao) GetAll(
 	`
 
 	// Subqueries with optimizations for reduced joins and grouping
-	// Conditionally filter by image_enabled based on IncludeSoftDeleted flag
+	// Conditionally filter by image_enabled based on softDeleteFilter
 	var artifactCountSubquery string
-	if filters != nil && filters.IncludeSoftDeleted == types.SoftDeleteFilterAll {
+	if softDeleteFilter == types.SoftDeleteFilterAll {
 		artifactCountSubquery = `
 			SELECT image_registry_id, COUNT(image_id) AS count
 			FROM images
@@ -401,9 +402,9 @@ func (r registryDao) GetAll(
 		JOIN generic_blobs gb ON  n.node_is_file = TRUE AND gb.generic_blob_id = n.node_generic_blob_id
 		GROUP BY 1
 	`
-	// Conditionally filter download stats by image_enabled based on IncludeSoftDeleted flag
+	// Conditionally filter download stats by image_enabled based on softDeleteFilter
 	var downloadStatsSubquery string
-	if filters != nil && filters.IncludeSoftDeleted == types.SoftDeleteFilterAll {
+	if softDeleteFilter == types.SoftDeleteFilterAll {
 		downloadStatsSubquery = `
 			SELECT i.image_registry_id AS registry_id, COUNT(d.download_stat_id) AS download_count
 			FROM download_stats d
@@ -439,7 +440,7 @@ func (r registryDao) GetAll(
 		Where(sq.Eq{"r.registry_parent_id": parentIDs})
 
 	// Apply soft delete filter for registries
-	if filters == nil || filters.IncludeSoftDeleted != types.SoftDeleteFilterAll {
+	if softDeleteFilter != types.SoftDeleteFilterAll {
 		query = query.Where("r.registry_deleted_at IS NULL")
 	}
 
