@@ -17,14 +17,14 @@ package types
 type SortOrder string
 
 type FilterParams struct {
-	SortOrder           SortOrder
-	OrderBy             string
-	Name                string
-	BeforeEntry         string
-	LastEntry           string
-	PublishedAt         string
-	MaxEntries          int
-	IncludeReferrers    bool
-	ReferrerTypes       []string
-	IncludeSoftDeleted  SoftDeleteFilter
+	SortOrder          SortOrder
+	OrderBy            string
+	Name               string
+	BeforeEntry        string
+	LastEntry          string
+	PublishedAt        string
+	MaxEntries         int
+	IncludeReferrers   bool
+	ReferrerTypes      []string
+	IncludeSoftDeleted SoftDeleteFilter
 }

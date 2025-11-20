@@ -341,7 +341,6 @@ func (_m *ArtifactRepository) GetAllArtifactsByRepo(ctx context.Context, registr
 	return r0, r1
 }
 
-
 // GetAllVersionsByRepoAndImage provides a mock function with given fields: ctx, id, image, field, order, limit, offset, term, artifactType
 func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, id int64, image string, field string, order string, limit int, offset int, term string, artifactType *artifact.ArtifactType) (*[]types.NonOCIArtifactMetadata, error) {
 	ret := _m.Called(ctx, id, image, field, order, limit, offset, term, artifactType)
@@ -372,7 +371,6 @@ func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, 
 	return r0, r1
 }
 
-
 // GetArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, version, artifactType
 func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64, identifier string, image string, version string, artifactType *artifact.ArtifactType) (*types.ArtifactMetadata, error) {
 	ret := _m.Called(ctx, id, identifier, image, version, artifactType)
@@ -402,7 +400,6 @@ func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64,
 
 	return r0, r1
 }
-
 
 // GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType
 func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, artifactType *artifact.ArtifactType) (*[]types.ArtifactMetadata, error) {

@@ -23,11 +23,11 @@ import (
 
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
-	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/app/auth"
 	"github.com/harness/gitness/app/paths"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/common"
+	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/registry/utils"
 	"github.com/harness/gitness/types/enum"
 

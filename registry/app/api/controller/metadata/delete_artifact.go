@@ -23,8 +23,8 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
-	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/registry/app/api/utils"
+	"github.com/harness/gitness/registry/types"
 	registryTypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types/enum"
 
