@@ -214,3 +214,26 @@ func (c *genericPackageType) BuildPackageMetadataAsync(
 ) error {
 	return fmt.Errorf("not implemented")
 }
+
+func (c *genericPackageType) GetNodePathsForImage(
+	_ *string,
+	packageName string,
+) ([]string, error) {
+	return []string{"/" + packageName}, nil
+}
+
+func (c *genericPackageType) GetNodePathsForArtifact(
+	_ *string,
+	packageName string,
+	version string,
+) ([]string, error) {
+	paths, err := c.GetNodePathsForImage(nil, packageName)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, len(paths))
+	for i, path := range paths {
+		result[i] = path + "/" + version
+	}
+	return result, nil
+}

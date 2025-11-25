@@ -164,24 +164,3 @@ func TestNoCache_Evict(t *testing.T) {
 		}
 	})
 }
-
-func TestNoCache_WithIntegerTypes(t *testing.T) {
-	getter := &mockGetter{}
-
-	type intGetter struct{}
-
-	intGetterImpl := intGetter{}
-
-	cache := NewNoCache[int, int](struct {
-		Getter[int, int]
-	}{
-		Getter: struct{ Getter[int, int] }{
-			Getter: nil,
-		}.Getter,
-	})
-
-	// Just verify the cache can be created with different types
-	_ = cache
-	_ = getter
-	_ = intGetterImpl
-}

@@ -96,14 +96,12 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
   {
     label: 'repositoryTypes.cargo',
     value: RepositoryPackageType.CARGO,
-    icon: 'rust-logo',
-    tag: ThumbnailTagEnum.Beta
+    icon: 'rust-logo'
   },
   {
     label: 'repositoryTypes.go',
     value: RepositoryPackageType.GO,
-    icon: 'go-logo',
-    tag: ThumbnailTagEnum.Beta
+    icon: 'go-logo'
   },
   {
     label: 'repositoryTypes.huggingface',
@@ -119,6 +117,16 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
     disabled: true,
     tag: ThumbnailTagEnum.ComingSoon,
     featureFlag: FeatureFlags.HAR_CONDA_PACKAGE_TYPE,
+    parent: Parent.Enterprise
+  },
+  {
+    label: 'repositoryTypes.dart',
+    value: RepositoryPackageType.DART,
+    icon: 'dart-icon',
+    tooltip: 'Coming Soon!',
+    disabled: true,
+    tag: ThumbnailTagEnum.ComingSoon,
+    featureFlag: FeatureFlags.HAR_DART_PACKAGE_TYPE,
     parent: Parent.Enterprise
   },
   {

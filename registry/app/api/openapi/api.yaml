@@ -1195,6 +1195,7 @@ paths:
         - $ref: "#/components/parameters/artifactParam"
         - $ref: "#/components/parameters/versionParam"
         - $ref: "#/components/parameters/filePathParam"
+        - $ref: "#/components/parameters/artifactTypeParam"
       responses:
         200:
           $ref:  "#/components/responses/Success"
@@ -3003,6 +3004,13 @@ components:
             - Crates
             - GoProxy
             - HuggingFace
+        remoteUrlSuffix:
+          type: string
+          description: >
+            Optional path suffix appended to the remote URL for this registry. For
+            Python upstreams, this allows overriding the default `/simple` path used
+            for PyPI-compatible indexes. Leading and trailing slashes are not required
+            and will be normalized.
       x-discriminator-value: UPSTREAM
       required:
         - authType
@@ -3209,6 +3217,8 @@ components:
         version:
           type: string
         reason:
+          type: string
+        artifactType:
           type: string
       required:
         - artifact

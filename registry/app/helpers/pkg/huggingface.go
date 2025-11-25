@@ -213,3 +213,30 @@ func (c *huggingFacePackageType) BuildPackageMetadataAsync(
 ) error {
 	return fmt.Errorf("not implemented")
 }
+
+func (c *huggingFacePackageType) GetNodePathsForImage(
+	artifactType *string,
+	packageName string,
+) ([]string, error) {
+	prefix := ""
+	if artifactType != nil && *artifactType != "" {
+		prefix = "/" + *artifactType
+	}
+	return []string{prefix + "/" + packageName}, nil
+}
+
+func (c *huggingFacePackageType) GetNodePathsForArtifact(
+	artifactType *string,
+	packageName string,
+	version string,
+) ([]string, error) {
+	paths, err := c.GetNodePathsForImage(artifactType, packageName)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, len(paths))
+	for i, path := range paths {
+		result[i] = path + "/" + version
+	}
+	return result, nil
+}

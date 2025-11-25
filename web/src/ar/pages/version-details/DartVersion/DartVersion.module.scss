@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-import React from 'react'
-import ManageMetadataLabels from '@ar/components/ManageMetadata/ManageMetadataLabels'
-
-function ManageRepositoryMetadata() {
-  return (
-    <ManageMetadataLabels
-      selectedLabels={[]}
-      onLabelSelect={(_label, _value) => {
-        // TODO: handle update repository metadata
-      }}
-    />
-  )
+.cardContainer {
+  width: 60% !important;
+  min-width: 1040px;
+  padding: var(--spacing-7) !important;
+  background-color: var(--white);
+  margin: var(--spacing-large);
 }
-
-export default ManageRepositoryMetadata

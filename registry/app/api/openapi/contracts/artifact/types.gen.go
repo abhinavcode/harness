@@ -222,6 +222,12 @@ const (
 	GetAllArtifactsByRegistryParamsArtifactTypeModel   GetAllArtifactsByRegistryParamsArtifactType = "model"
 )
 
+// Defines values for DeleteQuarantineFilePathParamsArtifactType.
+const (
+	DeleteQuarantineFilePathParamsArtifactTypeDataset DeleteQuarantineFilePathParamsArtifactType = "dataset"
+	DeleteQuarantineFilePathParamsArtifactTypeModel   DeleteQuarantineFilePathParamsArtifactType = "model"
+)
+
 // Defines values for GetAllRegistriesParamsType.
 const (
 	GetAllRegistriesParamsTypeUPSTREAM GetAllRegistriesParamsType = "UPSTREAM"
@@ -956,9 +962,12 @@ type UpstreamConfig struct {
 	Auth *UpstreamConfig_Auth `json:"auth,omitempty"`
 
 	// AuthType Authentication type
-	AuthType AuthType              `json:"authType"`
-	Source   *UpstreamConfigSource `json:"source,omitempty"`
-	Url      *string               `json:"url,omitempty"`
+	AuthType AuthType `json:"authType"`
+
+	// RemoteUrlSuffix Optional path suffix appended to the remote URL for this registry. For Python upstreams, this allows overriding the default `/simple` path used for PyPI-compatible indexes. Leading and trailing slashes are not required and will be normalized.
+	RemoteUrlSuffix *string               `json:"remoteUrlSuffix,omitempty"`
+	Source          *UpstreamConfigSource `json:"source,omitempty"`
+	Url             *string               `json:"url,omitempty"`
 }
 
 // UpstreamConfig_Auth defines model for UpstreamConfig.Auth.
@@ -1073,10 +1082,11 @@ type QuarantinePath struct {
 
 // QuarantineRequest defines model for quarantineRequest.
 type QuarantineRequest struct {
-	Artifact string  `json:"artifact"`
-	FilePath *string `json:"filePath,omitempty"`
-	Reason   string  `json:"reason"`
-	Version  *string `json:"version,omitempty"`
+	Artifact     string  `json:"artifact"`
+	ArtifactType *string `json:"artifactType,omitempty"`
+	FilePath     *string `json:"filePath,omitempty"`
+	Reason       string  `json:"reason"`
+	Version      *string `json:"version,omitempty"`
 }
 
 // LabelsParam defines model for LabelsParam.
@@ -1703,7 +1713,13 @@ type DeleteQuarantineFilePathParams struct {
 
 	// FilePath filePath
 	FilePath *FilePathParam `form:"file_path,omitempty" json:"file_path,omitempty"`
+
+	// ArtifactType artifact type.
+	ArtifactType *DeleteQuarantineFilePathParamsArtifactType `form:"artifact_type,omitempty" json:"artifact_type,omitempty"`
 }
+
+// DeleteQuarantineFilePathParamsArtifactType defines parameters for DeleteQuarantineFilePath.
+type DeleteQuarantineFilePathParamsArtifactType string
 
 // ListWebhooksParams defines parameters for ListWebhooks.
 type ListWebhooksParams struct {

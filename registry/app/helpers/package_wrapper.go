@@ -381,3 +381,28 @@ func (p *packageWrapper) BuildPackageMetadataAsync(
 	}
 	return pkg.BuildPackageMetadataAsync(ctx, registry, payload)
 }
+
+func (p *packageWrapper) GetNodePathsForImage(
+	packageType string,
+	artifactType *string,
+	packageName string,
+) ([]string, error) {
+	pkg := p.GetPackage(packageType)
+	if pkg == nil {
+		return []string{}, nil
+	}
+	return pkg.GetNodePathsForImage(artifactType, packageName)
+}
+
+func (p *packageWrapper) GetNodePathsForArtifact(
+	packageType string,
+	artifactType *string,
+	packageName string,
+	version string,
+) ([]string, error) {
+	pkg := p.GetPackage(packageType)
+	if pkg == nil {
+		return []string{}, nil
+	}
+	return pkg.GetNodePathsForArtifact(artifactType, packageName, version)
+}

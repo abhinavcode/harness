@@ -14,24 +14,12 @@
  * limitations under the License.
  */
 
+import { Parent } from '@ar/common/types'
 import { useAppStore } from './useAppStore'
+import { useFeatureFlags } from './useFeatureFlag'
 
-interface UseGetDownloadFileURLParams {
-  repositoryIdentifier: string
-  fileName: string
-  path: string
-}
-
-export function useGetDownloadFileURL(props: UseGetDownloadFileURLParams) {
-  const { repositoryIdentifier, fileName, path } = props
-  const { scope } = useAppStore()
-  const formattedFileName = encodeURIComponent(fileName)
-  const downloadURL = window.getApiBaseUrl(`/har/api/v2/files/${formattedFileName}`)
-  const downloadURLParams = new URLSearchParams({
-    account_identifier: scope.accountId || '',
-    registry_identifier: repositoryIdentifier,
-    path
-  })
-
-  return `${downloadURL}?${downloadURLParams.toString()}`
+export function useV2Apis() {
+  const { parent } = useAppStore()
+  const { HAR_CUSTOM_METADATA_ENABLED } = useFeatureFlags()
+  return parent === Parent.Enterprise && HAR_CUSTOM_METADATA_ENABLED
 }

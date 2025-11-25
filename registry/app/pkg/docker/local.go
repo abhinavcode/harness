@@ -39,7 +39,7 @@ import (
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/dist_temp/dcontext"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
-	"github.com/harness/gitness/registry/app/event"
+	"github.com/harness/gitness/registry/app/events/replication"
 	"github.com/harness/gitness/registry/app/manifest"
 	"github.com/harness/gitness/registry/app/manifest/manifestlist"
 	"github.com/harness/gitness/registry/app/manifest/ocischema"
@@ -94,7 +94,12 @@ const (
 const (
 	ReferrersSchemaVersion    = 2
 	ReferrersMediaType        = "application/vnd.oci.image.index.v1+json"
-	ArtifactTypeLocalRegistry = "Local Registry"
+	HeaderCacheControl        = "Cache-Control"
+	HeaderContentLength       = "Content-Length"
+	HeaderContentType         = "Content-Type"
+	HeaderDockerContentDigest = "Docker-Content-Digest"
+	HeaderEtag                = "Etag"
+	blobCacheControlMaxAge    = 365 * 24 * time.Hour
 )
 
 type CatalogAPIResponse struct {
@@ -113,8 +118,8 @@ func NewLocalRegistry(
 	blobRepo store.BlobRepository, mtRepository store.MediaTypesRepository,
 	tagDao store.TagRepository, imageDao store.ImageRepository, artifactDao store.ArtifactRepository,
 	bandwidthStatDao store.BandwidthStatRepository, downloadStatDao store.DownloadStatRepository,
-	gcService gc.Service, tx dbtx.Transactor, reporter event.Reporter,
-	quarantineArtifactDao store.QuarantineArtifactRepository, bucketService BucketService,
+	gcService gc.Service, tx dbtx.Transactor, quarantineArtifactDao store.QuarantineArtifactRepository,
+	bucketService BucketService, replicationReporter replication.Reporter,
 ) Registry {
 	return &LocalRegistry{
 		App:                   app,
@@ -131,9 +136,9 @@ func NewLocalRegistry(
 		downloadStatDao:       downloadStatDao,
 		gcService:             gcService,
 		tx:                    tx,
-		reporter:              reporter,
 		quarantineArtifactDao: quarantineArtifactDao,
 		bucketService:         bucketService,
+		replicationReporter:   replicationReporter,
 	}
 }
 
@@ -152,9 +157,9 @@ type LocalRegistry struct {
 	downloadStatDao       store.DownloadStatRepository
 	gcService             gc.Service
 	tx                    dbtx.Transactor
-	reporter              event.Reporter
 	quarantineArtifactDao store.QuarantineArtifactRepository
 	bucketService         BucketService
+	replicationReporter   replication.Reporter
 }
 
 func (r *LocalRegistry) Base() error {
@@ -346,10 +351,9 @@ func (r *LocalRegistry) HeadBlob(
 	ctx2 context.Context,
 	artInfo pkg.RegistryInfo,
 ) (
-	responseHeaders *commons.ResponseHeaders, fr *storage.FileReader, size int64, readCloser io.ReadCloser,
-	redirectURL string, errs []error,
+	responseHeaders *commons.ResponseHeaders, errs []error,
 ) {
-	return r.fetchBlobInternal(ctx2, http.MethodHead, artInfo)
+	return r.headBlobInternal(ctx2, artInfo)
 }
 
 func (r *LocalRegistry) GetBlob(
@@ -416,6 +420,42 @@ func (r *LocalRegistry) fetchBlobInternal(
 	maps.Copy(responseHeaders.Headers, headers)
 
 	return responseHeaders, fileReader, size, nil, "", errs
+}
+
+func (r *LocalRegistry) headBlobInternal(
+	ctx context.Context,
+	info pkg.RegistryInfo,
+) (*commons.ResponseHeaders, []error) {
+	responseHeaders := &commons.ResponseHeaders{
+		Code:    0,
+		Headers: make(map[string]string),
+	}
+	errs := make([]error, 0)
+
+	dgst := digest.Digest(info.Digest)
+	blobID, err := r.dbBlobLinkExists(ctx, dgst, info)
+	if err != nil {
+		errs = append(errs, errcode.FromUnknownError(err))
+		return responseHeaders, errs
+	}
+
+	blob, err := r.blobRepo.FindByID(ctx, blobID)
+	if err != nil {
+		errs = append(errs, errcode.FromUnknownError(err))
+		return responseHeaders, errs
+	}
+
+	responseHeaders.Headers[HeaderEtag] = fmt.Sprintf(`"%s"`, dgst)
+	responseHeaders.Headers[HeaderCacheControl] = fmt.Sprintf(
+		"max-age=%.f",
+		blobCacheControlMaxAge.Seconds(),
+	)
+
+	responseHeaders.Headers[HeaderDockerContentDigest] = dgst.String()
+	responseHeaders.Headers[HeaderContentType] = "application/octet-stream"
+	responseHeaders.Headers[HeaderContentLength] = fmt.Sprint(blob.Size)
+
+	return responseHeaders, errs
 }
 
 func (r *LocalRegistry) PullManifest(
@@ -1602,9 +1642,8 @@ func (r *LocalRegistry) dbPutBlobUploadComplete(
 
 	// Emit blob create event
 	if created {
-		destinations := []event.CloudLocation{}
-		event.ReportEventAsync(ctx.Context, ctx.OciBlobStore.Path(),
-			r.reporter, event.BlobCreate, storedBlob.ID,
+		destinations := []replication.CloudLocation{}
+		r.replicationReporter.ReportEventAsync(ctx.Context, ctx.OciBlobStore.Path(), replication.BlobCreate, storedBlob.ID,
 			"", digestVal, r.App.Config, destinations)
 	}
 	return nil

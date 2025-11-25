@@ -218,3 +218,26 @@ func (c *goPackageType) BuildPackageMetadataAsync(
 ) error {
 	return fmt.Errorf("not implemented")
 }
+
+func (c *goPackageType) GetNodePathsForImage(
+	_ *string,
+	packageName string,
+) ([]string, error) {
+	return []string{"/" + packageName}, nil
+}
+
+func (c *goPackageType) GetNodePathsForArtifact(
+	_ *string,
+	packageName string,
+	version string,
+) ([]string, error) {
+	paths, err := c.GetNodePathsForImage(nil, packageName)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, len(paths))
+	for i, path := range paths {
+		result[i] = path + "/@v/" + version
+	}
+	return result, nil
+}

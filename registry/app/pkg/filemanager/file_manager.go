@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/harness/gitness/app/api/usererror"
-	"github.com/harness/gitness/registry/app/event"
+	"github.com/harness/gitness/registry/app/events/replication"
 	"github.com/harness/gitness/registry/app/pkg/docker"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
@@ -48,31 +48,30 @@ const (
 func NewFileManager(
 	registryDao store.RegistryRepository, genericBlobDao store.GenericBlobRepository,
 	nodesDao store.NodesRepository, tx dbtx.Transactor,
-	reporter event.Reporter, config *gitnesstypes.Config,
-	storageService *storage.Service,
-	bucketService docker.BucketService,
+	config *gitnesstypes.Config, storageService *storage.Service,
+	bucketService docker.BucketService, replicationReporter replication.Reporter,
 ) FileManager {
 	return FileManager{
-		registryDao:    registryDao,
-		genericBlobDao: genericBlobDao,
-		nodesDao:       nodesDao,
-		tx:             tx,
-		reporter:       reporter,
-		config:         config,
-		storageService: storageService,
-		bucketService:  bucketService,
+		registryDao:         registryDao,
+		genericBlobDao:      genericBlobDao,
+		nodesDao:            nodesDao,
+		tx:                  tx,
+		config:              config,
+		storageService:      storageService,
+		bucketService:       bucketService,
+		replicationReporter: replicationReporter,
 	}
 }
 
 type FileManager struct {
-	config         *gitnesstypes.Config
-	storageService *storage.Service
-	registryDao    store.RegistryRepository
-	genericBlobDao store.GenericBlobRepository
-	nodesDao       store.NodesRepository
-	tx             dbtx.Transactor
-	reporter       event.Reporter
-	bucketService  docker.BucketService
+	config              *gitnesstypes.Config
+	storageService      *storage.Service
+	registryDao         store.RegistryRepository
+	genericBlobDao      store.GenericBlobRepository
+	nodesDao            store.NodesRepository
+	tx                  dbtx.Transactor
+	bucketService       docker.BucketService
+	replicationReporter replication.Reporter
 }
 
 func (f *FileManager) UploadFile(
@@ -108,8 +107,8 @@ func (f *FileManager) UploadFile(
 
 	// Emit blob create event
 	if created {
-		destinations := []event.CloudLocation{}
-		event.ReportEventAsync(ctx, rootIdentifier, f.reporter, event.BlobCreate, 0, blobID, fileInfo.Sha256,
+		destinations := []replication.CloudLocation{}
+		f.replicationReporter.ReportEventAsync(ctx, rootIdentifier, replication.BlobCreate, 0, blobID, fileInfo.Sha256,
 			f.config, destinations)
 	}
 	return fileInfo, nil
@@ -216,6 +215,38 @@ func (f *FileManager) SaveNodesTx(
 	return f.tx.WithTx(ctx, func(ctx context.Context) error {
 		return f.SaveNodes(ctx, filePath, regID, rootParentID, createdBy, sha256)
 	})
+}
+
+func (f *FileManager) CreateNodesWithoutFileNode(
+	ctx context.Context,
+	path string,
+	regID int64,
+	principalID int64,
+) error {
+	segments := strings.Split(path, rootPathString)
+	parentID := ""
+	// Start with root (-1)
+	// Iterate through segments and create Node objects
+	nodePath := ""
+	for i, segment := range segments {
+		if i >= nodeLimit { // Stop after 1000 iterations
+			break
+		}
+		if segment == "" {
+			continue // Skip empty segments
+		}
+		var nodeID string
+		var err error
+		nodePath += rootPathString + segment
+
+		nodeID, err = f.SaveNode(ctx, path, "", regID, segment,
+			parentID, nodePath, false, principalID)
+		if err != nil {
+			return err
+		}
+		parentID = nodeID
+	}
+	return nil
 }
 
 func (f *FileManager) moveFile(
@@ -658,8 +689,8 @@ func (f *FileManager) MoveTempFile(
 
 	// Emit blob create event
 	if created {
-		destinations := []event.CloudLocation{}
-		event.ReportEventAsync(ctx, rootIdentifier, f.reporter, event.BlobCreate, 0, blobID, fileInfo.Sha256,
+		destinations := []replication.CloudLocation{}
+		f.replicationReporter.ReportEventAsync(ctx, rootIdentifier, replication.BlobCreate, 0, blobID, fileInfo.Sha256,
 			f.config, destinations)
 	}
 	return nil

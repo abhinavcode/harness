@@ -45,7 +45,9 @@ const (
 		aitask_api_url,
 		aitask_ai_agent,
 		aitask_state,
-		aitask_output`
+		aitask_output,
+		aitask_output_metadata,
+		aitask_error_message`
 	aiTaskSelectColumns = "aitask_id," + aiTaskInsertColumns
 )
 
@@ -64,6 +66,8 @@ type aiTask struct {
 	AgentType          enum.AIAgent     `db:"aitask_ai_agent"`
 	State              enum.AITaskState `db:"aitask_state"`
 	Output             null.String      `db:"aitask_output"`
+	OutputMetadata     []byte           `db:"aitask_output_metadata"`
+	ErrorMessage       null.String      `db:"aitask_error_message"`
 }
 
 var _ store.AITaskStore = (*aiTaskStore)(nil)
@@ -85,8 +89,8 @@ func (s aiTaskStore) Create(ctx context.Context, aiTask *types.AITask) error {
 		Columns(aiTaskInsertColumns).
 		Values(
 			aiTask.Identifier,
-			aiTask.GitspaceConfigID,
-			aiTask.GitspaceInstanceID,
+			aiTask.GitspaceConfig.ID,
+			aiTask.GitspaceConfig.GitspaceInstance.ID,
 			aiTask.InitialPrompt,
 			aiTask.DisplayName,
 			aiTask.UserUID,
@@ -97,6 +101,8 @@ func (s aiTaskStore) Create(ctx context.Context, aiTask *types.AITask) error {
 			aiTask.AIAgent,
 			aiTask.State,
 			aiTask.Output,
+			aiTask.OutputMetadata,
+			aiTask.ErrorMessage,
 		).
 		Suffix("RETURNING aitask_id")
 	sql, args, err := stmt.ToSql()
@@ -118,7 +124,10 @@ func (s aiTaskStore) Update(ctx context.Context, aiTask *types.AITask) error {
 		Set("aitask_api_url", aiTask.APIURL).
 		Set("aitask_state", aiTask.State).
 		Set("aitask_output", aiTask.Output).
+		Set("aitask_error_message", aiTask.ErrorMessage).
+		Set("aitask_output_metadata", aiTask.OutputMetadata).
 		Where("aitask_id = ?", aiTask.ID)
+
 	sql, args, err := stmt.ToSql()
 	if err != nil {
 		return errors.Wrap(err, "Failed to convert squirrel builder to sql")
@@ -146,11 +155,13 @@ func (s aiTaskStore) Find(ctx context.Context, id int64) (*types.AITask, error) 
 	}
 	return s.mapDBToAITask(dst), nil
 }
-func (s aiTaskStore) FindByIdentifier(ctx context.Context, identifier string) (*types.AITask, error) {
+func (s aiTaskStore) FindByIdentifier(ctx context.Context, spaceID int64, identifier string) (*types.AITask, error) {
 	stmt := database.Builder.
 		Select(aiTaskSelectColumns).
 		From(aiTaskTable).
-		Where("LOWER(aitask_uid) = ?", strings.ToLower(identifier))
+		Where("LOWER(aitask_uid) = $1", strings.ToLower(identifier)).
+		Where("aitask_space_id = $2", spaceID)
+
 	sql, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to convert squirrel builder to sql")
@@ -167,8 +178,8 @@ func (s aiTaskStore) List(ctx context.Context, filter *types.AITaskFilter) ([]*t
 		Select(aiTaskSelectColumns).
 		From(aiTaskTable)
 	stmt = s.addAITaskFilter(stmt, filter)
-	stmt = stmt.Limit(database.Limit(filter.Size))
-	stmt = stmt.Offset(database.Offset(filter.Page, filter.Size))
+	stmt = stmt.Limit(database.Limit(filter.QueryFilter.Size))
+	stmt = stmt.Offset(database.Offset(filter.QueryFilter.Page, filter.QueryFilter.Size))
 	stmt = stmt.OrderBy("aitask_created DESC")
 	sql, args, err := stmt.ToSql()
 	if err != nil {
@@ -181,26 +192,38 @@ func (s aiTaskStore) List(ctx context.Context, filter *types.AITaskFilter) ([]*t
 	}
 	return s.mapToAITasks(dst), nil
 }
+func (s aiTaskStore) Count(ctx context.Context, filter *types.AITaskFilter) (int64, error) {
+	stmt := database.Builder.
+		Select("COUNT(*)").
+		From(aiTaskTable)
+	stmt = s.addAITaskFilter(stmt, filter)
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return 0, errors.Wrap(err, "Failed to convert squirrel builder to sql")
+	}
+	db := dbtx.GetAccessor(ctx, s.db)
+	var count int64
+	if err = db.QueryRowContext(ctx, sql, args...).Scan(&count); err != nil {
+		return 0, database.ProcessSQLErrorf(ctx, err, "Failed executing count ai task query")
+	}
+	return count, nil
+}
 func (s aiTaskStore) addAITaskFilter(stmt squirrel.SelectBuilder, filter *types.AITaskFilter) squirrel.SelectBuilder {
-	if filter.SpaceID != 0 {
-		stmt = stmt.Where("aitask_space_id = ?", filter.SpaceID)
+	stmt = stmt.Where("aitask_space_id = ?", filter.SpaceID)
+	stmt = stmt.Where(squirrel.Eq{"aitask_user_uid": filter.UserIdentifier})
+
+	if len(filter.AIAgents) > 0 {
+		stmt = stmt.Where(squirrel.Eq{"aitask_ai_agent": filter.AIAgents})
 	}
-	if filter.GitspaceConfigID != 0 {
-		stmt = stmt.Where("aitask_gitspace_config_id = ?", filter.GitspaceConfigID)
+	if len(filter.States) > 0 {
+		stmt = stmt.Where(squirrel.Eq{"aitask_state": filter.States})
 	}
-	if filter.GitspaceInstanceID != 0 {
-		stmt = stmt.Where("aitask_gitspace_instance_id = ?", filter.GitspaceInstanceID)
-	}
-	if filter.AIAgent != "" {
-		stmt = stmt.Where("aitask_ai_agent = ?", filter.AIAgent)
-	}
-	if filter.State != "" {
-		stmt = stmt.Where("aitask_state = ?", filter.State)
-	}
-	if filter.Query != "" {
+
+	if filter.QueryFilter.Query != "" {
 		stmt = stmt.Where(squirrel.Or{
-			squirrel.Expr("LOWER(aitask_uid) LIKE ?", "%"+strings.ToLower(filter.Query)+"%"),
-			squirrel.Expr("LOWER(aitask_display_name) LIKE ?", "%"+strings.ToLower(filter.Query)+"%"),
+			squirrel.Expr(PartialMatch("aitask_uid", filter.QueryFilter.Query)),
+			squirrel.Expr(PartialMatch("aitask_display_name", filter.QueryFilter.Query)),
+			squirrel.Expr(PartialMatch("aitask_initial_prompt", filter.QueryFilter.Query)),
 		})
 	}
 	return stmt
@@ -221,6 +244,8 @@ func (s aiTaskStore) mapDBToAITask(in *aiTask) *types.AITask {
 		AIAgent:            in.AgentType,
 		State:              in.State,
 		Output:             in.Output.Ptr(),
+		OutputMetadata:     in.OutputMetadata,
+		ErrorMessage:       in.ErrorMessage.Ptr(),
 	}
 }
 func (s aiTaskStore) mapToAITasks(aiTasks []*aiTask) []*types.AITask {

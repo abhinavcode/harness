@@ -393,6 +393,7 @@ type RegistryMetadata struct {
 	LastModified  time.Time
 	URL           string
 	Labels        pq.StringArray
+	Config        *types.RegistryConfig
 	ArtifactCount int64
 	DownloadCount int64
 	Size          int64
@@ -705,6 +706,8 @@ type NodesRepository interface {
 		ctx context.Context, registryID int64, pathPrefix string, filename string,
 	) (*types.Node, error)
 
+	FindByPathsAndRegistryID(ctx context.Context, paths []string, registryID int64) (*[]string, error)
+
 	CountByPathAndRegistryID(
 		ctx context.Context, registryID int64, path string,
 	) (int64, error)
@@ -843,7 +846,6 @@ type TaskSourceRepository interface {
 
 	UpdateSourceStatus(ctx context.Context, runID string, status types.TaskStatus, errMsg string) error
 }
-
 type TaskEventRepository interface {
 	LogTaskEvent(ctx context.Context, key string, event string, payload []byte) error
 }
@@ -855,6 +857,7 @@ type QuarantineArtifactRepository interface {
 		registryID int64,
 		artifact string,
 		version string,
+		artifactType *artifact.ArtifactType,
 	) ([]*types.QuarantineArtifact, error)
 	DeleteByRegistryIDArtifactAndFilePath(
 		ctx context.Context, registryID int64,

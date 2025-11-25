@@ -17,6 +17,8 @@ export interface StringsMap {
   'artifactDetails.downloadsThisWeek': string
   'artifactDetails.labelsUpdated': string
   'artifactDetails.page': string
+  'artifactDetails.tabs.properties': string
+  'artifactDetails.tabs.versions': string
   'artifactDetails.totalDownloads': string
   'artifactList.deployedArtifacts': string
   'artifactList.page': string
@@ -144,6 +146,7 @@ export interface StringsMap {
   'repositoryDetails.tabs.datasets': string
   'repositoryDetails.tabs.models': string
   'repositoryDetails.tabs.packages': string
+  'repositoryDetails.tabs.properties': string
   'repositoryDetails.tabs.webhooks': string
   'repositoryDetails.upstream': string
   'repositoryDetails.upstreamProxiesSelectList.addUpstreamProxies': string
@@ -212,6 +215,7 @@ export interface StringsMap {
   'upstreamProxyDetails.createForm.source.mavenCentral': string
   'upstreamProxyDetails.createForm.source.npmjs': string
   'upstreamProxyDetails.createForm.source.nugetOrg': string
+  'upstreamProxyDetails.createForm.source.pubdev': string
   'upstreamProxyDetails.createForm.source.pypi': string
   'upstreamProxyDetails.createForm.source.title': string
   'upstreamProxyDetails.createForm.title': string
@@ -402,7 +406,10 @@ export interface StringsMap {
   'actions.scan': string
   'actions.setupClient': string
   add: string
+  addMetadata: string
+  addProperty: string
   all: string
+  apply: string
   'badges.accountScope': string
   'badges.artifactRegistry': string
   'badges.orgScope': string
@@ -429,6 +436,7 @@ export interface StringsMap {
   copied: string
   copy: string
   createdAt: string
+  customMetadata: string
   dateLabel: string
   delete: string
   description: string
@@ -443,6 +451,7 @@ export interface StringsMap {
   harLabel: string
   harnessAI: string
   id: string
+  key: string
   'labels.addLabel': string
   'labels.addNewValue': string
   'labels.addNewValueDynamic': string
@@ -453,6 +462,7 @@ export interface StringsMap {
   lastUpdated: string
   loadMore: string
   loading: string
+  metadata: string
   modifiedAt: string
   moduleName: string
   na: string
@@ -466,6 +476,7 @@ export interface StringsMap {
   optionalField: string
   'packageTypes.cargoPackage': string
   'packageTypes.condaPackage': string
+  'packageTypes.dartPackage': string
   'packageTypes.dockerPackage': string
   'packageTypes.genericPackage': string
   'packageTypes.goPackage': string
@@ -480,11 +491,13 @@ export interface StringsMap {
   plusNewName: string
   prod: string
   prodCount: string
+  properties: string
   'publicAccess.oopsPageNotPublic': string
   'publicAccess.tryOtherOptions': string
   'repositoryTypes.alpine': string
   'repositoryTypes.cargo': string
   'repositoryTypes.conda': string
+  'repositoryTypes.dart': string
   'repositoryTypes.debian': string
   'repositoryTypes.docker': string
   'repositoryTypes.generic': string
@@ -531,6 +544,7 @@ export interface StringsMap {
   'validationMessages.urlPattern': string
   'validationMessages.urlRequired': string
   'validationMessages.userNameRequired': string
+  value: string
   view: string
   'vulnerabilityStatus.critical': string
   'vulnerabilityStatus.high': string

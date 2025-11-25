@@ -14,13 +14,18 @@
 
 package types
 
-import "github.com/harness/gitness/types/enum"
+import (
+	"encoding/json"
+
+	"github.com/harness/gitness/types/enum"
+)
 
 type AITask struct {
 	ID                 int64            `json:"id"`
 	Identifier         string           `json:"identifier"`
-	GitspaceConfigID   int64            `json:"gitspace_config_id"`
-	GitspaceInstanceID int64            `json:"gitspace_instance_id"`
+	GitspaceConfigID   int64            `json:"-"`
+	GitspaceInstanceID int64            `json:"-"`
+	GitspaceConfig     *GitspaceConfig  `json:"gitspace_config"`
 	InitialPrompt      string           `json:"initial_prompt"`
 	DisplayName        string           `json:"display_name"`
 	UserUID            string           `json:"user_uid"`
@@ -31,12 +36,23 @@ type AITask struct {
 	AIAgent            enum.AIAgent     `json:"ai_agent"`
 	State              enum.AITaskState `json:"state"`
 	Output             *string          `json:"output,omitempty"`
+	OutputMetadata     json.RawMessage  `json:"-"`
+	AIUsageMetric      *AIUsageMetric   `json:"ai_usage_metric,omitempty"`
+	ErrorMessage       *string          `json:"error_message,omitempty"`
 }
+
+type AIUsageMetric struct {
+	TotalCostUSD      float64  `json:"total_cost_usd"`
+	DurationMs        int64    `json:"duration_ms"`
+	TotalInputTokens  int64    `json:"total_input_tokens"`
+	TotalOutputTokens int64    `json:"total_output_tokens"`
+	LLMModels         []string `json:"llm_models"`
+}
+
 type AITaskFilter struct {
-	ListQueryFilter
-	SpaceID            int64            `json:"space_id,omitempty"`
-	GitspaceConfigID   int64            `json:"gitspace_config_id,omitempty"`
-	GitspaceInstanceID int64            `json:"gitspace_instance_id,omitempty"`
-	AIAgent            enum.AIAgent     `json:"ai_agent,omitempty"`
-	State              enum.AITaskState `json:"state,omitempty"`
+	QueryFilter    ListQueryFilter
+	SpaceID        int64
+	UserIdentifier string
+	AIAgents       []enum.AIAgent
+	States         []enum.AITaskState
 }

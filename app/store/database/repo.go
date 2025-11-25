@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/harness/gitness/app/paths"
@@ -1001,6 +1002,14 @@ func applyQueryFilter(
 	filter *types.RepoFilter,
 	driverName string,
 ) squirrel.SelectBuilder {
+	if len(filter.Identifiers) > 0 {
+		identifiers := make([]string, len(filter.Identifiers))
+		for i, id := range filter.Identifiers {
+			identifiers[i] = strings.ToLower(id)
+		}
+		stmt = stmt.Where(squirrel.Eq{"LOWER(repo_uid)": identifiers})
+	}
+
 	if filter.Query != "" {
 		stmt = stmt.Where(PartialMatch("repo_uid", filter.Query))
 	}

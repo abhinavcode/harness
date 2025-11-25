@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/harness/gitness/registry/app/api/interfaces"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
@@ -217,4 +218,31 @@ func (c *dockerPackageType) BuildPackageMetadataAsync(
 	_ types.BuildPackageMetadataTaskPayload,
 ) error {
 	return fmt.Errorf("not implemented")
+}
+
+func (c *dockerPackageType) GetNodePathsForImage(
+	_ *string,
+	packageName string,
+) ([]string, error) {
+	return []string{"/" + packageName}, nil
+}
+
+func (c *dockerPackageType) GetNodePathsForArtifact(
+	_ *string,
+	packageName string,
+	version string,
+) ([]string, error) {
+	parsedDigest, err := types.Digest(strings.ToLower(version)).Parse()
+	if err != nil {
+		return nil, err
+	}
+	paths, err := c.GetNodePathsForImage(nil, packageName)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, len(paths))
+	for i, path := range paths {
+		result[i] = path + "/" + parsedDigest.String()
+	}
+	return result, nil
 }

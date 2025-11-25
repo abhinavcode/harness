@@ -484,3 +484,26 @@ func (c *cargoPackageType) BuildPackageMetadataAsync(
 ) error {
 	return fmt.Errorf("not implemented")
 }
+
+func (c *cargoPackageType) GetNodePathsForImage(
+	_ *string,
+	packageName string,
+) ([]string, error) {
+	return []string{"/crates/" + packageName}, nil
+}
+
+func (c *cargoPackageType) GetNodePathsForArtifact(
+	_ *string,
+	packageName string,
+	version string,
+) ([]string, error) {
+	paths, err := c.GetNodePathsForImage(nil, packageName)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, len(paths))
+	for i, path := range paths {
+		result[i] = path + "/" + version
+	}
+	return result, nil
+}
