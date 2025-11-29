@@ -104,7 +104,7 @@ func (c *APIController) GetAllArtifactVersions(
 		}
 	}
 
-	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, types.SoftDeleteFilterAll)
+	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetAllArtifactVersions404JSONResponse{

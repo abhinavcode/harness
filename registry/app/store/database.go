@@ -225,6 +225,7 @@ type TagRepository interface {
 		ctx context.Context, parentID int64, repoKey string,
 		sortByField string, sortByOrder string,
 		limit int, offset int, search string, labels []string,
+		softDeleteFilter types.SoftDeleteFilter,
 	) (*[]types.ArtifactMetadata, error)
 
 	GetLatestTagMetadata(
@@ -258,6 +259,7 @@ type TagRepository interface {
 	CountAllArtifactsByRepo(
 		ctx context.Context, parentID int64, repoKey string,
 		search string, labels []string,
+		softDeleteFilter types.SoftDeleteFilter,
 	) (int64, error)
 
 	GetTagDetail(

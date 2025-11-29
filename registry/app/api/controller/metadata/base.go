@@ -203,7 +203,7 @@ func (c *APIController) setUpstreamProxyIDs(
 		0,
 		"",
 		"",
-		types.SoftDeleteFilterAll,
+		types.SoftDeleteFilterExcludeDeleted,
 		nil,
 	)
 

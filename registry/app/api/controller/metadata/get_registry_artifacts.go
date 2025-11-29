@@ -101,10 +101,12 @@ func (c *APIController) GetAllArtifactsByRegistry(
 		artifacts, err = c.TagStore.GetAllArtifactsByRepo(
 			ctx, regInfo.ParentID, regInfo.RegistryIdentifier,
 			regInfo.sortByField, regInfo.sortByOrder, regInfo.limit, regInfo.offset, regInfo.searchTerm, regInfo.labels,
+			types.SoftDeleteFilterExcludeDeleted,
 		)
 		count, _ = c.TagStore.CountAllArtifactsByRepo(
 			ctx, regInfo.ParentID, regInfo.RegistryIdentifier,
 			regInfo.searchTerm, regInfo.labels,
+			types.SoftDeleteFilterExcludeDeleted,
 		)
 		if err != nil {
 			return artifact.GetAllArtifactsByRegistry500JSONResponse{
@@ -117,10 +119,10 @@ func (c *APIController) GetAllArtifactsByRegistry(
 		artifacts, err = c.ArtifactStore.GetArtifactsByRepo(
 			ctx, regInfo.ParentID, regInfo.RegistryIdentifier, regInfo.searchTerm, regInfo.labels, true,
 			regInfo.limit, regInfo.offset, regInfo.sortByField, regInfo.sortByOrder,
-			artifactType, types.SoftDeleteFilterAll)
+			artifactType, types.SoftDeleteFilterExcludeDeleted)
 		count, _ = c.ArtifactStore.CountArtifactsByRepo(
 			ctx, regInfo.ParentID, regInfo.RegistryIdentifier,
-			regInfo.searchTerm, regInfo.labels, artifactType, types.SoftDeleteFilterAll)
+			regInfo.searchTerm, regInfo.labels, artifactType, types.SoftDeleteFilterExcludeDeleted)
 		if err != nil {
 			return artifact.GetAllArtifactsByRegistry500JSONResponse{
 				InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
