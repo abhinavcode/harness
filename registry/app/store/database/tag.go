@@ -597,7 +597,10 @@ func (t tagDao) getCoreArtifactsQuery(
 		ar.artifact_version as version, 
 		ar.artifact_updated_at as modified_at, 
 		i.image_labels as labels,
-		i.image_type as artifact_type`,
+		i.image_type as artifact_type,
+		ar.artifact_deleted_at as artifact_deleted_at,
+		i.image_deleted_at as image_deleted_at,
+		r.registry_deleted_at as registry_deleted_at`,
 	).
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").

@@ -809,7 +809,10 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 		a.artifact_updated_at as modified_at, 
 		i.image_labels as labels, 
 		a.artifact_metadata as metadata,
-		COALESCE(t2.download_count,0) as download_count `,
+		COALESCE(t2.download_count,0) as download_count,
+		a.artifact_deleted_at as artifact_deleted_at,
+		i.image_deleted_at as image_deleted_at,
+		r.registry_deleted_at as registry_deleted_at`,
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -994,7 +997,10 @@ func (a ArtifactDao) GetArtifactsByRepo(
 		`r.registry_name as repo_name, i.image_name as name, 
 		r.registry_package_type as package_type, a.artifact_version as latest_version, 
 		a.artifact_updated_at as modified_at, i.image_labels as labels, i.image_type as artifact_type,
-		COALESCE(t2.download_count, 0) as download_count`,
+		COALESCE(t2.download_count, 0) as download_count,
+		a.artifact_deleted_at as artifact_deleted_at,
+		i.image_deleted_at as image_deleted_at,
+		r.registry_deleted_at as registry_deleted_at`,
 	).
 		From("artifacts a").
 		Join(rowNumSubquery+` ON a.artifact_id = a1.id`, parentID, repoKey).
@@ -1542,6 +1548,9 @@ func (a ArtifactDao) GetArtifactsByRepoAndImageBatch(
 		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("artifact_id > ? AND r.registry_id = ?", lastArtifactID, registryID).
 		Where("i.image_name = ?", imageName).
+		Where("a.artifact_deleted_at IS NULL").
+		Where("i.image_deleted_at IS NULL").
+		Where("r.registry_deleted_at IS NULL").
 		OrderBy("artifact_id ASC").
 		Limit(util.SafeIntToUInt64(util.MinInt(batchSize, 100)))
 
