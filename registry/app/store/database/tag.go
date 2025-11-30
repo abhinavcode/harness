@@ -77,22 +77,25 @@ type tagDB struct {
 }
 
 type artifactMetadataDB struct {
-	ID               int64                  `db:"artifact_id"`
-	Name             string                 `db:"name"`
-	RepoName         string                 `db:"repo_name"`
-	DownloadCount    int64                  `db:"download_count"`
-	PackageType      artifact.PackageType   `db:"package_type"`
-	Labels           sql.NullString         `db:"labels"`
-	LatestVersion    string                 `db:"latest_version"`
-	CreatedAt        int64                  `db:"created_at"`
-	ModifiedAt       int64                  `db:"modified_at"`
-	Tag              *string                `db:"tag"`
-	Version          string                 `db:"version"`
-	Metadata         *json.RawMessage       `db:"metadata"`
-	IsQuarantined    bool                   `db:"is_quarantined"`
-	QuarantineReason *string                `db:"quarantine_reason"`
-	ArtifactType     *artifact.ArtifactType `db:"artifact_type"`
-	Tags             *string                `db:"tags"`
+	ID                int64                  `db:"artifact_id"`
+	Name              string                 `db:"name"`
+	RepoName          string                 `db:"repo_name"`
+	DownloadCount     int64                  `db:"download_count"`
+	PackageType       artifact.PackageType   `db:"package_type"`
+	Labels            sql.NullString         `db:"labels"`
+	LatestVersion     string                 `db:"latest_version"`
+	CreatedAt         int64                  `db:"created_at"`
+	ModifiedAt        int64                  `db:"modified_at"`
+	Tag               *string                `db:"tag"`
+	Version           string                 `db:"version"`
+	Metadata          *json.RawMessage       `db:"metadata"`
+	IsQuarantined     bool                   `db:"is_quarantined"`
+	QuarantineReason  *string                `db:"quarantine_reason"`
+	ArtifactType      *artifact.ArtifactType `db:"artifact_type"`
+	Tags              *string                `db:"tags"`
+	ArtifactDeletedAt *int64                 `db:"artifact_deleted_at"` // For cascade logic
+	ImageDeletedAt    *int64                 `db:"image_deleted_at"`    // For cascade logic
+	RegistryDeletedAt *int64                 `db:"registry_deleted_at"` // For cascade logic
 }
 
 type tagMetadataDB struct {
@@ -401,7 +404,8 @@ func (t tagDao) GetAllArtifactsByParentID(
 	// Combine q1 and q2 with UNION ALL
 	finalQuery := fmt.Sprintf(`
     SELECT repo_name, name, package_type, version, modified_at,
-           labels, download_count, is_quarantined, quarantine_reason, artifact_type
+           labels, download_count, is_quarantined, quarantine_reason, artifact_type,
+           artifact_deleted_at, image_deleted_at, registry_deleted_at
     FROM (%s UNION ALL %s) AS combined
 `, q1SQL, q2SQL)
 
@@ -445,7 +449,10 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 		COALESCE(t2.download_count,0) as download_count,
         false as is_quarantined,
 		'' as quarantine_reason,
-        i.image_type as artifact_type `,
+        i.image_type as artifact_type,
+        NULL as artifact_deleted_at,
+        i.image_deleted_at as image_deleted_at,
+        r.registry_deleted_at as registry_deleted_at`,
 	).
 		From("tags t").
 		Join("registries r ON t.tag_registry_id = r.registry_id").
@@ -629,7 +636,7 @@ func (t tagDao) getCoreArtifactsQuery(
 	}
 
 	return query.OrderBy(fmt.Sprintf("%s %s", sortField, sortByOrder)).
-		Limit(uint64(limit)).  // nolint:gosec
+		Limit(uint64(limit)). // nolint:gosec
 		Offset(uint64(offset)) // nolint:gosec
 }
 
@@ -797,7 +804,10 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 		COALESCE(t2.download_count, 0) as download_count,
         (qp.quarantined_path_id IS NOT NULL) AS is_quarantined,
         qp.quarantined_path_reason as quarantine_reason,
-        i.image_type as artifact_type`+suffix,
+        i.image_type as artifact_type,
+        ar.artifact_deleted_at as artifact_deleted_at,
+        i.image_deleted_at as image_deleted_at,
+        r.registry_deleted_at as registry_deleted_at`+suffix,
 	).
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").
@@ -1980,6 +1990,37 @@ func (t tagDao) mapToArtifactMetadata(
 		}
 	}
 
+	// Compute DeletedAt and IsDeleted with cascade logic
+	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
+	var deletedAt *time.Time
+	isDeleted := false
+
+	// Collect all non-null deleted_at timestamps
+	var timestamps []*int64
+	if dst.ArtifactDeletedAt != nil {
+		timestamps = append(timestamps, dst.ArtifactDeletedAt)
+	}
+	if dst.ImageDeletedAt != nil {
+		timestamps = append(timestamps, dst.ImageDeletedAt)
+	}
+	if dst.RegistryDeletedAt != nil {
+		timestamps = append(timestamps, dst.RegistryDeletedAt)
+	}
+
+	// If any entity is deleted, set isDeleted and find earliest timestamp
+	if len(timestamps) > 0 {
+		isDeleted = true
+		// Find the earliest (minimum) timestamp
+		earliestTimestamp := timestamps[0]
+		for _, ts := range timestamps[1:] {
+			if *ts < *earliestTimestamp {
+				earliestTimestamp = ts
+			}
+		}
+		t := time.UnixMilli(*earliestTimestamp)
+		deletedAt = &t
+	}
+
 	artifactMetadata := &types.ArtifactMetadata{
 		Name:             dst.Name,
 		RepoName:         dst.RepoName,
@@ -1993,6 +2034,8 @@ func (t tagDao) mapToArtifactMetadata(
 		IsQuarantined:    dst.IsQuarantined,
 		QuarantineReason: dst.QuarantineReason,
 		ArtifactType:     dst.ArtifactType,
+		DeletedAt:        deletedAt,
+		IsDeleted:        isDeleted,
 	}
 
 	if dst.Tags != nil {

@@ -2218,12 +2218,20 @@ components:
           type: string
         isPublic:
           type: boolean
+        deletedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the registry was soft-deleted
+        isDeleted:
+          type: boolean
+          description: True if the registry is soft-deleted
       required:
         - type
         - packageType
         - identifier
         - url
         - isPublic
+        - isDeleted
     ClientSetupDetails:
       type: object
       description: Client Setup Details
@@ -2331,12 +2339,20 @@ components:
           $ref: "#/components/schemas/ArtifactType"
         metadata:
           $ref: "#/components/schemas/ArtifactEntityMetadata"
+        deletedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the artifact was soft-deleted
+        isDeleted:
+          type: boolean
+          description: True if the artifact, its parent image, or registry is soft-deleted (cascade)
       required:
         - name
         - registryIdentifier
         - latestVersion
         - registryPath
         - packageType
+        - isDeleted
     RegistryArtifactMetadata:
       type: object
       description: Artifact Metadata
@@ -2366,6 +2382,13 @@ components:
           $ref: "#/components/schemas/PackageType"
         artifactType:
           $ref: "#/components/schemas/ArtifactType"
+        deletedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the package (image) was soft-deleted
+        isDeleted:
+          type: boolean
+          description: True if the package or its parent registry is soft-deleted (cascade)
       required:
         - name
         - registryIdentifier
@@ -2373,6 +2396,7 @@ components:
         - registryPath
         - packageType
         - isPublic
+        - isDeleted
     ArtifactVersionMetadata:
       type: object
       description: Artifact Version Metadata

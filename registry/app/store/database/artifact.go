@@ -63,17 +63,28 @@ type artifactDB struct {
 	DeletedBy *int64           `db:"artifact_deleted_by"`
 }
 
+// artifactWithParentsDB is used for queries that JOIN with images and registries tables
+type artifactWithParentsDB struct {
+	artifactDB                                        // Embed base struct
+	ImageDeletedAt    *int64 `db:"image_deleted_at"`    // CASCADE from parent image
+	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from grandparent registry
+}
+
 func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version string, softDeleteFilter types.SoftDeleteFilter) (*types.Artifact, error) {
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
-		From("artifacts").
-		Where("artifact_image_id = ?", imageID).
-		Where("artifact_version = ?", version)
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
+		From("artifacts a").
+		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("a.artifact_image_id = ?", imageID).
+		Where("a.artifact_version = ?", version)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExcludeDeleted:
-		q = q.Where("artifact_deleted_at IS NULL")
+		q = q.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnlyDeleted:
-		q = q.Where("artifact_deleted_at IS NOT NULL")
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
 	case types.SoftDeleteFilterAll:
 		// No filtering
 	}
@@ -85,27 +96,29 @@ func (a ArtifactDao) GetByName(ctx context.Context, imageID int64, version strin
 
 	db := dbtx.GetAccessor(ctx, a.db)
 
-	dst := new(artifactDB)
+	dst := new(artifactWithParentsDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact")
 	}
-	return a.mapToArtifact(ctx, dst)
+	return a.mapArtifactWithParents(ctx, dst)
 }
 
 func (a ArtifactDao) GetByRegistryImageAndVersion(
 	ctx context.Context, registryID int64, image string, version string, softDeleteFilter types.SoftDeleteFilter,
 ) (*types.Artifact, error) {
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("i.image_registry_id = ? AND i.image_name = ? AND a.artifact_version = ?", registryID, image, version)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
-			Where("i.image_deleted_at IS NULL")
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnlyDeleted:
-		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)")
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
 	case types.SoftDeleteFilterAll:
 		// No filtering
 	}
@@ -117,28 +130,30 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 
 	db := dbtx.GetAccessor(ctx, a.db)
 
-	dst := new(artifactDB)
+	dst := new(artifactWithParentsDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact")
 	}
-	return a.mapToArtifact(ctx, dst)
+	return a.mapArtifactWithParents(ctx, dst)
 }
 
 func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, softDeleteFilter types.SoftDeleteFilter) (
 	*[]types.Artifact,
 	error,
 ) {
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("i.image_registry_id = ? AND i.image_name = ?", registryID, image)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExcludeDeleted:
 		q = q.Where("a.artifact_deleted_at IS NULL").
-			Where("i.image_deleted_at IS NULL")
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnlyDeleted:
-		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)")
+		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
 	case types.SoftDeleteFilterAll:
 		// No filtering
 	}
@@ -152,7 +167,7 @@ func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int
 
 	db := dbtx.GetAccessor(ctx, a.db)
 
-	dst := []artifactDB{}
+	dst := []artifactWithParentsDB{}
 	if err = db.SelectContext(ctx, &dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifacts")
 	}
@@ -160,7 +175,7 @@ func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int
 	artifacts := make([]types.Artifact, len(dst))
 	for i := range dst {
 		d := dst[i]
-		art, err := a.mapToArtifact(ctx, &d)
+		art, err := a.mapArtifactWithParents(ctx, &d)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to map artifact")
 		}
@@ -171,9 +186,15 @@ func (a ArtifactDao) GetByRegistryIDAndImage(ctx context.Context, registryID int
 }
 
 func (a ArtifactDao) GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error) {
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
-		From("artifacts").
-		Where("artifact_image_id = ?", imageID).OrderBy("artifact_updated_at DESC").Limit(1)
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
+		From("artifacts a").
+		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("a.artifact_image_id = ?", imageID).
+		Where("a.artifact_deleted_at IS NULL").
+		Where("i.image_deleted_at IS NULL").
+		Where("r.registry_deleted_at IS NULL").
+		OrderBy("a.artifact_updated_at DESC").Limit(1)
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -182,11 +203,11 @@ func (a ArtifactDao) GetLatestByImageID(ctx context.Context, imageID int64) (*ty
 
 	db := dbtx.GetAccessor(ctx, a.db)
 
-	dst := new(artifactDB)
+	dst := new(artifactWithParentsDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact")
 	}
-	return a.mapToArtifact(ctx, dst)
+	return a.mapArtifactWithParents(ctx, dst)
 }
 
 func (a ArtifactDao) CreateOrUpdate(ctx context.Context, artifact *types.Artifact) (int64, error) {
@@ -524,13 +545,46 @@ func (a ArtifactDao) mapToInternalArtifact(ctx context.Context, in *types.Artifa
 	}
 }
 
-func (a ArtifactDao) mapToArtifact(_ context.Context, dst *artifactDB) (*types.Artifact, error) {
+// mapArtifactWithParents maps artifactWithParentsDB (from JOIN queries) and computes earliest deletedAt
+func (a ArtifactDao) mapArtifactWithParents(_ context.Context, dst *artifactWithParentsDB) (*types.Artifact, error) {
 	createdBy := dst.CreatedBy
 	updatedBy := dst.UpdatedBy
 	var metadata json.RawMessage
 	if dst.Metadata != nil {
 		metadata = *dst.Metadata
 	}
+	
+	// Compute DeletedAt and IsDeleted with cascade logic
+	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
+	var deletedAt *time.Time
+	isDeleted := false
+	
+	// Collect all non-null deleted_at timestamps
+	var timestamps []*int64
+	if dst.DeletedAt != nil {
+		timestamps = append(timestamps, dst.DeletedAt)
+	}
+	if dst.ImageDeletedAt != nil {
+		timestamps = append(timestamps, dst.ImageDeletedAt)
+	}
+	if dst.RegistryDeletedAt != nil {
+		timestamps = append(timestamps, dst.RegistryDeletedAt)
+	}
+	
+	// If any entity is deleted, set isDeleted and find earliest timestamp
+	if len(timestamps) > 0 {
+		isDeleted = true
+		// Find the earliest (minimum) timestamp
+		earliestTimestamp := timestamps[0]
+		for _, ts := range timestamps[1:] {
+			if *ts < *earliestTimestamp {
+				earliestTimestamp = ts
+			}
+		}
+		t := time.UnixMilli(*earliestTimestamp)
+		deletedAt = &t
+	}
+	
 	return &types.Artifact{
 		ID:        dst.ID,
 		UUID:      dst.UUID,
@@ -541,6 +595,9 @@ func (a ArtifactDao) mapToArtifact(_ context.Context, dst *artifactDB) (*types.A
 		UpdatedAt: time.UnixMilli(dst.UpdatedAt),
 		CreatedBy: createdBy,
 		UpdatedBy: updatedBy,
+		DeletedAt: deletedAt,
+		DeletedBy: dst.DeletedBy,
+		IsDeleted: isDeleted, // CASCADE: deleted if artifact OR image OR registry is deleted
 	}, nil
 }
 
@@ -553,8 +610,7 @@ func (a ArtifactDao) SearchLatestByName(
 	GROUP BY artifact_image_id`
 
 	q := databaseg.Builder.
-		Select("a.artifact_metadata,"+
-			"a.artifact_created_at").
+		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
@@ -584,17 +640,21 @@ func (a ArtifactDao) SearchLatestByName(
 	}
 	db := dbtx.GetAccessor(ctx, a.db)
 
-	var metadataList []*artifactDB
-	if err := db.SelectContext(ctx, &metadataList, sql, args...); err != nil {
+	var artifactList []artifactWithParentsDB
+	if err := db.SelectContext(ctx, &artifactList, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact metadata")
 	}
 
-	artifactList, err := a.mapArtifactToArtifactMetadataList(ctx, metadataList)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to map artifact metadata")
+	artifacts := make([]types.Artifact, len(artifactList))
+	for i := range artifactList {
+		art, err := a.mapArtifactWithParents(ctx, &artifactList[i])
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to map artifact")
+		}
+		artifacts[i] = *art
 	}
 
-	return artifactList, nil
+	return &artifacts, nil
 }
 
 func (a ArtifactDao) CountLatestByName(
@@ -649,7 +709,10 @@ func (a ArtifactDao) SearchByImageName(
 ) (*[]types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		`i.image_name as name,
-        a.artifact_id as artifact_id, a.artifact_version as version, a.artifact_metadata as metadata`,
+        a.artifact_id as artifact_id, a.artifact_version as version, a.artifact_metadata as metadata,
+        a.artifact_deleted_at as artifact_deleted_at,
+        i.image_deleted_at as image_deleted_at,
+        r.registry_deleted_at as registry_deleted_at`,
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -1135,21 +1198,6 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 	return a.mapToArtifactMetadata(dst)
 }
 
-func (a ArtifactDao) mapArtifactToArtifactMetadataList(
-	ctx context.Context,
-	dst []*artifactDB,
-) (*[]types.Artifact, error) {
-	artifacts := make([]types.Artifact, 0, len(dst))
-	for _, d := range dst {
-		artifact, err := a.mapToArtifact(ctx, d)
-		if err != nil {
-			return nil, err
-		}
-		artifacts = append(artifacts, *artifact)
-	}
-	return &artifacts, nil
-}
-
 func (a ArtifactDao) mapToArtifactMetadataList(
 	dst []*artifactMetadataDB,
 ) (*[]types.ArtifactMetadata, error) {
@@ -1515,6 +1563,37 @@ func (a ArtifactDao) GetArtifactsByRepoAndImageBatch(
 func (a ArtifactDao) mapToArtifactMetadata(
 	dst *artifactMetadataDB,
 ) (*types.ArtifactMetadata, error) {
+	// Compute DeletedAt and IsDeleted with cascade logic
+	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
+	var deletedAt *time.Time
+	isDeleted := false
+	
+	// Collect all non-null deleted_at timestamps
+	var timestamps []*int64
+	if dst.ArtifactDeletedAt != nil {
+		timestamps = append(timestamps, dst.ArtifactDeletedAt)
+	}
+	if dst.ImageDeletedAt != nil {
+		timestamps = append(timestamps, dst.ImageDeletedAt)
+	}
+	if dst.RegistryDeletedAt != nil {
+		timestamps = append(timestamps, dst.RegistryDeletedAt)
+	}
+	
+	// If any entity is deleted, set isDeleted and find earliest timestamp
+	if len(timestamps) > 0 {
+		isDeleted = true
+		// Find the earliest (minimum) timestamp
+		earliestTimestamp := timestamps[0]
+		for _, ts := range timestamps[1:] {
+			if *ts < *earliestTimestamp {
+				earliestTimestamp = ts
+			}
+		}
+		t := time.UnixMilli(*earliestTimestamp)
+		deletedAt = &t
+	}
+
 	artifactMetadata := &types.ArtifactMetadata{
 		ID:               dst.ID,
 		Name:             dst.Name,
@@ -1529,6 +1608,8 @@ func (a ArtifactDao) mapToArtifactMetadata(
 		IsQuarantined:    dst.IsQuarantined,
 		QuarantineReason: dst.QuarantineReason,
 		ArtifactType:     dst.ArtifactType,
+		DeletedAt:        deletedAt,
+		IsDeleted:        isDeleted,
 	}
 	if dst.Metadata != nil {
 		artifactMetadata.Metadata = *dst.Metadata

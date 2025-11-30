@@ -891,6 +891,12 @@ func (r registryDao) mapToRegistry(ctx context.Context, dst *registryDB) (*types
 		}
 	}
 
+	var deletedAt *time.Time
+	if dst.DeletedAt != nil {
+		t := time.UnixMilli(*dst.DeletedAt)
+		deletedAt = &t
+	}
+
 	return &types.Registry{
 		ID:              dst.ID,
 		UUID:            dst.UUID,
@@ -909,6 +915,9 @@ func (r registryDao) mapToRegistry(ctx context.Context, dst *registryDB) (*types
 		UpdatedAt:       time.UnixMilli(dst.UpdatedAt),
 		CreatedBy:       dst.CreatedBy,
 		UpdatedBy:       dst.UpdatedBy,
+		DeletedAt:       deletedAt,
+		DeletedBy:       dst.DeletedBy,
+		IsDeleted:       dst.DeletedAt != nil, // Registry is deleted if its DeletedAt is not nil
 	}, nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -285,11 +286,17 @@ type ArtifactLabelRequest struct {
 // ArtifactMetadata Artifact Metadata
 type ArtifactMetadata struct {
 	// ArtifactType refers to artifact type
-	ArtifactType   *ArtifactType `json:"artifactType,omitempty"`
-	DownloadsCount *int64        `json:"downloadsCount,omitempty"`
-	IsQuarantined  *bool         `json:"isQuarantined,omitempty"`
-	Labels         *[]string     `json:"labels,omitempty"`
-	LastModified   *string       `json:"lastModified,omitempty"`
+	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
+
+	// DeletedAt Timestamp when the artifact was soft-deleted
+	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
+	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
+
+	// IsDeleted True if the artifact, its parent image, or registry is soft-deleted (cascade)
+	IsDeleted     bool      `json:"isDeleted"`
+	IsQuarantined *bool     `json:"isQuarantined,omitempty"`
+	Labels        *[]string `json:"labels,omitempty"`
+	LastModified  *string   `json:"lastModified,omitempty"`
 
 	// Metadata Artifact Entity Metadata
 	Metadata *ArtifactEntityMetadata `json:"metadata,omitempty"`
@@ -828,14 +835,20 @@ type Registry struct {
 // RegistryArtifactMetadata Artifact Metadata
 type RegistryArtifactMetadata struct {
 	// ArtifactType refers to artifact type
-	ArtifactType   *ArtifactType `json:"artifactType,omitempty"`
-	DownloadsCount *int64        `json:"downloadsCount,omitempty"`
-	IsPublic       bool          `json:"isPublic"`
-	IsQuarantined  *bool         `json:"isQuarantined,omitempty"`
-	Labels         *[]string     `json:"labels,omitempty"`
-	LastModified   *string       `json:"lastModified,omitempty"`
-	LatestVersion  string        `json:"latestVersion"`
-	Name           string        `json:"name"`
+	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
+
+	// DeletedAt Timestamp when the package (image) was soft-deleted
+	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
+	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
+
+	// IsDeleted True if the package or its parent registry is soft-deleted (cascade)
+	IsDeleted     bool      `json:"isDeleted"`
+	IsPublic      bool      `json:"isPublic"`
+	IsQuarantined *bool     `json:"isQuarantined,omitempty"`
+	Labels        *[]string `json:"labels,omitempty"`
+	LastModified  *string   `json:"lastModified,omitempty"`
+	LatestVersion string    `json:"latestVersion"`
+	Name          string    `json:"name"`
 
 	// PackageType refers to package
 	PackageType        PackageType `json:"packageType"`
@@ -852,13 +865,19 @@ type RegistryConfig struct {
 
 // RegistryMetadata Harness Artifact Registry Metadata
 type RegistryMetadata struct {
-	ArtifactsCount *int64    `json:"artifactsCount,omitempty"`
-	Description    *string   `json:"description,omitempty"`
-	DownloadsCount *int64    `json:"downloadsCount,omitempty"`
-	Identifier     string    `json:"identifier"`
-	IsPublic       bool      `json:"isPublic"`
-	Labels         *[]string `json:"labels,omitempty"`
-	LastModified   *string   `json:"lastModified,omitempty"`
+	ArtifactsCount *int64 `json:"artifactsCount,omitempty"`
+
+	// DeletedAt Timestamp when the registry was soft-deleted
+	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
+	Description    *string    `json:"description,omitempty"`
+	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
+	Identifier     string     `json:"identifier"`
+
+	// IsDeleted True if the registry is soft-deleted
+	IsDeleted    bool      `json:"isDeleted"`
+	IsPublic     bool      `json:"isPublic"`
+	Labels       *[]string `json:"labels,omitempty"`
+	LastModified *string   `json:"lastModified,omitempty"`
 
 	// PackageType refers to package
 	PackageType  PackageType `json:"packageType"`

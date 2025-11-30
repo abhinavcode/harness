@@ -35,4 +35,5 @@ type Image struct {
 	UpdatedBy    int64
 	DeletedAt    *time.Time
 	DeletedBy    *int64
+	IsDeleted    bool // Computed field: true if DeletedAt is not nil OR parent registry is deleted
 }
