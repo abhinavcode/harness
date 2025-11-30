@@ -458,7 +458,7 @@ type RegistryRepository interface {
 	) (ids []int64, err error)
 
 	FetchUpstreamProxyKeys(ctx context.Context, ids []int64) (repokeys []string, err error)
-	Count(ctx context.Context) (int64, error)
+	Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error)
 
 	// GetDistinctAccountIDs returns a list of distinct account identifiers that have registries
 	GetDistinctAccountIDs(ctx context.Context) ([]string, error)
@@ -501,12 +501,12 @@ type ImageRepository interface {
 	GetLabelsByParentIDAndRepo(
 		ctx context.Context, parentID int64,
 		repo string, limit int, offset int,
-		search string,
+		search string, softDeleteFilter types.SoftDeleteFilter,
 	) (labels []string, err error)
 	// Count the Labels specified by Parent ID and Repo
 	CountLabelsByParentIDAndRepo(
 		ctx context.Context, parentID int64,
-		repo, search string,
+		repo, search string, softDeleteFilter types.SoftDeleteFilter,
 	) (count int64, err error)
 	// Get an Artifact specified by Artifact Name
 	GetByRepoAndName(
@@ -544,7 +544,7 @@ type ArtifactRepository interface {
 	) (*types.Artifact, error)
 	// Create an Artifact
 	CreateOrUpdate(ctx context.Context, artifact *types.Artifact) (int64, error)
-	Count(ctx context.Context) (int64, error)
+	Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error)
 	GetAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
 		registryIDs *[]string, search string, latestVersion bool, packageTypes []string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
@@ -568,19 +568,19 @@ type ArtifactRepository interface {
 	) (int64, error)
 	GetLatestArtifactMetadata(
 		ctx context.Context, id int64, identifier string,
-		image string,
+		image string, softDeleteFilter types.SoftDeleteFilter,
 	) (*types.ArtifactMetadata, error)
 	GetAllVersionsByRepoAndImage(
 		ctx context.Context, id int64, image string, field string, order string, limit int,
-		offset int, term string, artifactType *artifact.ArtifactType,
+		offset int, term string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 	) (*[]types.NonOCIArtifactMetadata, error)
 	CountAllVersionsByRepoAndImage(
 		ctx context.Context, parentID int64, repoKey string, image string,
-		search string, artifactType *artifact.ArtifactType,
+		search string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 	) (int64, error)
 	GetArtifactMetadata(
 		ctx context.Context, id int64, identifier string, image string, version string,
-		artifactType *artifact.ArtifactType,
+		artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 	) (*types.ArtifactMetadata, error)
 	UpdateArtifactMetadata(
 		ctx context.Context, metadata json.RawMessage,

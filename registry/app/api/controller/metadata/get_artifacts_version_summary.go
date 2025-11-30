@@ -133,12 +133,12 @@ func (c *APIController) FetchArtifactSummary(
 
 		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, nil
 	}
-	art, err := c.ArtifactStore.GetArtifactMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image,
-		version, artifactType)
+	metadata, err := c.ArtifactStore.GetArtifactMetadata(
+		ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version, artifactType, types.SoftDeleteFilterExcludeDeleted)
 
 	if err != nil {
 		return "", "", "", false, "", nil, err
 	}
 
-	return image, art.Name, art.PackageType, isQuarantined, quarantineReason, art.ArtifactType, nil
+	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason, metadata.ArtifactType, nil
 }

@@ -347,7 +347,7 @@ func (i ImageDao) CreateOrUpdate(ctx context.Context, image *types.Image) error 
 
 func (i ImageDao) GetLabelsByParentIDAndRepo(
 	ctx context.Context, parentID int64, repo string,
-	limit int, offset int, search string,
+	limit int, offset int, search string, softDeleteFilter types.SoftDeleteFilter,
 ) (labels []string, err error) {
 	q := databaseg.Builder.Select("a.image_labels as labels").
 		From("images a").
@@ -356,6 +356,15 @@ func (i ImageDao) GetLabelsByParentIDAndRepo(
 
 	if search != "" {
 		q = q.Where("a.image_labels LIKE ?", "%"+search+"%")
+	}
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		q = q.Where("a.image_deleted_at IS NULL").Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	q = q.OrderBy("a.image_labels ASC").
@@ -379,7 +388,7 @@ func (i ImageDao) GetLabelsByParentIDAndRepo(
 
 func (i ImageDao) CountLabelsByParentIDAndRepo(
 	ctx context.Context, parentID int64, repo,
-	search string,
+	search string, softDeleteFilter types.SoftDeleteFilter,
 ) (count int64, err error) {
 	q := databaseg.Builder.Select("a.image_labels as labels").
 		From("images a").
@@ -388,6 +397,15 @@ func (i ImageDao) CountLabelsByParentIDAndRepo(
 
 	if search != "" {
 		q = q.Where("a.image_labels LIKE ?", "%"+search+"%")
+	}
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		q = q.Where("a.image_deleted_at IS NULL").Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()

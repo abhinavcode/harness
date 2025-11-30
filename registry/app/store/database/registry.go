@@ -181,9 +181,18 @@ func (r registryDao) GetByRootParentIDAndName(
 	return r.mapToRegistry(ctx, dst)
 }
 
-func (r registryDao) Count(ctx context.Context) (int64, error) {
+func (r registryDao) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("registries")
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		stmt = stmt.Where("registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterAll:
+		// No filtering
+	}
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {

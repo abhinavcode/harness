@@ -65,7 +65,7 @@ type artifactDB struct {
 
 // artifactWithParentsDB is used for queries that JOIN with images and registries tables
 type artifactWithParentsDB struct {
-	artifactDB                                        // Embed base struct
+	artifactDB               // Embed base struct
 	ImageDeletedAt    *int64 `db:"image_deleted_at"`    // CASCADE from parent image
 	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from grandparent registry
 }
@@ -251,9 +251,22 @@ func (a ArtifactDao) CreateOrUpdate(ctx context.Context, artifact *types.Artifac
 	return artifact.ID, nil
 }
 
-func (a ArtifactDao) Count(ctx context.Context) (int64, error) {
+func (a ArtifactDao) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
 	stmt := databaseg.Builder.Select("COUNT(*)").
-		From("artifacts")
+		From("artifacts a").
+		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id")
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		stmt = stmt.Where("a.artifact_deleted_at IS NULL").
+			Where("i.image_deleted_at IS NULL").
+			Where("r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		stmt = stmt.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+	case types.SoftDeleteFilterAll:
+		// No filtering
+	}
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {
@@ -553,12 +566,12 @@ func (a ArtifactDao) mapArtifactWithParents(_ context.Context, dst *artifactWith
 	if dst.Metadata != nil {
 		metadata = *dst.Metadata
 	}
-	
+
 	// Compute DeletedAt and IsDeleted with cascade logic
 	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
 	var deletedAt *time.Time
 	isDeleted := false
-	
+
 	// Collect all non-null deleted_at timestamps
 	var timestamps []*int64
 	if dst.DeletedAt != nil {
@@ -570,7 +583,7 @@ func (a ArtifactDao) mapArtifactWithParents(_ context.Context, dst *artifactWith
 	if dst.RegistryDeletedAt != nil {
 		timestamps = append(timestamps, dst.RegistryDeletedAt)
 	}
-	
+
 	// If any entity is deleted, set isDeleted and find earliest timestamp
 	if len(timestamps) > 0 {
 		isDeleted = true
@@ -584,7 +597,7 @@ func (a ArtifactDao) mapArtifactWithParents(_ context.Context, dst *artifactWith
 		t := time.UnixMilli(*earliestTimestamp)
 		deletedAt = &t
 	}
-	
+
 	return &types.Artifact{
 		ID:        dst.ID,
 		UUID:      dst.UUID,
@@ -1123,29 +1136,82 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 	parentID int64,
 	repoKey string,
 	imageName string,
+	softDeleteFilter types.SoftDeleteFilter,
 ) (*types.ArtifactMetadata, error) {
-	// Precomputed download count subquery
-	downloadCountSubquery := `
-		SELECT 
-			i.image_name, 
-			i.image_registry_id,
-			SUM(COALESCE(dc.download_count, 0)) AS download_count
-		FROM 
-			images i
-		LEFT JOIN (
+	// Precomputed download count subquery with soft delete filtering
+	var downloadCountSubquery string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		downloadCountSubquery = `
 			SELECT 
-				a.artifact_image_id, 
-				COUNT(d.download_stat_id) AS download_count
+				i.image_name, 
+				i.image_registry_id,
+				SUM(COALESCE(dc.download_count, 0)) AS download_count
 			FROM 
-				artifacts a
-			JOIN 
-				download_stats d ON d.download_stat_artifact_id = a.artifact_id
+				images i
+			LEFT JOIN (
+				SELECT 
+					a.artifact_image_id, 
+					COUNT(d.download_stat_id) AS download_count
+				FROM 
+					artifacts a
+				JOIN 
+					download_stats d ON d.download_stat_artifact_id = a.artifact_id
+				WHERE a.artifact_deleted_at IS NULL
+				GROUP BY 
+					a.artifact_image_id
+			) AS dc ON i.image_id = dc.artifact_image_id
+			WHERE i.image_deleted_at IS NULL
 			GROUP BY 
-				a.artifact_image_id
-		) AS dc ON i.image_id = dc.artifact_image_id
-		GROUP BY 
-			i.image_name, i.image_registry_id
-	`
+				i.image_name, i.image_registry_id
+		`
+	case types.SoftDeleteFilterOnlyDeleted:
+		downloadCountSubquery = `
+			SELECT 
+				i.image_name, 
+				i.image_registry_id,
+				SUM(COALESCE(dc.download_count, 0)) AS download_count
+			FROM 
+				images i
+			LEFT JOIN (
+				SELECT 
+					a.artifact_image_id, 
+					COUNT(d.download_stat_id) AS download_count
+				FROM 
+					artifacts a
+				JOIN 
+					download_stats d ON d.download_stat_artifact_id = a.artifact_id
+				WHERE a.artifact_deleted_at IS NOT NULL
+				GROUP BY 
+					a.artifact_image_id
+			) AS dc ON i.image_id = dc.artifact_image_id
+			WHERE i.image_deleted_at IS NOT NULL
+			GROUP BY 
+				i.image_name, i.image_registry_id
+		`
+	case types.SoftDeleteFilterAll:
+		downloadCountSubquery = `
+			SELECT 
+				i.image_name, 
+				i.image_registry_id,
+				SUM(COALESCE(dc.download_count, 0)) AS download_count
+			FROM 
+				images i
+			LEFT JOIN (
+				SELECT 
+					a.artifact_image_id, 
+					COUNT(d.download_stat_id) AS download_count
+				FROM 
+					artifacts a
+				JOIN 
+					download_stats d ON d.download_stat_artifact_id = a.artifact_id
+				GROUP BY 
+					a.artifact_image_id
+			) AS dc ON i.image_id = dc.artifact_image_id
+			GROUP BY 
+				i.image_name, i.image_registry_id
+		`
+	}
 	var q sq.SelectBuilder
 	if a.db.DriverName() == SQLITE3 {
 		q = databaseg.Builder.Select(
@@ -1162,8 +1228,18 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 			Where(
 				"r.registry_parent_id = ? AND r.registry_name = ? AND i.image_name = ?",
 				parentID, repoKey, imageName,
-			).
-			OrderBy("a.artifact_updated_at DESC").Limit(1)
+			)
+		// For metadata queries, only check artifact deletion (not parents)
+		// Download counts in subquery already apply full cascade filtering
+		switch softDeleteFilter {
+		case types.SoftDeleteFilterExcludeDeleted:
+			q = q.Where("a.artifact_deleted_at IS NULL")
+		case types.SoftDeleteFilterOnlyDeleted:
+			q = q.Where("a.artifact_deleted_at IS NOT NULL")
+		case types.SoftDeleteFilterAll:
+			// No filtering
+		}
+		q = q.OrderBy("a.artifact_updated_at DESC").Limit(1)
 	} else {
 		q = databaseg.Builder.Select(
 			`r.registry_name AS repo_name,
@@ -1182,8 +1258,18 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 			Where(
 				"r.registry_parent_id = ? AND r.registry_name = ? AND i.image_name = ?",
 				parentID, repoKey, imageName,
-			).
-			OrderBy("a.artifact_updated_at DESC").Limit(1)
+			)
+		// For metadata queries, only check artifact deletion (not parents)
+		// Download counts in subquery already apply full cascade filtering
+		switch softDeleteFilter {
+		case types.SoftDeleteFilterExcludeDeleted:
+			q = q.Where("a.artifact_deleted_at IS NULL")
+		case types.SoftDeleteFilterOnlyDeleted:
+			q = q.Where("a.artifact_deleted_at IS NOT NULL")
+		case types.SoftDeleteFilterAll:
+			// No filtering
+		}
+		q = q.OrderBy("a.artifact_updated_at DESC").Limit(1)
 	}
 
 	sql, args, err := q.ToSql()
@@ -1221,7 +1307,7 @@ func (a ArtifactDao) mapToArtifactMetadataList(
 func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 	ctx context.Context, regID int64, image string,
 	sortByField string, sortByOrder string, limit int, offset int, search string,
-	artifactType *artifact.ArtifactType,
+	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.NonOCIArtifactMetadata, error) {
 	// Build the main query
 	q := databaseg.Builder.
@@ -1264,6 +1350,18 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 	if search != "" {
 		q = q.Where("artifact_version LIKE ?", sqlPartialMatch(search))
 	}
+
+	// When listing versions of a specific image, only check artifact deletion (not parent image)
+	// This allows viewing versions even if the parent image is deleted
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		q = q.Where("a.artifact_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("a.artifact_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterAll:
+		// No filtering
+	}
+
 	// nolint:goconst
 	sortField := "artifact_" + sortByField
 	if sortByField == name || sortByField == downloadCount {
@@ -1346,7 +1444,7 @@ func (a ArtifactDao) fetchDownloadStatsForArtifacts(
 
 func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 	ctx context.Context, parentID int64, repoKey string, image string,
-	search string, artifactType *artifact.ArtifactType,
+	search string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 ) (int64, error) {
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
@@ -1363,6 +1461,17 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 
 	if search != "" {
 		stmt = stmt.Where("artifact_version LIKE ?", sqlPartialMatch(search))
+	}
+
+	// When counting versions of a specific image, only check artifact deletion (not parents)
+	// Must match GetAllVersionsByRepoAndImage filtering logic
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		stmt = stmt.Where("a.artifact_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		stmt = stmt.Where("a.artifact_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterAll:
+		// No filtering
 	}
 
 	sql, args, err := stmt.ToSql()
@@ -1382,7 +1491,7 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 
 func (a ArtifactDao) GetArtifactMetadata(
 	ctx context.Context, id int64, identifier string, image string, version string,
-	artifactType *artifact.ArtifactType,
+	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 ) (*types.ArtifactMetadata, error) {
 	q := databaseg.Builder.Select(
 		"r.registry_package_type as package_type, a.artifact_version as name,"+
@@ -1402,6 +1511,17 @@ func (a ArtifactDao) GetArtifactMetadata(
 		q = q.Where("i.image_type = ?", *artifactType)
 	}
 
+	// For metadata queries on specific versions, only check the artifact itself (not parents)
+	// This allows retrieving metadata even if parent image/registry is soft-deleted
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		q = q.Where("a.artifact_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("a.artifact_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterAll:
+		// No filtering
+	}
+
 	sql, args, err := q.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to convert query to sql")
@@ -1409,7 +1529,7 @@ func (a ArtifactDao) GetArtifactMetadata(
 
 	db := dbtx.GetAccessor(ctx, a.db)
 
-	dst := new(artifactMetadataDB)
+	dst := &artifactMetadataDB{}
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact metadata")
 	}
@@ -1576,7 +1696,7 @@ func (a ArtifactDao) mapToArtifactMetadata(
 	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
 	var deletedAt *time.Time
 	isDeleted := false
-	
+
 	// Collect all non-null deleted_at timestamps
 	var timestamps []*int64
 	if dst.ArtifactDeletedAt != nil {
@@ -1588,7 +1708,7 @@ func (a ArtifactDao) mapToArtifactMetadata(
 	if dst.RegistryDeletedAt != nil {
 		timestamps = append(timestamps, dst.RegistryDeletedAt)
 	}
-	
+
 	// If any entity is deleted, set isDeleted and find earliest timestamp
 	if len(timestamps) > 0 {
 		isDeleted = true

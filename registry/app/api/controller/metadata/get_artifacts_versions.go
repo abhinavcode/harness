@@ -190,13 +190,13 @@ func (c *APIController) GetAllArtifactVersions(
 	}
 	metadata, err := c.ArtifactStore.GetAllVersionsByRepoAndImage(ctx, regInfo.RegistryID, image,
 		regInfo.sortByField, regInfo.sortByOrder, regInfo.limit, regInfo.offset,
-		regInfo.searchTerm, artifactType)
+		regInfo.searchTerm, artifactType, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
 		return throw500Error(err)
 	}
 
 	cnt, _ := c.ArtifactStore.CountAllVersionsByRepoAndImage(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image,
-		regInfo.searchTerm, artifactType)
+		regInfo.searchTerm, artifactType, types.SoftDeleteFilterExcludeDeleted)
 
 	registryURL := c.URLProvider.RegistryURL(ctx, regInfo.RootIdentifier, regInfo.RegistryIdentifier)
 	if registry.PackageType == artifact.PackageTypeGENERIC {

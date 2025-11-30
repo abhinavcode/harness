@@ -21,6 +21,7 @@ import (
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types/enum"
 )
 
@@ -76,14 +77,10 @@ func (c *APIController) ListArtifactLabels(
 		}, nil
 	}
 
-	labels, err := c.ImageStore.GetLabelsByParentIDAndRepo(
-		ctx, regInfo.ParentID,
-		regInfo.RegistryIdentifier, regInfo.limit, regInfo.offset, regInfo.searchTerm,
-	)
-	count, _ := c.ImageStore.CountLabelsByParentIDAndRepo(
-		ctx, regInfo.ParentID,
-		regInfo.RegistryIdentifier, regInfo.searchTerm,
-	)
+	labels, err := c.ImageStore.GetLabelsByParentIDAndRepo(ctx, regInfo.ParentID, regInfo.RegistryIdentifier,
+		regInfo.limit, regInfo.offset, regInfo.searchTerm, types.SoftDeleteFilterExcludeDeleted)
+	count, _ := c.ImageStore.CountLabelsByParentIDAndRepo(ctx, regInfo.ParentID,
+		regInfo.RegistryIdentifier, regInfo.searchTerm, types.SoftDeleteFilterExcludeDeleted)
 
 	if err != nil {
 		return artifact.ListArtifactLabels500JSONResponse{
