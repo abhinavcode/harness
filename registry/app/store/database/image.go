@@ -66,7 +66,7 @@ type imageDB struct {
 
 // imageWithParentDB is used for queries that JOIN with registries table
 type imageWithParentDB struct {
-	imageDB                                           // Embed base struct
+	imageDB                  // Embed base struct
 	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from parent registry
 }
 
@@ -578,12 +578,12 @@ func (i ImageDao) mapToInternalImage(ctx context.Context, in *types.Image) *imag
 func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) (*types.Image, error) {
 	createdBy := dst.CreatedBy
 	updatedBy := dst.UpdatedBy
-	
+
 	// Compute DeletedAt and IsDeleted with cascade logic
 	// deletedAt should be set to the earliest timestamp among image or registry
 	var deletedAt *time.Time
 	isDeleted := false
-	
+
 	// Collect all non-null deleted_at timestamps
 	var timestamps []*int64
 	if dst.DeletedAt != nil {
@@ -592,7 +592,7 @@ func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) 
 	if dst.RegistryDeletedAt != nil {
 		timestamps = append(timestamps, dst.RegistryDeletedAt)
 	}
-	
+
 	// If any entity is deleted, set isDeleted and find earliest timestamp
 	if len(timestamps) > 0 {
 		isDeleted = true
@@ -606,7 +606,7 @@ func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) 
 		t := time.UnixMilli(*earliestTimestamp)
 		deletedAt = &t
 	}
-	
+
 	return &types.Image{
 		ID:           dst.ID,
 		UUID:         dst.UUID,

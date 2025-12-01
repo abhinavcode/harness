@@ -462,7 +462,10 @@ func (r registryDao) GetAll(
 			FROM nodes n
 			JOIN generic_blobs gb ON n.node_is_file = TRUE AND gb.generic_blob_id = n.node_generic_blob_id
 			JOIN registries r ON n.node_registry_id = r.registry_id
+			LEFT JOIN images i ON i.image_registry_id = n.node_registry_id AND i.image_name = SPLIT_PART(n.node_path, '/', 2)
+			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
 			WHERE r.registry_deleted_at IS NULL
+			  AND (i.image_id IS NULL OR (i.image_deleted_at IS NULL AND (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL)))
 			GROUP BY 1
 		`
 	case types.SoftDeleteFilterOnlyDeleted:

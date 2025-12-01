@@ -402,18 +402,30 @@ func (a ArtifactDao) SoftDeleteByVersionAndImageName(
 	now := time.Now().UnixMilli()
 	userID := session.Principal.ID
 
-	// Build subquery using Squirrel
-	subQuery := databaseg.Builder.
+	// First get the image ID
+	var imageID int64
+	imgQuery := databaseg.Builder.
 		Select("image_id").
 		From("images").
 		Where(sq.Eq{"image_registry_id": regID, "image_name": image})
 
+	imgSQL, imgArgs, err := imgQuery.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build image query")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	if err = db.GetContext(ctx, &imageID, imgSQL, imgArgs...); err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get image ID")
+	}
+
+	// Now soft delete the artifact
 	stmt := databaseg.Builder.
 		Update("artifacts").
 		Set("artifact_deleted_at", now).
 		Set("artifact_deleted_by", userID).
 		Where(sq.Eq{
-			"artifact_image_id": subQuery,
+			"artifact_image_id": imageID,
 			"artifact_version":  version,
 		}).
 		Where("artifact_deleted_at IS NULL")
@@ -423,7 +435,6 @@ func (a ArtifactDao) SoftDeleteByVersionAndImageName(
 		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build soft delete query")
 	}
 
-	db := dbtx.GetAccessor(ctx, a.db)
 	result, err := db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to soft delete artifact version")
