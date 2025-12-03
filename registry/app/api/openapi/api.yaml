@@ -2896,6 +2896,13 @@ components:
           $ref: "#/components/schemas/PackageType"
         artifactType:
           $ref: "#/components/schemas/ArtifactType"
+        deletedAt:
+          type: integer
+          format: int64
+          description: Timestamp when the artifact was soft deleted (Unix milliseconds). Null if not deleted.
+        isDeleted:
+          type: boolean
+          description: Indicates if the artifact version is soft deleted
       required:
         - imageName
         - version

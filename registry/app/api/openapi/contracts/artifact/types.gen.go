@@ -362,9 +362,15 @@ type ArtifactVersionMetadata struct {
 // ArtifactVersionSummary Docker Artifact Version Summary
 type ArtifactVersionSummary struct {
 	// ArtifactType refers to artifact type
-	ArtifactType  *ArtifactType `json:"artifactType,omitempty"`
-	ImageName     string        `json:"imageName"`
-	IsQuarantined *bool         `json:"isQuarantined,omitempty"`
+	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
+
+	// DeletedAt Timestamp when the artifact was soft deleted (Unix milliseconds). Null if not deleted.
+	DeletedAt *int64 `json:"deletedAt,omitempty"`
+	ImageName string `json:"imageName"`
+
+	// IsDeleted Indicates if the artifact version is soft deleted
+	IsDeleted     *bool `json:"isDeleted,omitempty"`
+	IsQuarantined *bool `json:"isQuarantined,omitempty"`
 
 	// PackageType refers to package
 	PackageType      PackageType `json:"packageType"`

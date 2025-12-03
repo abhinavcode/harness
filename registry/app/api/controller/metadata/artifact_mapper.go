@@ -827,6 +827,8 @@ func GetArtifactVersionSummary(
 	isQuarantined bool,
 	quarantineReason string,
 	artifactType *artifactapi.ArtifactType,
+	deletedAt *int64,
+	isDeleted bool,
 ) *artifactapi.ArtifactVersionSummaryResponseJSONResponse {
 	artifactVersionSummary := &artifactapi.ArtifactVersionSummary{
 		ImageName:        artifactName,
@@ -835,6 +837,8 @@ func GetArtifactVersionSummary(
 		IsQuarantined:    &isQuarantined,
 		QuarantineReason: &quarantineReason,
 		ArtifactType:     artifactType,
+		DeletedAt:        deletedAt,
+		IsDeleted:        &isDeleted,
 	}
 	response := &artifactapi.ArtifactVersionSummaryResponseJSONResponse{
 		Data:   *artifactVersionSummary,

@@ -34,7 +34,7 @@ func (c *APIController) GetArtifactVersionSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
 ) (artifact.GetArtifactVersionSummaryResponseObject, error) {
-	image, version, pkgType, isQuarantined, quarantineReason, artifactType, err := c.FetchArtifactSummary(ctx, r)
+	image, version, pkgType, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, err := c.FetchArtifactSummary(ctx, r)
 	if err != nil {
 		return artifact.GetArtifactVersionSummary500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
@@ -45,7 +45,7 @@ func (c *APIController) GetArtifactVersionSummary(
 
 	return artifact.GetArtifactVersionSummary200JSONResponse{
 		ArtifactVersionSummaryResponseJSONResponse: *GetArtifactVersionSummary(image,
-			pkgType, version, isQuarantined, quarantineReason, artifactType),
+			pkgType, version, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted),
 	}, nil
 }
 
@@ -53,16 +53,16 @@ func (c *APIController) GetArtifactVersionSummary(
 func (c *APIController) FetchArtifactSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
-) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, error) {
+) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, *int64, bool, error) {
 	regInfo, err := c.RegistryMetadataHelper.GetRegistryRequestBaseInfo(ctx, "", string(r.RegistryRef))
 
 	if err != nil {
-		return "", "", "", false, "", nil, fmt.Errorf("failed to get registry request base info: %w", err)
+		return "", "", "", false, "", nil, nil, false, fmt.Errorf("failed to get registry request base info: %w", err)
 	}
 
 	space, err := c.SpaceFinder.FindByRef(ctx, regInfo.ParentRef)
 	if err != nil {
-		return "", "", "", false, "", nil, err
+		return "", "", "", false, "", nil, nil, false, err
 	}
 
 	session, _ := request.AuthSessionFrom(ctx)
@@ -74,7 +74,7 @@ func (c *APIController) FetchArtifactSummary(
 		session,
 		permissionChecks...,
 	); err != nil {
-		return "", "", "", false, "", nil, err
+		return "", "", "", false, "", nil, nil, false, err
 	}
 
 	image := string(r.Artifact)
@@ -91,14 +91,14 @@ func (c *APIController) FetchArtifactSummary(
 
 	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
-		return "", "", "", false, "", nil, err
+		return "", "", "", false, "", nil, nil, false, err
 	}
 
 	var artifactType *artifact.ArtifactType
 	if r.Params.ArtifactType != nil {
 		artifactType, err = ValidateAndGetArtifactType(registry.PackageType, string(*r.Params.ArtifactType))
 		if err != nil {
-			return "", "", "", false, "", nil, err
+			return "", "", "", false, "", nil, nil, false, err
 		}
 	}
 
@@ -122,23 +122,40 @@ func (c *APIController) FetchArtifactSummary(
 		if c.UntaggedImagesEnabled(ctx) {
 			ociVersion, err = c.TagStore.GetOCIVersionMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version)
 			if err != nil {
-				return "", "", "", false, "", nil, err
+				return "", "", "", false, "", nil, nil, false, err
 			}
 		} else {
 			ociVersion, err = c.TagStore.GetTagMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version)
 			if err != nil {
-				return "", "", "", false, "", nil, err
+				return "", "", "", false, "", nil, nil, false, err
 			}
 		}
 
-		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, nil
+		// For OCI artifacts, check if artifact or image is deleted
+		isDeleted := ociVersion.ArtifactDeletedAt != nil || ociVersion.ImageDeletedAt != nil || ociVersion.RegistryDeletedAt != nil
+		var deletedAt *int64
+		if ociVersion.ArtifactDeletedAt != nil {
+			deletedAt = ociVersion.ArtifactDeletedAt
+		} else if ociVersion.ImageDeletedAt != nil {
+			deletedAt = ociVersion.ImageDeletedAt
+		}
+
+		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt, isDeleted, nil
 	}
 	metadata, err := c.ArtifactStore.GetArtifactMetadata(
 		ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version, artifactType, types.SoftDeleteFilterExcludeDeleted)
 
 	if err != nil {
-		return "", "", "", false, "", nil, err
+		return "", "", "", false, "", nil, nil, false, err
 	}
 
-	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason, metadata.ArtifactType, nil
+	// Check if artifact is soft deleted and convert DeletedAt to Unix milliseconds
+	isDeleted := metadata.DeletedAt != nil
+	var deletedAtMillis *int64
+	if metadata.DeletedAt != nil {
+		millis := metadata.DeletedAt.UnixMilli()
+		deletedAtMillis = &millis
+	}
+
+	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason, metadata.ArtifactType, deletedAtMillis, isDeleted, nil
 }

@@ -68,20 +68,23 @@ type ImageMetadata struct {
 }
 
 type OciVersionMetadata struct {
-	Name             string
-	Size             string
-	PackageType      artifact.PackageType
-	DigestCount      int
-	ModifiedAt       time.Time
-	SchemaVersion    int
-	NonConformant    bool
-	Payload          Payload
-	MediaType        string
-	Digest           string
-	DownloadCount    int64
-	Tags             []string
-	IsQuarantined    bool
-	QuarantineReason string
+	Name                string
+	Size                string
+	PackageType         artifact.PackageType
+	DigestCount         int
+	ModifiedAt          time.Time
+	SchemaVersion       int
+	NonConformant       bool
+	Payload             Payload
+	MediaType           string
+	Digest              string
+	DownloadCount       int64
+	Tags                []string
+	IsQuarantined       bool
+	QuarantineReason    string
+	ArtifactDeletedAt   *int64 // Cascade from artifact
+	ImageDeletedAt      *int64 // Cascade from image
+	RegistryDeletedAt   *int64 // Cascade from registry
 }
 
 type TagDetail struct {
