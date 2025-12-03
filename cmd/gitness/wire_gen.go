@@ -449,7 +449,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	spaceController := space2.ProvideController(config, transactor, provider, streamer, spaceIdentifier, authorizer, spacePathStore, pipelineStore, secretStore, connectorStore, templateStore, spaceStore, repoStore, principalStore, repoController, membershipStore, listService, spaceFinder, jobRepository, repository, resourceLimiter, publicaccessService, auditService, gitspaceService, labelService, instrumentService, executionStore, rulesService, usageMetricStore, repoIdentifier, infraproviderService, favoriteStore, spaceService)
+	spaceController := space2.ProvideController(config, transactor, provider, streamer, spaceIdentifier, authorizer, spacePathStore, pipelineStore, secretStore, connectorStore, templateStore, spaceStore, repoStore, principalStore, repoController, membershipStore, listService, spaceFinder, repoFinder, jobRepository, repository, resourceLimiter, publicaccessService, auditService, gitspaceService, labelService, instrumentService, executionStore, rulesService, usageMetricStore, repoIdentifier, infraproviderService, favoriteStore, spaceService)
 	reporter7, err := events9.ProvideReporter(eventsSystem)
 	if err != nil {
 		return nil, err
@@ -573,14 +573,15 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	proxyController := docker.ProvideProxyController(localRegistry, manifestService, secretService, spaceFinder)
 	remoteRegistry := docker.RemoteRegistryProvider(localRegistry, app, upstreamProxyConfigRepository, spaceFinder, secretService, proxyController)
 	quarantineService := quarantine.ProvideService(quarantineArtifactRepository, manifestRepository)
-	cache3 := quarantine.ProvideQuarantineCache(ctx, quarantineService)
-	finder := quarantine.ProvideFinder(quarantineService, cache3)
+	evictor3 := quarantine.ProvideEvictorQuarantine(pubSub)
+	cache3 := quarantine.ProvideQuarantineCache(ctx, quarantineService, evictor3)
+	finder := quarantine.ProvideFinder(quarantineService, cache3, evictor3)
 	coreController := pkg.CoreControllerProvider(registryRepository, finder)
 	dbStore := docker.DBStoreProvider(blobRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, manifestRepository, quarantineArtifactRepository)
 	dockerController := docker.ControllerProvider(localRegistry, remoteRegistry, coreController, spaceStore, authorizer, dbStore, spaceFinder)
-	evictor3 := publicaccess2.ProvideEvictorPublicAccess(pubSub)
-	publicaccessCache := publicaccess2.ProvidePublicAccessCache(ctx, publicaccessService, evictor3)
-	cacheService := publicaccess2.ProvideRegistryPublicAccess(publicaccessService, publicaccessCache, evictor3)
+	evictor4 := publicaccess2.ProvideEvictorPublicAccess(pubSub)
+	publicaccessCache := publicaccess2.ProvidePublicAccessCache(ctx, publicaccessService, evictor4)
+	cacheService := publicaccess2.ProvideRegistryPublicAccess(publicaccessService, publicaccessCache, evictor4)
 	handler := api2.NewHandlerProvider(dockerController, spaceFinder, spaceStore, tokenStore, controller, authenticator, provider, authorizer, config, registryFinder, cacheService)
 	registryOCIHandler := router.OCIHandlerProvider(handler)
 	genericBlobRepository := database2.ProvideGenericBlobDao(db)
@@ -658,7 +659,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	huggingfaceLocalRegistry := huggingface.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider)
 	huggingfaceController := huggingface2.ProvideController(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, huggingfaceLocalRegistry, finder)
 	huggingfaceHandler := huggingface3.ProvideHandler(huggingfaceController, packagesHandler)
-	handler4 := router.PackageHandlerProvider(packagesHandler, mavenHandler, genericHandler, pythonHandler, nugetHandler, npmHandler, rpmHandler, cargoHandler, gopackageHandler, huggingfaceHandler)
+	handler4 := router.PackageHandlerProvider(packagesHandler, mavenHandler, genericHandler, pythonHandler, nugetHandler, npmHandler, rpmHandler, cargoHandler, gopackageHandler, huggingfaceHandler, spaceFinder, cacheService)
 	appRouter := router.AppRouterProvider(registryOCIHandler, apiHandler, handler2, handler3, handler4)
 	readerFactory3, err := events3.ProvideReaderFactory(eventsSystem)
 	if err != nil {
