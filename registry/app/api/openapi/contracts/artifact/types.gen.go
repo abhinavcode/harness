@@ -139,6 +139,13 @@ const (
 	None        ScopeParam = "none"
 )
 
+// Defines values for SoftDeleteFilterParam.
+const (
+	All            SoftDeleteFilterParam = "all"
+	ExcludeDeleted SoftDeleteFilterParam = "exclude_deleted"
+	OnlyDeleted    SoftDeleteFilterParam = "only_deleted"
+)
+
 // Defines values for VersionTypeParam.
 const (
 	DIGEST VersionTypeParam = "DIGEST"
@@ -215,6 +222,13 @@ const (
 const (
 	GetAllArtifactVersionsParamsArtifactTypeDataset GetAllArtifactVersionsParamsArtifactType = "dataset"
 	GetAllArtifactVersionsParamsArtifactTypeModel   GetAllArtifactVersionsParamsArtifactType = "model"
+)
+
+// Defines values for GetAllArtifactVersionsParamsSoftDeleteFilter.
+const (
+	GetAllArtifactVersionsParamsSoftDeleteFilterAll            GetAllArtifactVersionsParamsSoftDeleteFilter = "all"
+	GetAllArtifactVersionsParamsSoftDeleteFilterExcludeDeleted GetAllArtifactVersionsParamsSoftDeleteFilter = "exclude_deleted"
+	GetAllArtifactVersionsParamsSoftDeleteFilterOnlyDeleted    GetAllArtifactVersionsParamsSoftDeleteFilter = "only_deleted"
 )
 
 // Defines values for GetAllArtifactsByRegistryParamsArtifactType.
@@ -1186,6 +1200,9 @@ type ScopeParam string
 // SearchTerm defines model for searchTerm.
 type SearchTerm string
 
+// SoftDeleteFilterParam defines model for softDeleteFilterParam.
+type SoftDeleteFilterParam string
+
 // SortField defines model for sortField.
 type SortField string
 
@@ -1699,10 +1716,16 @@ type GetAllArtifactVersionsParams struct {
 
 	// SearchTerm search Term.
 	SearchTerm *SearchTerm `form:"search_term,omitempty" json:"search_term,omitempty"`
+
+	// SoftDeleteFilter Filter for soft-deleted entities
+	SoftDeleteFilter *GetAllArtifactVersionsParamsSoftDeleteFilter `form:"soft_delete_filter,omitempty" json:"soft_delete_filter,omitempty"`
 }
 
 // GetAllArtifactVersionsParamsArtifactType defines parameters for GetAllArtifactVersions.
 type GetAllArtifactVersionsParamsArtifactType string
+
+// GetAllArtifactVersionsParamsSoftDeleteFilter defines parameters for GetAllArtifactVersions.
+type GetAllArtifactVersionsParamsSoftDeleteFilter string
 
 // GetAllArtifactsByRegistryParams defines parameters for GetAllArtifactsByRegistry.
 type GetAllArtifactsByRegistryParams struct {
