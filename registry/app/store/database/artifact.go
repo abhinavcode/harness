@@ -205,6 +205,10 @@ func (a ArtifactDao) GetLatestByImageID(ctx context.Context, imageID int64) (*ty
 
 	dst := new(artifactWithParentsDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
+		// If no artifacts found for this image, return nil instead of error
+		if err.Error() == "sql: no rows in result set" {
+			return nil, nil //nolint:nilnil
+		}
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact")
 	}
 	return a.mapArtifactWithParents(ctx, dst)
@@ -1507,7 +1511,8 @@ func (a ArtifactDao) GetArtifactMetadata(
 	q := databaseg.Builder.Select(
 		"r.registry_package_type as package_type, a.artifact_version as name,"+
 			"a.artifact_updated_at as modified_at, "+
-			"COALESCE(COUNT(dc.download_stat_id), 0) as download_count").
+			"COALESCE(COUNT(dc.download_stat_id), 0) as download_count, "+
+			"a.artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at").
 		From("artifacts a").
 		Join("images i ON i.image_id = a.artifact_image_id").
 		Join("registries r ON i.image_registry_id = registry_id").
@@ -1516,7 +1521,8 @@ func (a ArtifactDao) GetArtifactMetadata(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
 				" AND i.image_name = ? AND a.artifact_version = ?", id, identifier, image, version,
 		).
-		GroupBy("r.registry_package_type, a.artifact_version, a.artifact_updated_at")
+		GroupBy("r.registry_package_type, a.artifact_version, a.artifact_updated_at, "+
+			"a.artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at")
 
 	if artifactType != nil && *artifactType != "" {
 		q = q.Where("i.image_type = ?", *artifactType)

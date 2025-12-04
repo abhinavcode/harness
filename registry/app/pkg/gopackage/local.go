@@ -255,6 +255,11 @@ func (c *localRegistry) DownloadPackageLatestVersionInfo(
 		return nil, nil, nil, "", fmt.Errorf("failed to get latest artifact: %w", err)
 	}
 
+	// If no artifacts found, return error
+	if artifact == nil {
+		return nil, nil, nil, "", fmt.Errorf("no artifacts found for image")
+	}
+
 	info.Version = artifact.Version
 	info.FileName = artifact.Version + ".info"
 

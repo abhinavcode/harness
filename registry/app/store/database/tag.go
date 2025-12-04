@@ -99,31 +99,37 @@ type artifactMetadataDB struct {
 }
 
 type tagMetadataDB struct {
-	Name          string               `db:"name"`
-	Size          string               `db:"size"`
-	PackageType   artifact.PackageType `db:"package_type"`
-	DigestCount   int                  `db:"digest_count"`
-	ModifiedAt    int64                `db:"modified_at"`
-	SchemaVersion int                  `db:"manifest_schema_version"`
-	NonConformant bool                 `db:"manifest_non_conformant"`
-	Payload       []byte               `db:"manifest_payload"`
-	MediaType     string               `db:"mt_media_type"`
-	Digest        []byte               `db:"manifest_digest"`
-	DownloadCount int64                `db:"download_count"`
+	Name              string               `db:"name"`
+	Size              string               `db:"size"`
+	PackageType       artifact.PackageType `db:"package_type"`
+	DigestCount       int                  `db:"digest_count"`
+	ModifiedAt        int64                `db:"modified_at"`
+	SchemaVersion     int                  `db:"manifest_schema_version"`
+	NonConformant     bool                 `db:"manifest_non_conformant"`
+	Payload           []byte               `db:"manifest_payload"`
+	MediaType         string               `db:"mt_media_type"`
+	Digest            []byte               `db:"manifest_digest"`
+	DownloadCount     int64                `db:"download_count"`
+	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"` // For cascade logic
+	ImageDeletedAt    *int64               `db:"image_deleted_at"`    // For cascade logic
+	RegistryDeletedAt *int64               `db:"registry_deleted_at"` // For cascade logic
 }
 
 type ociVersionMetadataDB struct {
-	Size          string               `db:"size"`
-	PackageType   artifact.PackageType `db:"package_type"`
-	DigestCount   int                  `db:"digest_count"`
-	ModifiedAt    int64                `db:"modified_at"`
-	SchemaVersion int                  `db:"manifest_schema_version"`
-	NonConformant bool                 `db:"manifest_non_conformant"`
-	Payload       []byte               `db:"manifest_payload"`
-	MediaType     string               `db:"mt_media_type"`
-	Digest        []byte               `db:"manifest_digest"`
-	DownloadCount int64                `db:"download_count"`
-	Tags          *string              `db:"tags"`
+	Size              string               `db:"size"`
+	PackageType       artifact.PackageType `db:"package_type"`
+	DigestCount       int                  `db:"digest_count"`
+	ModifiedAt        int64                `db:"modified_at"`
+	SchemaVersion     int                  `db:"manifest_schema_version"`
+	NonConformant     bool                 `db:"manifest_non_conformant"`
+	Payload           []byte               `db:"manifest_payload"`
+	MediaType         string               `db:"mt_media_type"`
+	Digest            []byte               `db:"manifest_digest"`
+	DownloadCount     int64                `db:"download_count"`
+	Tags              *string              `db:"tags"`
+	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"` // For cascade logic
+	ImageDeletedAt    *int64               `db:"image_deleted_at"`    // For cascade logic
+	RegistryDeletedAt *int64               `db:"registry_deleted_at"` // For cascade logic
 }
 
 type tagDetailDB struct {
@@ -1279,14 +1285,16 @@ func (t tagDao) GetTagMetadata(
 ) (*types.OciVersionMetadata, error) {
 	q := databaseg.Builder.Select(
 		"registry_package_type as package_type, tag_name as name,"+
-			"tag_updated_at as modified_at, manifest_total_size as size",
+			"tag_updated_at as modified_at, manifest_total_size as size, "+
+			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at",
 	).
-		From("tags").
-		Join("registries ON tag_registry_id = registry_id").
-		Join("manifests ON manifest_id = tag_manifest_id").
+		From("tags t").
+		Join("registries r ON t.tag_registry_id = r.registry_id").
+		Join("manifests ON manifest_id = t.tag_manifest_id").
+		Join("images i ON i.image_registry_id = r.registry_id AND i.image_name = t.tag_image_name").
 		Where(
-			"registry_parent_id = ? AND registry_name = ?"+
-				" AND tag_image_name = ? AND tag_name = ?", parentID, repoKey, imageName, name,
+			"r.registry_parent_id = ? AND r.registry_name = ?"+
+				" AND t.tag_image_name = ? AND t.tag_name = ?", parentID, repoKey, imageName, name,
 		)
 
 	sql, args, err := q.ToSql()
@@ -1317,12 +1325,14 @@ func (t tagDao) GetOCIVersionMetadata(
 	}
 	q := databaseg.Builder.Select(
 		"registry_package_type as package_type, manifest_digest, "+
-			"manifest_created_at as modified_at, manifest_total_size as size",
+			"manifest_created_at as modified_at, manifest_total_size as size, "+
+			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at",
 	).
 		From("manifests").
-		Join("registries ON manifest_registry_id = registry_id").
+		Join("registries r ON manifest_registry_id = r.registry_id").
+		Join("images i ON i.image_registry_id = r.registry_id AND i.image_name = manifest_image_name").
 		Where(
-			"registry_parent_id = ? AND registry_name = ?"+
+			"r.registry_parent_id = ? AND r.registry_name = ?"+
 				" AND manifest_image_name = ? AND manifest_digest = ?", parentID, repoKey, imageName, digestBytes,
 		)
 
@@ -2104,16 +2114,19 @@ func (t tagDao) mapToTagMetadata(
 	dst *tagMetadataDB,
 ) (*types.OciVersionMetadata, error) {
 	tagMetadata := &types.OciVersionMetadata{
-		Name:          dst.Name,
-		Size:          dst.Size,
-		PackageType:   dst.PackageType,
-		DigestCount:   dst.DigestCount,
-		ModifiedAt:    time.UnixMilli(dst.ModifiedAt),
-		SchemaVersion: dst.SchemaVersion,
-		NonConformant: dst.NonConformant,
-		MediaType:     dst.MediaType,
-		Payload:       dst.Payload,
-		DownloadCount: dst.DownloadCount,
+		Name:              dst.Name,
+		Size:              dst.Size,
+		PackageType:       dst.PackageType,
+		DigestCount:       dst.DigestCount,
+		ModifiedAt:        time.UnixMilli(dst.ModifiedAt),
+		SchemaVersion:     dst.SchemaVersion,
+		NonConformant:     dst.NonConformant,
+		MediaType:         dst.MediaType,
+		Payload:           dst.Payload,
+		DownloadCount:     dst.DownloadCount,
+		ArtifactDeletedAt: dst.ArtifactDeletedAt,
+		ImageDeletedAt:    dst.ImageDeletedAt,
+		RegistryDeletedAt: dst.RegistryDeletedAt,
 	}
 	if dst.Digest != nil {
 		dgst := types.Digest(util.GetHexEncodedString(dst.Digest))
@@ -2127,14 +2140,17 @@ func (t tagDao) mapToOciVersion(
 	dst *ociVersionMetadataDB,
 ) (*types.OciVersionMetadata, error) {
 	ociVersion := &types.OciVersionMetadata{
-		Size:          dst.Size,
-		PackageType:   dst.PackageType,
-		DigestCount:   dst.DigestCount,
-		ModifiedAt:    time.UnixMilli(dst.ModifiedAt),
-		SchemaVersion: dst.SchemaVersion,
-		NonConformant: dst.NonConformant,
-		MediaType:     dst.MediaType,
-		Payload:       dst.Payload,
+		Size:              dst.Size,
+		PackageType:       dst.PackageType,
+		DigestCount:       dst.DigestCount,
+		ModifiedAt:        time.UnixMilli(dst.ModifiedAt),
+		SchemaVersion:     dst.SchemaVersion,
+		NonConformant:     dst.NonConformant,
+		MediaType:         dst.MediaType,
+		Payload:           dst.Payload,
+		ArtifactDeletedAt: dst.ArtifactDeletedAt,
+		ImageDeletedAt:    dst.ImageDeletedAt,
+		RegistryDeletedAt: dst.RegistryDeletedAt,
 	}
 	if dst.Tags != nil {
 		ociVersion.Tags = strings.Split(*dst.Tags, ",")

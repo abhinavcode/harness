@@ -135,9 +135,9 @@ func (d DownloadStatDao) CreateByRegistryIDImageAndArtifactName(
 	return nil
 }
 func (d DownloadStatDao) GetTotalDownloadsForImage(ctx context.Context, imageID int64) (int64, error) {
-	q := databaseg.Builder.Select(`count(*)`).
+	q := databaseg.Builder.Select(`count(ds.download_stat_id)`).
 		From("artifacts art").Where("art.artifact_image_id = ?", imageID).
-		Join("download_stats ds ON ds.download_stat_artifact_id = art.artifact_id")
+		LeftJoin("download_stats ds ON ds.download_stat_artifact_id = art.artifact_id")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -152,6 +152,10 @@ func (d DownloadStatDao) GetTotalDownloadsForImage(ctx context.Context, imageID 
 	var count int64
 	err = db.QueryRowContext(ctx, sql, args...).Scan(&count)
 	if err != nil {
+		// If no rows found (no artifacts or no downloads), return 0 instead of error
+		if err.Error() == "sql: no rows in result set" {
+			return 0, nil
+		}
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
 	}
 	return count, nil

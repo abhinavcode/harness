@@ -262,7 +262,8 @@ func (i ImageDao) GetByNameAndType(
 	ctx context.Context, registryID int64,
 	name string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
 ) (*types.Image, error) {
-	if artifactType == nil {
+	// If artifactType is nil or empty, fall back to GetByName
+	if artifactType == nil || *artifactType == "" {
 		return i.GetByName(ctx, registryID, name, softDeleteFilter)
 	}
 

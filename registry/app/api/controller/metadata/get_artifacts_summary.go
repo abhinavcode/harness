@@ -64,7 +64,7 @@ func (c *APIController) GetArtifactSummary(
 	}
 
 	image := string(r.Artifact)
-	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterAll)
 
 	if err != nil {
 		return artifact.GetArtifactSummary500JSONResponse{
@@ -102,7 +102,7 @@ func (c *APIController) getImageMetadata(
 	ctx context.Context, registry *types.Registry, image string,
 	artifactType *artifact.ArtifactType,
 ) (*types.ImageMetadata, error) {
-	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, types.SoftDeleteFilterExcludeDeleted)
+	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, types.SoftDeleteFilterAll)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +117,8 @@ func (c *APIController) getImageMetadata(
 		PackageType:   registry.PackageType,
 		CreatedAt:     img.CreatedAt,
 		ArtifactType:  img.ArtifactType,
+		DeletedAt:     img.DeletedAt,
+		IsDeleted:     img.IsDeleted,
 	}
 	//nolint:nestif
 	if registry.PackageType == artifact.PackageTypeDOCKER || registry.PackageType == artifact.PackageTypeHELM {
@@ -140,8 +142,15 @@ func (c *APIController) getImageMetadata(
 		if err != nil {
 			return nil, err
 		}
-		imgMetadata.LatestVersion = latestArtifact.Version
-		imgMetadata.ModifiedAt = latestArtifact.UpdatedAt
+
+		// If no artifacts exist, set empty values
+		if latestArtifact == nil {
+			imgMetadata.LatestVersion = ""
+			imgMetadata.ModifiedAt = img.UpdatedAt
+		} else {
+			imgMetadata.LatestVersion = latestArtifact.Version
+			imgMetadata.ModifiedAt = latestArtifact.UpdatedAt
+		}
 	}
 	return imgMetadata, nil
 }

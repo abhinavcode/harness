@@ -405,20 +405,38 @@ func (l *localBase) postUploadArtifact(
 	metadata metadata.Metadata,
 	fileInfo types.FileInfo,
 ) (int64, error) {
+	// Check if registry is soft deleted
+	if registry.DeletedAt != nil {
+		return 0, fmt.Errorf("cannot upload to soft-deleted registry: %s", registry.Name)
+	}
+
 	var artifactID int64
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
+			// Check if image already exists and is soft-deleted
+			existingImage, err := l.imageDao.GetByName(ctx, registry.ID, info.Image, types.SoftDeleteFilterAll)
+			if err == nil && existingImage.DeletedAt != nil {
+				return fmt.Errorf("cannot upload to soft-deleted image: %s", info.Image)
+			}
+
 			image := &types.Image{
 				Name:       info.Image,
 				RegistryID: registry.ID,
 				Enabled:    true,
 			}
-			err := l.imageDao.CreateOrUpdate(ctx, image)
+			err = l.imageDao.CreateOrUpdate(ctx, image)
 			if err != nil {
 				return fmt.Errorf("failed to create image for artifact: [%s], error: %w", info.Image, err)
 			}
 
-			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterExcludeDeleted)
+			// Check if artifact version already exists and is soft-deleted
+			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterAll)
+			if err == nil && dbArtifact.DeletedAt != nil {
+				return fmt.Errorf("cannot upload to soft-deleted artifact version: %s", version)
+			}
+
+			// Fetch artifact without soft-deleted ones for metadata update
+			dbArtifact, err = l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterExcludeDeleted)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				return fmt.Errorf("failed to fetch artifact : [%s] with error: %w", info.Image, err)

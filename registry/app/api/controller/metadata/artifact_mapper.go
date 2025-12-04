@@ -805,6 +805,14 @@ func GetRPMArtifactDetail(
 func GetArtifactSummary(artifact types.ImageMetadata) *artifactapi.ArtifactSummaryResponseJSONResponse {
 	createdAt := GetTimeInMs(artifact.CreatedAt)
 	modifiedAt := GetTimeInMs(artifact.ModifiedAt)
+	
+	// Handle soft delete fields
+	var deletedAt *int64
+	if artifact.DeletedAt != nil {
+		millis := artifact.DeletedAt.UnixMilli()
+		deletedAt = &millis
+	}
+	
 	artifactVersionSummary := &artifactapi.ArtifactSummary{
 		CreatedAt:      &createdAt,
 		ModifiedAt:     &modifiedAt,
@@ -812,6 +820,8 @@ func GetArtifactSummary(artifact types.ImageMetadata) *artifactapi.ArtifactSumma
 		ImageName:      artifact.Name,
 		PackageType:    artifact.PackageType,
 		ArtifactType:   artifact.ArtifactType,
+		DeletedAt:      deletedAt,
+		IsDeleted:      &artifact.IsDeleted,
 	}
 	response := &artifactapi.ArtifactSummaryResponseJSONResponse{
 		Data:   *artifactVersionSummary,

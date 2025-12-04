@@ -322,12 +322,18 @@ type ArtifactStats struct {
 // ArtifactSummary Harness Artifact Summary
 type ArtifactSummary struct {
 	// ArtifactType refers to artifact type
-	ArtifactType   *ArtifactType `json:"artifactType,omitempty"`
-	CreatedAt      *string       `json:"createdAt,omitempty"`
-	DownloadsCount *int64        `json:"downloadsCount,omitempty"`
-	ImageName      string        `json:"imageName"`
-	Labels         *[]string     `json:"labels,omitempty"`
-	ModifiedAt     *string       `json:"modifiedAt,omitempty"`
+	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
+	CreatedAt    *string       `json:"createdAt,omitempty"`
+
+	// DeletedAt Timestamp when the artifact (image) was soft deleted (Unix milliseconds). Null if not deleted.
+	DeletedAt      *int64 `json:"deletedAt,omitempty"`
+	DownloadsCount *int64 `json:"downloadsCount,omitempty"`
+	ImageName      string `json:"imageName"`
+
+	// IsDeleted Indicates if the artifact (image) is soft deleted
+	IsDeleted  *bool     `json:"isDeleted,omitempty"`
+	Labels     *[]string `json:"labels,omitempty"`
+	ModifiedAt *string   `json:"modifiedAt,omitempty"`
 
 	// PackageType refers to package
 	PackageType PackageType `json:"packageType"`
@@ -825,13 +831,19 @@ type Registry struct {
 	CleanupPolicy  *[]CleanupPolicy `json:"cleanupPolicy,omitempty"`
 
 	// Config SubConfig specific for Virtual or Upstream Registry
-	Config      *RegistryConfig `json:"config,omitempty"`
-	CreatedAt   *string         `json:"createdAt,omitempty"`
-	Description *string         `json:"description,omitempty"`
-	Identifier  string          `json:"identifier"`
-	IsPublic    bool            `json:"isPublic"`
-	Labels      *[]string       `json:"labels,omitempty"`
-	ModifiedAt  *string         `json:"modifiedAt,omitempty"`
+	Config    *RegistryConfig `json:"config,omitempty"`
+	CreatedAt *string         `json:"createdAt,omitempty"`
+
+	// DeletedAt Timestamp when the registry was soft deleted (Unix milliseconds). Null if not deleted.
+	DeletedAt   *int64  `json:"deletedAt,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Identifier  string  `json:"identifier"`
+
+	// IsDeleted Indicates if the registry is soft deleted
+	IsDeleted  *bool     `json:"isDeleted,omitempty"`
+	IsPublic   bool      `json:"isPublic"`
+	Labels     *[]string `json:"labels,omitempty"`
+	ModifiedAt *string   `json:"modifiedAt,omitempty"`
 
 	// PackageType refers to package
 	PackageType PackageType `json:"packageType"`

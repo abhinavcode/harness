@@ -2488,6 +2488,13 @@ components:
           type: string
         isPublic:
           type: boolean
+        deletedAt:
+          type: integer
+          format: int64
+          description: Timestamp when the registry was soft deleted (Unix milliseconds). Null if not deleted.
+        isDeleted:
+          type: boolean
+          description: Indicates if the registry is soft deleted
       required:
         - name
         - identifier
@@ -2877,6 +2884,13 @@ components:
           type: string
         modifiedAt:
           type: string
+        deletedAt:
+          type: integer
+          format: int64
+          description: Timestamp when the artifact (image) was soft deleted (Unix milliseconds). Null if not deleted.
+        isDeleted:
+          type: boolean
+          description: Indicates if the artifact (image) is soft deleted
       required:
         - imageName
         - packageType

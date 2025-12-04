@@ -334,6 +334,13 @@ func (c *APIController) CreateVirtualRepositoryResponse(
 	blockedPattern := registry.BlockedPattern
 	labels := registry.Labels
 
+	// Handle soft delete fields
+	var deletedAt *int64
+	if registry.DeletedAt != nil {
+		millis := registry.DeletedAt.UnixMilli()
+		deletedAt = &millis
+	}
+
 	config := api.RegistryConfig{}
 	_ = config.FromVirtualConfig(api.VirtualConfig{UpstreamProxies: &upstreamProxyKeys})
 	response := &api.RegistryResponseJSONResponse{
@@ -350,6 +357,8 @@ func (c *APIController) CreateVirtualRepositoryResponse(
 			Config:         &config,
 			Labels:         &labels,
 			IsPublic:       isPublic,
+			DeletedAt:      deletedAt,
+			IsDeleted:      &registry.IsDeleted,
 		},
 		Status: api.StatusSUCCESS,
 	}
@@ -369,6 +378,14 @@ func (c *APIController) CreateUpstreamProxyResponseJSONResponse(
 	modifiedAt := GetTimeInMs(upstreamproxy.UpdatedAt)
 	allowedPattern := upstreamproxy.AllowedPattern
 	blockedPattern := upstreamproxy.BlockedPattern
+	
+	// Handle soft delete fields from upstream proxy
+	var deletedAt *int64
+	if upstreamproxy.DeletedAt != nil {
+		millis := upstreamproxy.DeletedAt.UnixMilli()
+		deletedAt = &millis
+	}
+	
 	configAuth := &api.UpstreamConfig_Auth{}
 
 	if api.AuthType(upstreamproxy.RepoAuthType) == api.AuthTypeUserPassword {
@@ -417,6 +434,8 @@ func (c *APIController) CreateUpstreamProxyResponseJSONResponse(
 			ModifiedAt:     &modifiedAt,
 			Config:         registryConfig,
 			IsPublic:       isPublic,
+			DeletedAt:      deletedAt,
+			IsDeleted:      &upstreamproxy.IsDeleted,
 		},
 		Status: api.StatusSUCCESS,
 	}

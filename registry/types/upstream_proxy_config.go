@@ -64,4 +64,7 @@ type UpstreamProxy struct {
 	UpdatedAt                time.Time
 	CreatedBy                int64
 	UpdatedBy                int64
+	DeletedAt                *time.Time
+	DeletedBy                int64
+	IsDeleted                bool
 }
