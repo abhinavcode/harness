@@ -2490,9 +2490,9 @@ components:
         isPublic:
           type: boolean
         deletedAt:
-          type: integer
-          format: int64
-          description: Timestamp when the registry was soft deleted (Unix milliseconds). Null if not deleted.
+          type: string
+          format: date-time
+          description: Timestamp when the registry was soft deleted. Null if not deleted.
         isDeleted:
           type: boolean
           description: Indicates if the registry is soft deleted
@@ -2886,9 +2886,9 @@ components:
         modifiedAt:
           type: string
         deletedAt:
-          type: integer
-          format: int64
-          description: Timestamp when the artifact (image) was soft deleted (Unix milliseconds). Null if not deleted.
+          type: string
+          format: date-time
+          description: Timestamp when the artifact (image) was soft deleted. Null if not deleted.
         isDeleted:
           type: boolean
           description: Indicates if the artifact (image) is soft deleted
@@ -2912,9 +2912,9 @@ components:
         artifactType:
           $ref: "#/components/schemas/ArtifactType"
         deletedAt:
-          type: integer
-          format: int64
-          description: Timestamp when the artifact was soft deleted (Unix milliseconds). Null if not deleted.
+          type: string
+          format: date-time
+          description: Timestamp when the artifact was soft deleted. Null if not deleted.
         isDeleted:
           type: boolean
           description: Indicates if the artifact version is soft deleted

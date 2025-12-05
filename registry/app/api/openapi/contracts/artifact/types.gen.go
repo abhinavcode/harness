@@ -339,10 +339,10 @@ type ArtifactSummary struct {
 	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
 	CreatedAt    *string       `json:"createdAt,omitempty"`
 
-	// DeletedAt Timestamp when the artifact (image) was soft deleted (Unix milliseconds). Null if not deleted.
-	DeletedAt      *int64 `json:"deletedAt,omitempty"`
-	DownloadsCount *int64 `json:"downloadsCount,omitempty"`
-	ImageName      string `json:"imageName"`
+	// DeletedAt Timestamp when the artifact (image) was soft deleted. Null if not deleted.
+	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
+	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
+	ImageName      string     `json:"imageName"`
 
 	// IsDeleted Indicates if the artifact (image) is soft deleted
 	IsDeleted  *bool     `json:"isDeleted,omitempty"`
@@ -384,9 +384,9 @@ type ArtifactVersionSummary struct {
 	// ArtifactType refers to artifact type
 	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
 
-	// DeletedAt Timestamp when the artifact was soft deleted (Unix milliseconds). Null if not deleted.
-	DeletedAt *int64 `json:"deletedAt,omitempty"`
-	ImageName string `json:"imageName"`
+	// DeletedAt Timestamp when the artifact was soft deleted. Null if not deleted.
+	DeletedAt *time.Time `json:"deletedAt,omitempty"`
+	ImageName string     `json:"imageName"`
 
 	// IsDeleted Indicates if the artifact version is soft deleted
 	IsDeleted     *bool `json:"isDeleted,omitempty"`
@@ -848,10 +848,10 @@ type Registry struct {
 	Config    *RegistryConfig `json:"config,omitempty"`
 	CreatedAt *string         `json:"createdAt,omitempty"`
 
-	// DeletedAt Timestamp when the registry was soft deleted (Unix milliseconds). Null if not deleted.
-	DeletedAt   *int64  `json:"deletedAt,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Identifier  string  `json:"identifier"`
+	// DeletedAt Timestamp when the registry was soft deleted. Null if not deleted.
+	DeletedAt   *time.Time `json:"deletedAt,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	Identifier  string     `json:"identifier"`
 
 	// IsDeleted Indicates if the registry is soft deleted
 	IsDeleted  *bool     `json:"isDeleted,omitempty"`

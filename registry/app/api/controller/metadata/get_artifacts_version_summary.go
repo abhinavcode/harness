@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
@@ -53,7 +54,7 @@ func (c *APIController) GetArtifactVersionSummary(
 func (c *APIController) FetchArtifactSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
-) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, *int64, bool, error) {
+) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, *time.Time, bool, error) {
 	regInfo, err := c.RegistryMetadataHelper.GetRegistryRequestBaseInfo(ctx, "", string(r.RegistryRef))
 
 	if err != nil {
@@ -133,11 +134,13 @@ func (c *APIController) FetchArtifactSummary(
 
 		// For OCI artifacts, check if artifact or image is deleted
 		isDeleted := ociVersion.ArtifactDeletedAt != nil || ociVersion.ImageDeletedAt != nil || ociVersion.RegistryDeletedAt != nil
-		var deletedAt *int64
+		var deletedAt *time.Time
 		if ociVersion.ArtifactDeletedAt != nil {
-			deletedAt = ociVersion.ArtifactDeletedAt
+			timestamp := time.UnixMilli(*ociVersion.ArtifactDeletedAt)
+			deletedAt = &timestamp
 		} else if ociVersion.ImageDeletedAt != nil {
-			deletedAt = ociVersion.ImageDeletedAt
+			timestamp := time.UnixMilli(*ociVersion.ImageDeletedAt)
+			deletedAt = &timestamp
 		}
 
 		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt, isDeleted, nil
@@ -149,13 +152,8 @@ func (c *APIController) FetchArtifactSummary(
 		return "", "", "", false, "", nil, nil, false, err
 	}
 
-	// Check if artifact is soft deleted and convert DeletedAt to Unix milliseconds
+	// Check if artifact is soft deleted
 	isDeleted := metadata.DeletedAt != nil
-	var deletedAtMillis *int64
-	if metadata.DeletedAt != nil {
-		millis := metadata.DeletedAt.UnixMilli()
-		deletedAtMillis = &millis
-	}
 
-	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason, metadata.ArtifactType, deletedAtMillis, isDeleted, nil
+	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason, metadata.ArtifactType, metadata.DeletedAt, isDeleted, nil
 }

@@ -1521,7 +1521,7 @@ func (a ArtifactDao) GetArtifactMetadata(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
 				" AND i.image_name = ? AND a.artifact_version = ?", id, identifier, image, version,
 		).
-		GroupBy("r.registry_package_type, a.artifact_version, a.artifact_updated_at, "+
+		GroupBy("r.registry_package_type, a.artifact_version, a.artifact_updated_at, " +
 			"a.artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at")
 
 	if artifactType != nil && *artifactType != "" {
