@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -302,9 +301,9 @@ type ArtifactMetadata struct {
 	// ArtifactType refers to artifact type
 	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
 
-	// DeletedAt Timestamp when the artifact was soft-deleted
-	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
-	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
+	// DeletedAt Timestamp in milliseconds when the artifact was soft-deleted
+	DeletedAt      *string `json:"deletedAt,omitempty"`
+	DownloadsCount *int64  `json:"downloadsCount,omitempty"`
 
 	// IsDeleted True if the artifact, its parent image, or registry is soft-deleted (cascade)
 	IsDeleted     bool      `json:"isDeleted"`
@@ -339,10 +338,10 @@ type ArtifactSummary struct {
 	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
 	CreatedAt    *string       `json:"createdAt,omitempty"`
 
-	// DeletedAt Timestamp when the artifact (image) was soft deleted. Null if not deleted.
-	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
-	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
-	ImageName      string     `json:"imageName"`
+	// DeletedAt Timestamp in milliseconds when the artifact (image) was soft deleted. Null if not deleted.
+	DeletedAt      *string `json:"deletedAt,omitempty"`
+	DownloadsCount *int64  `json:"downloadsCount,omitempty"`
+	ImageName      string  `json:"imageName"`
 
 	// IsDeleted Indicates if the artifact (image) is soft deleted
 	IsDeleted  *bool     `json:"isDeleted,omitempty"`
@@ -384,9 +383,9 @@ type ArtifactVersionSummary struct {
 	// ArtifactType refers to artifact type
 	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
 
-	// DeletedAt Timestamp when the artifact was soft deleted. Null if not deleted.
-	DeletedAt *time.Time `json:"deletedAt,omitempty"`
-	ImageName string     `json:"imageName"`
+	// DeletedAt Timestamp in milliseconds when the artifact was soft deleted. Null if not deleted.
+	DeletedAt *string `json:"deletedAt,omitempty"`
+	ImageName string  `json:"imageName"`
 
 	// IsDeleted Indicates if the artifact version is soft deleted
 	IsDeleted     *bool `json:"isDeleted,omitempty"`
@@ -848,10 +847,10 @@ type Registry struct {
 	Config    *RegistryConfig `json:"config,omitempty"`
 	CreatedAt *string         `json:"createdAt,omitempty"`
 
-	// DeletedAt Timestamp when the registry was soft deleted. Null if not deleted.
-	DeletedAt   *time.Time `json:"deletedAt,omitempty"`
-	Description *string    `json:"description,omitempty"`
-	Identifier  string     `json:"identifier"`
+	// DeletedAt Timestamp in milliseconds when the registry was soft deleted. Null if not deleted.
+	DeletedAt   *string `json:"deletedAt,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Identifier  string  `json:"identifier"`
 
 	// IsDeleted Indicates if the registry is soft deleted
 	IsDeleted  *bool     `json:"isDeleted,omitempty"`
@@ -869,9 +868,9 @@ type RegistryArtifactMetadata struct {
 	// ArtifactType refers to artifact type
 	ArtifactType *ArtifactType `json:"artifactType,omitempty"`
 
-	// DeletedAt Timestamp when the package (image) was soft-deleted
-	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
-	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
+	// DeletedAt Timestamp in milliseconds when the package (image) was soft-deleted
+	DeletedAt      *string `json:"deletedAt,omitempty"`
+	DownloadsCount *int64  `json:"downloadsCount,omitempty"`
 
 	// IsDeleted True if the package or its parent registry is soft-deleted (cascade)
 	IsDeleted     bool      `json:"isDeleted"`
@@ -899,11 +898,11 @@ type RegistryConfig struct {
 type RegistryMetadata struct {
 	ArtifactsCount *int64 `json:"artifactsCount,omitempty"`
 
-	// DeletedAt Timestamp when the registry was soft-deleted
-	DeletedAt      *time.Time `json:"deletedAt,omitempty"`
-	Description    *string    `json:"description,omitempty"`
-	DownloadsCount *int64     `json:"downloadsCount,omitempty"`
-	Identifier     string     `json:"identifier"`
+	// DeletedAt Timestamp in milliseconds when the registry was soft-deleted
+	DeletedAt      *string `json:"deletedAt,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	DownloadsCount *int64  `json:"downloadsCount,omitempty"`
+	Identifier     string  `json:"identifier"`
 
 	// IsDeleted True if the registry is soft-deleted
 	IsDeleted    bool      `json:"isDeleted"`

@@ -330,6 +330,11 @@ func (c *APIController) CreateVirtualRepositoryResponse(
 	}
 	createdAt := GetTimeInMs(registry.CreatedAt)
 	modifiedAt := GetTimeInMs(registry.UpdatedAt)
+	var deletedAt *string
+	if registry.DeletedAt != nil {
+		d := GetTimeInMs(*registry.DeletedAt)
+		deletedAt = &d
+	}
 	allowedPattern := registry.AllowedPattern
 	blockedPattern := registry.BlockedPattern
 	labels := registry.Labels
@@ -350,7 +355,7 @@ func (c *APIController) CreateVirtualRepositoryResponse(
 			Config:         &config,
 			Labels:         &labels,
 			IsPublic:       isPublic,
-			DeletedAt:      registry.DeletedAt,
+			DeletedAt:      deletedAt,
 			IsDeleted:      &registry.IsDeleted,
 		},
 		Status: api.StatusSUCCESS,
@@ -369,6 +374,11 @@ func (c *APIController) CreateUpstreamProxyResponseJSONResponse(
 	}
 	createdAt := GetTimeInMs(upstreamproxy.CreatedAt)
 	modifiedAt := GetTimeInMs(upstreamproxy.UpdatedAt)
+	var deletedAt *string
+	if upstreamproxy.DeletedAt != nil {
+		d := GetTimeInMs(*upstreamproxy.DeletedAt)
+		deletedAt = &d
+	}
 	allowedPattern := upstreamproxy.AllowedPattern
 	blockedPattern := upstreamproxy.BlockedPattern
 
@@ -420,7 +430,7 @@ func (c *APIController) CreateUpstreamProxyResponseJSONResponse(
 			ModifiedAt:     &modifiedAt,
 			Config:         registryConfig,
 			IsPublic:       isPublic,
-			DeletedAt:      upstreamproxy.DeletedAt,
+			DeletedAt:      deletedAt,
 			IsDeleted:      &upstreamproxy.IsDeleted,
 		},
 		Status: api.StatusSUCCESS,

@@ -2221,8 +2221,7 @@ components:
           type: boolean
         deletedAt:
           type: string
-          format: date-time
-          description: Timestamp when the registry was soft-deleted
+          description: Timestamp in milliseconds when the registry was soft-deleted
         isDeleted:
           type: boolean
           description: True if the registry is soft-deleted
@@ -2342,8 +2341,7 @@ components:
           $ref: "#/components/schemas/ArtifactEntityMetadata"
         deletedAt:
           type: string
-          format: date-time
-          description: Timestamp when the artifact was soft-deleted
+          description: Timestamp in milliseconds when the artifact was soft-deleted
         isDeleted:
           type: boolean
           description: True if the artifact, its parent image, or registry is soft-deleted (cascade)
@@ -2385,8 +2383,7 @@ components:
           $ref: "#/components/schemas/ArtifactType"
         deletedAt:
           type: string
-          format: date-time
-          description: Timestamp when the package (image) was soft-deleted
+          description: Timestamp in milliseconds when the package (image) was soft-deleted
         isDeleted:
           type: boolean
           description: True if the package or its parent registry is soft-deleted (cascade)
@@ -2491,8 +2488,7 @@ components:
           type: boolean
         deletedAt:
           type: string
-          format: date-time
-          description: Timestamp when the registry was soft deleted. Null if not deleted.
+          description: Timestamp in milliseconds when the registry was soft deleted. Null if not deleted.
         isDeleted:
           type: boolean
           description: Indicates if the registry is soft deleted
@@ -2887,8 +2883,7 @@ components:
           type: string
         deletedAt:
           type: string
-          format: date-time
-          description: Timestamp when the artifact (image) was soft deleted. Null if not deleted.
+          description: Timestamp in milliseconds when the artifact (image) was soft deleted. Null if not deleted.
         isDeleted:
           type: boolean
           description: Indicates if the artifact (image) is soft deleted
@@ -2913,8 +2908,7 @@ components:
           $ref: "#/components/schemas/ArtifactType"
         deletedAt:
           type: string
-          format: date-time
-          description: Timestamp when the artifact was soft deleted. Null if not deleted.
+          description: Timestamp in milliseconds when the artifact was soft deleted. Null if not deleted.
         isDeleted:
           type: boolean
           description: Indicates if the artifact version is soft deleted

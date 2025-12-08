@@ -221,6 +221,11 @@ func (c *APIController) GetRegistryMetadata(
 	repoMetadataList := []artifact.RegistryMetadata{}
 	for _, reg := range *registryMetadatas {
 		modifiedAt := GetTimeInMs(reg.LastModified)
+		var deletedAt *string
+		if reg.DeletedAt != nil {
+			d := GetTimeInMs(*reg.DeletedAt)
+			deletedAt = &d
+		}
 		var labels *[]string
 		if !commons.IsEmpty(reg.Labels) {
 			temp := []string(reg.Labels)
@@ -264,6 +269,8 @@ func (c *APIController) GetRegistryMetadata(
 			Labels:         labels,
 			Path:           &path,
 			IsPublic:       isPublic,
+			DeletedAt:      deletedAt,
+			IsDeleted:      reg.IsDeleted,
 		}
 		repoMetadataList = append(repoMetadataList, repoMetadata)
 	}

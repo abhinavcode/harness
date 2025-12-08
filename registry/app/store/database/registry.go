@@ -347,6 +347,7 @@ type RegistryMetadataDB struct {
 	Size          int64                 `db:"size"`
 	Labels        sql.NullString        `db:"registry_labels"`
 	Config        sql.NullString        `db:"registry_config"`
+	DeletedAt     *int64                `db:"registry_deleted_at"`
 }
 
 func (r registryDao) GetAll(
@@ -381,7 +382,8 @@ func (r registryDao) GetAll(
 		END AS size,
 		r.registry_labels,
 		r.registry_config,
-		COALESCE(download_stats.download_count, 0) AS download_count
+		COALESCE(download_stats.download_count, 0) AS download_count,
+		r.registry_deleted_at
 	`
 
 	// Subqueries with optimizations for reduced joins and grouping
@@ -956,6 +958,12 @@ func (r registryDao) mapToRegistryMetadata(ctx context.Context, dst *RegistryMet
 		}
 	}
 
+	var deletedAt *time.Time
+	if dst.DeletedAt != nil {
+		t := time.UnixMilli(*dst.DeletedAt)
+		deletedAt = &t
+	}
+
 	return &store.RegistryMetadata{
 		RegID:         dst.RegID,
 		ParentID:      dst.ParentID,
@@ -970,6 +978,8 @@ func (r registryDao) mapToRegistryMetadata(ctx context.Context, dst *RegistryMet
 		Size:          dst.Size,
 		Labels:        util.StringToArr(dst.Labels.String),
 		Config:        config,
+		DeletedAt:     deletedAt,
+		IsDeleted:     dst.DeletedAt != nil,
 	}
 }
 

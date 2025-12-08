@@ -399,6 +399,8 @@ type RegistryMetadata struct {
 	ArtifactCount int64
 	DownloadCount int64
 	Size          int64
+	DeletedAt     *time.Time
+	IsDeleted     bool
 }
 
 type RegistryRepository interface {
