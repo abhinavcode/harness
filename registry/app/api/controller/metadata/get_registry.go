@@ -23,6 +23,8 @@ import (
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types/enum"
+
+	"github.com/rs/zerolog/log"
 )
 
 func (c *APIController) GetRegistry(
@@ -61,10 +63,15 @@ func (c *APIController) GetRegistry(
 			),
 		}, nil
 	}
-	repoEntity, _ := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("Failed to get registry by parent ID and name")
+		return throwGetRegistry500Error(err), nil
+	}
 	if string(repoEntity.Type) == string(artifact.RegistryTypeVIRTUAL) {
 		cleanupPolicies, err := c.CleanupPolicyStore.GetByRegistryID(ctx, repoEntity.ID)
 		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msg("Failed to get cleanup policies")
 			return throwGetRegistry500Error(err), nil
 		}
 		if len(repoEntity.Name) == 0 {
