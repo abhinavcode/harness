@@ -202,7 +202,8 @@ func (i ImageDao) RestoreByImageNameAndRegID(ctx context.Context, regID int64, i
 		Set("image_deleted_by", nil).
 		Set("image_updated_at", time.Now().UnixMilli()).
 		Set("image_updated_by", userID).
-		Where("image_registry_id = ? AND image_name = ? AND image_deleted_at IS NOT NULL", regID, image)
+		Where("image_registry_id = ? AND image_name = ? AND image_deleted_at IS NOT NULL", regID, image).
+		Where("EXISTS (SELECT 1 FROM registries r WHERE r.registry_id = image_registry_id AND r.registry_deleted_at IS NULL)")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {

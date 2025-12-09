@@ -514,7 +514,9 @@ func (a ArtifactDao) RestoreByVersionAndImageName(
 		Where("i.image_registry_id = ?", regID).
 		Where("i.image_name = ?", image).
 		Where("a.artifact_version = ?", version).
-		Where("a.artifact_deleted_at IS NOT NULL")
+		Where("a.artifact_deleted_at IS NOT NULL").
+		Where("i.image_deleted_at IS NULL").
+		Where("EXISTS (SELECT 1 FROM registries r WHERE r.registry_id = i.image_registry_id AND r.registry_deleted_at IS NULL)")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {
