@@ -16,7 +16,7 @@
 
 import type { IconName } from '@harnessio/icons'
 
-import type { FeatureFlags } from '@ar/MFEAppTypes'
+import { FeatureFlags } from '@ar/MFEAppTypes'
 import type { StringsMap } from '@ar/frameworks/strings'
 import { Parent, RepositoryPackageType } from '@ar/common/types'
 import { ThumbnailTagEnum } from '@ar/components/Tag/ThumbnailTags'
@@ -118,8 +118,17 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
     label: 'repositoryTypes.dart',
     value: RepositoryPackageType.DART,
     icon: 'dart-icon',
-    tag: ThumbnailTagEnum.Beta,
     parent: Parent.Enterprise
+  },
+  {
+    label: 'repositoryTypes.composer',
+    value: RepositoryPackageType.COMPOSER,
+    icon: 'php-composer-logo',
+    tooltip: 'Coming Soon!',
+    disabled: true,
+    tag: ThumbnailTagEnum.ComingSoon,
+    parent: Parent.Enterprise,
+    featureFlag: FeatureFlags.HAR_COMPOSER_PACKAGE_TYPE
   },
   {
     label: 'repositoryTypes.debian',

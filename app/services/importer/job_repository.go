@@ -53,10 +53,10 @@ type RepositoryInput struct {
 	Input
 }
 
-const jobRepositoryType = "repository_import"
+const jobTypeRepositoryImport = "repository_import"
 
 func (r *JobRepository) Register(executor *job.Executor) error {
-	return executor.Register(jobRepositoryType, r)
+	return executor.Register(jobTypeRepositoryImport, r)
 }
 
 // Run starts a background job that imports the provided repository from the provided clone URL.
@@ -154,7 +154,7 @@ func (r *JobRepository) getJobDef(jobUID string, input RepositoryInput) (job.Def
 
 	return job.Definition{
 		UID:        jobUID,
-		Type:       jobRepositoryType,
+		Type:       jobTypeRepositoryImport,
 		MaxRetries: importJobMaxRetries,
 		Timeout:    importJobMaxDuration,
 		Data:       base64.StdEncoding.EncodeToString(encryptedData),
