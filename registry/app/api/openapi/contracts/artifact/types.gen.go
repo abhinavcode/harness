@@ -530,8 +530,9 @@ type Error struct {
 
 // ExtraHeader Webhook Extra Header
 type ExtraHeader struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key    string `json:"key"`
+	Masked *bool  `json:"masked,omitempty"`
+	Value  string `json:"value"`
 }
 
 // FileDetail File Detail
@@ -935,7 +936,7 @@ type RegistryRequest struct {
 
 	// PackageType refers to package
 	PackageType PackageType `json:"packageType"`
-	ParentRef   *string     `json:"parentRef,omitempty"`
+	ParentRef   string      `json:"parentRef"`
 }
 
 // RegistryType refers to type of registry i.e virtual or upstream
@@ -1192,6 +1193,9 @@ type RecursiveParam bool
 
 // RegistryRefPathParam defines model for registryRefPathParam.
 type RegistryRefPathParam string
+
+// RequiredSpaceRefQueryParam defines model for requiredSpaceRefQueryParam.
+type RequiredSpaceRefQueryParam string
 
 // ScopeParam defines model for scopeParam.
 type ScopeParam string
@@ -1515,8 +1519,8 @@ type QuarantinePathResponse struct {
 
 // CreateRegistryParams defines parameters for CreateRegistry.
 type CreateRegistryParams struct {
-	// SpaceRef Unique path identifier for the final space in the branch. The value can be provided either as a fully URL-encoded path (e.g., `organization%2Fproject`) or as a plain path ending with a trailing plus sign (`+`) as separator (e.g., `organization/project/+`).
-	SpaceRef *SpaceRefQueryParam `form:"space_ref,omitempty" json:"space_ref,omitempty"`
+	// SpaceRef Unique path identifier for the final space in the branch (required for registry creation). The value can be provided either as a fully URL-encoded path (e.g., `organization%2Fproject`) or as a plain path ending with a trailing plus sign (`+`) as separator (e.g., `organization/project/+`).
+	SpaceRef RequiredSpaceRefQueryParam `form:"space_ref" json:"space_ref"`
 }
 
 // ListArtifactLabelsParams defines parameters for ListArtifactLabels.
