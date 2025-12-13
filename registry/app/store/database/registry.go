@@ -380,148 +380,9 @@ func (r registryDao) GetAll(
 		r.registry_updated_at AS last_modified, 
 		COALESCE(u.upstream_proxy_config_url, '') AS url,
 		r.registry_config,
-<<<<<<< HEAD
-		COALESCE(download_stats.download_count, 0) AS download_count,
+		r.registry_labels,
 		r.registry_deleted_at
 	`
-
-	// Subqueries with optimizations for reduced joins and grouping
-	// Apply soft delete filtering based on softDeleteFilter
-	var artifactCountSubquery string
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
-		artifactCountSubquery = `
-			SELECT i.image_registry_id, COUNT(i.image_id) AS count
-			FROM images i
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterExcludeDeleted:
-		artifactCountSubquery = `
-			SELECT i.image_registry_id, COUNT(i.image_id) AS count
-			FROM images i
-			JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE i.image_deleted_at IS NULL
-			  AND r.registry_deleted_at IS NULL
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterOnlyDeleted:
-		artifactCountSubquery = `
-			SELECT i.image_registry_id, COUNT(i.image_id) AS count
-			FROM images i
-			JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE (i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)
-			GROUP BY 1
-		`
-	}
-
-	// Apply soft delete filtering to blob sizes with cascade logic
-	var blobSizesSubquery string
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
-		blobSizesSubquery = `
-			SELECT rblob_registry_id AS rblob_registry_id, SUM(b.blob_size) AS total_size
-			FROM registry_blobs rb
-			JOIN blobs b ON rb.rblob_blob_id = b.blob_id
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterExcludeDeleted:
-		blobSizesSubquery = `
-			SELECT rb.rblob_registry_id AS rblob_registry_id, SUM(b.blob_size) AS total_size
-			FROM registry_blobs rb
-			JOIN blobs b ON rb.rblob_blob_id = b.blob_id
-			JOIN registries r ON rb.rblob_registry_id = r.registry_id
-			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
-			WHERE r.registry_deleted_at IS NULL
-			  AND (rb.rblob_image_name IS NULL OR i.image_deleted_at IS NULL)
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterOnlyDeleted:
-		blobSizesSubquery = `
-			SELECT rb.rblob_registry_id AS rblob_registry_id, SUM(b.blob_size) AS total_size
-			FROM registry_blobs rb
-			JOIN blobs b ON rb.rblob_blob_id = b.blob_id
-			JOIN registries r ON rb.rblob_registry_id = r.registry_id
-			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
-			WHERE (r.registry_deleted_at IS NOT NULL OR (rb.rblob_image_name IS NOT NULL AND i.image_deleted_at IS NOT NULL))
-			GROUP BY 1
-		`
-	}
-
-	// Apply soft delete filtering to generic blob sizes - cascade from registry only
-	var genericBlobSizesSubquery string
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
-		genericBlobSizesSubquery = `
-			SELECT node_registry_id AS node_registry_id, SUM(gb.generic_blob_size) AS total_size
-			FROM nodes n
-			JOIN generic_blobs gb ON n.node_is_file = TRUE AND gb.generic_blob_id = n.node_generic_blob_id
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterExcludeDeleted:
-		genericBlobSizesSubquery = `
-			SELECT n.node_registry_id AS node_registry_id, SUM(gb.generic_blob_size) AS total_size
-			FROM nodes n
-			JOIN generic_blobs gb ON n.node_is_file = TRUE AND gb.generic_blob_id = n.node_generic_blob_id
-			JOIN registries r ON n.node_registry_id = r.registry_id
-			LEFT JOIN images i ON i.image_registry_id = n.node_registry_id AND i.image_name = SPLIT_PART(n.node_path, '/', 2)
-			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
-			WHERE r.registry_deleted_at IS NULL
-			  AND (i.image_id IS NULL OR (i.image_deleted_at IS NULL AND (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL)))
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterOnlyDeleted:
-		genericBlobSizesSubquery = `
-			SELECT n.node_registry_id AS node_registry_id, SUM(gb.generic_blob_size) AS total_size
-			FROM nodes n
-			JOIN generic_blobs gb ON n.node_is_file = TRUE AND gb.generic_blob_id = n.node_generic_blob_id
-			JOIN registries r ON n.node_registry_id = r.registry_id
-			WHERE r.registry_deleted_at IS NOT NULL
-			GROUP BY 1
-		`
-	}
-	// Apply soft delete filtering to download stats with cascade logic
-	var downloadStatsSubquery string
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
-		downloadStatsSubquery = `
-			SELECT i.image_registry_id AS registry_id, COUNT(d.download_stat_id) AS download_count
-			FROM download_stats d
-			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
-			JOIN images i ON a.artifact_image_id = i.image_id
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterExcludeDeleted:
-		downloadStatsSubquery = `
-			SELECT i.image_registry_id AS registry_id, COUNT(d.download_stat_id) AS download_count
-			FROM download_stats d
-			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
-			JOIN images i ON a.artifact_image_id = i.image_id
-			JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE a.artifact_deleted_at IS NULL
-			  AND i.image_deleted_at IS NULL
-			  AND r.registry_deleted_at IS NULL
-			GROUP BY 1
-		`
-	case types.SoftDeleteFilterOnlyDeleted:
-		downloadStatsSubquery = `
-			SELECT i.image_registry_id AS registry_id, COUNT(d.download_stat_id) AS download_count
-			FROM download_stats d
-			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
-			JOIN images i ON a.artifact_image_id = i.image_id
-			JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE (a.artifact_deleted_at IS NOT NULL 
-			   OR i.image_deleted_at IS NOT NULL 
-			   OR r.registry_deleted_at IS NOT NULL)
-			GROUP BY 1
-		`
-	}
-=======
-		r.registry_labels,
-		0 AS artifact_count,
-		0 AS size,
-		0 AS download_count
-	`
->>>>>>> a3bf05091cc60024c93fd6d33d0543120141265f
 
 	var query sq.SelectBuilder
 	query = databaseg.Builder.
@@ -530,7 +391,6 @@ func (r registryDao) GetAll(
 		LeftJoin("upstream_proxy_configs u ON r.registry_id = u.upstream_proxy_config_registry_id").
 		Where(sq.Eq{"r.registry_parent_id": parentIDs})
 
-<<<<<<< HEAD
 	// Apply soft delete filter for registries
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExcludeDeleted:
@@ -541,8 +401,6 @@ func (r registryDao) GetAll(
 		// No filter - include all
 	}
 
-=======
->>>>>>> a3bf05091cc60024c93fd6d33d0543120141265f
 	// Apply search filter
 	if search != "" {
 		query = query.Where("r.registry_name LIKE ?", "%"+search+"%")
@@ -601,23 +459,23 @@ func (r registryDao) GetAll(
 		registryIDStrings[i] = reg.RegID
 	}
 
-	// Fetch aggregate data sequentially
-	artifactCounts, err := r.fetchArtifactCounts(ctx, registryIDs)
+	// Fetch aggregate data sequentially with soft delete filtering
+	artifactCounts, err := r.fetchArtifactCounts(ctx, registryIDs, softDeleteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch artifact counts: %w", err)
 	}
 
-	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs)
+	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs, softDeleteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OCI blob sizes: %w", err)
 	}
 
-	genericSizes, err := r.fetchGenericBlobSizes(ctx, registryIDs)
+	genericSizes, err := r.fetchGenericBlobSizes(ctx, registryIDs, softDeleteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch generic blob sizes: %w", err)
 	}
 
-	downloadCounts, err := r.fetchDownloadCounts(ctx, registryIDs)
+	downloadCounts, err := r.fetchDownloadCounts(ctx, registryIDs, softDeleteFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch download counts: %w", err)
 	}
@@ -648,20 +506,41 @@ func (r registryDao) GetAll(
 	return r.mapToRegistryMetadataList(ctx, dst)
 }
 
-<<<<<<< HEAD
-=======
-// fetchArtifactCounts fetches artifact counts for given registry IDs.
-func (r registryDao) fetchArtifactCounts(ctx context.Context, registryIDs []int64) (map[int64]int64, error) {
+// fetchArtifactCounts fetches artifact counts for given registry IDs with soft delete filtering.
+func (r registryDao) fetchArtifactCounts(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
-	query := `
-		SELECT image_registry_id, COUNT(images.image_id) AS count
-		FROM images
-		WHERE image_registry_id IN (?) AND image_enabled = TRUE
-		GROUP BY image_registry_id
-	`
+	var query string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterAll:
+		query = `
+			SELECT image_registry_id, COUNT(images.image_id) AS count
+			FROM images
+			WHERE image_registry_id IN (?)
+			GROUP BY image_registry_id
+		`
+	case types.SoftDeleteFilterExcludeDeleted:
+		query = `
+			SELECT i.image_registry_id, COUNT(i.image_id) AS count
+			FROM images i
+			JOIN registries r ON i.image_registry_id = r.registry_id
+			WHERE i.image_registry_id IN (?)
+			  AND i.image_deleted_at IS NULL
+			  AND r.registry_deleted_at IS NULL
+			GROUP BY i.image_registry_id
+		`
+	case types.SoftDeleteFilterOnlyDeleted:
+		query = `
+			SELECT i.image_registry_id, COUNT(i.image_id) AS count
+			FROM images i
+			JOIN registries r ON i.image_registry_id = r.registry_id
+			WHERE i.image_registry_id IN (?)
+			  AND (i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)
+			GROUP BY i.image_registry_id
+		`
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 	sql, args, err := sqlx.In(query, registryIDs)
@@ -687,19 +566,46 @@ func (r registryDao) fetchArtifactCounts(ctx context.Context, registryIDs []int6
 	return counts, nil
 }
 
-// fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs.
-func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64) (map[int64]int64, error) {
+// fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs with soft delete filtering.
+func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
-	query := `
-		SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
-		FROM registry_blobs rb
-		LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
-		WHERE rb.rblob_registry_id IN (?)
+	var query string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterAll:
+		query = `
+			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
+			FROM registry_blobs rb
+			LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
+			WHERE rb.rblob_registry_id IN (?)
+			GROUP BY rb.rblob_registry_id
+		`
+	case types.SoftDeleteFilterExcludeDeleted:
+		query = `
+			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
+			FROM registry_blobs rb
+			LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
+			JOIN registries r ON rb.rblob_registry_id = r.registry_id
+			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
+			WHERE rb.rblob_registry_id IN (?)
+			  AND r.registry_deleted_at IS NULL
+			  AND (rb.rblob_image_name IS NULL OR i.image_deleted_at IS NULL)
+			GROUP BY rb.rblob_registry_id
+		`
+	case types.SoftDeleteFilterOnlyDeleted:
+		query = `
+			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
+			FROM registry_blobs rb
+			LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
+			JOIN registries r ON rb.rblob_registry_id = r.registry_id
+			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
+			WHERE rb.rblob_registry_id IN (?)
+			  AND (r.registry_deleted_at IS NOT NULL OR (rb.rblob_image_name IS NOT NULL AND i.image_deleted_at IS NOT NULL))
 		GROUP BY rb.rblob_registry_id
-	`
+		`
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 	sql, args, err := sqlx.In(query, registryIDs)
@@ -725,20 +631,49 @@ func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64)
 	return sizes, nil
 }
 
-// fetchGenericBlobSizes fetches generic blob sizes for given registry IDs.
-func (r registryDao) fetchGenericBlobSizes(ctx context.Context, registryIDs []int64) (map[int64]int64, error) {
+// fetchGenericBlobSizes fetches generic blob sizes for given registry IDs with soft delete filtering.
+func (r registryDao) fetchGenericBlobSizes(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
-	query := `
-		SELECT nodes.node_registry_id, COALESCE(SUM(generic_blobs.generic_blob_size), 0) AS total_size
-		FROM nodes
-		LEFT JOIN generic_blobs ON generic_blob_id = nodes.node_generic_blob_id
-		WHERE node_is_file AND generic_blob_id IS NOT NULL
-		  AND node_registry_id IN (?)
-		GROUP BY nodes.node_registry_id
-	`
+	var query string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterAll:
+		query = `
+			SELECT nodes.node_registry_id, COALESCE(SUM(generic_blobs.generic_blob_size), 0) AS total_size
+			FROM nodes
+			LEFT JOIN generic_blobs ON generic_blob_id = nodes.node_generic_blob_id
+			WHERE node_is_file AND generic_blob_id IS NOT NULL
+			  AND node_registry_id IN (?)
+			GROUP BY nodes.node_registry_id
+		`
+	case types.SoftDeleteFilterExcludeDeleted:
+		query = `
+			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
+			FROM nodes n
+			LEFT JOIN generic_blobs gb ON gb.generic_blob_id = n.node_generic_blob_id
+			JOIN registries r ON n.node_registry_id = r.registry_id
+			LEFT JOIN images i ON i.image_registry_id = n.node_registry_id AND i.image_name = SPLIT_PART(n.node_path, '/', 2)
+			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
+			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
+			  AND n.node_registry_id IN (?)
+			  AND r.registry_deleted_at IS NULL
+			  AND (i.image_id IS NULL OR (i.image_deleted_at IS NULL AND (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL)))
+			GROUP BY n.node_registry_id
+		`
+	case types.SoftDeleteFilterOnlyDeleted:
+		query = `
+			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
+			FROM nodes n
+			LEFT JOIN generic_blobs gb ON gb.generic_blob_id = n.node_generic_blob_id
+			JOIN registries r ON n.node_registry_id = r.registry_id
+			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
+			  AND n.node_registry_id IN (?)
+			  AND r.registry_deleted_at IS NOT NULL
+			GROUP BY n.node_registry_id
+		`
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 	sql, args, err := sqlx.In(query, registryIDs)
@@ -764,20 +699,50 @@ func (r registryDao) fetchGenericBlobSizes(ctx context.Context, registryIDs []in
 	return sizes, nil
 }
 
-// fetchDownloadCounts fetches download counts for given registry IDs.
-func (r registryDao) fetchDownloadCounts(ctx context.Context, registryIDs []int64) (map[int64]int64, error) {
+// fetchDownloadCounts fetches download counts for given registry IDs with soft delete filtering.
+func (r registryDao) fetchDownloadCounts(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
-	query := `
-		SELECT i.image_registry_id, COUNT(d.download_stat_id) AS download_count
-		FROM download_stats d
-		LEFT JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
-		LEFT JOIN images i ON a.artifact_image_id = i.image_id
-		WHERE i.image_registry_id IN (?) AND i.image_enabled = TRUE
-		GROUP BY i.image_registry_id
-	`
+	var query string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterAll:
+		query = `
+			SELECT i.image_registry_id, COUNT(d.download_stat_id) AS download_count
+			FROM download_stats d
+			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
+			JOIN images i ON a.artifact_image_id = i.image_id
+			WHERE i.image_registry_id IN (?)
+			GROUP BY i.image_registry_id
+		`
+	case types.SoftDeleteFilterExcludeDeleted:
+		query = `
+			SELECT i.image_registry_id, COUNT(d.download_stat_id) AS download_count
+			FROM download_stats d
+			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
+			JOIN images i ON a.artifact_image_id = i.image_id
+			JOIN registries r ON i.image_registry_id = r.registry_id
+			WHERE i.image_registry_id IN (?)
+			  AND a.artifact_deleted_at IS NULL
+			  AND i.image_deleted_at IS NULL
+			  AND r.registry_deleted_at IS NULL
+			GROUP BY i.image_registry_id
+		`
+	case types.SoftDeleteFilterOnlyDeleted:
+		query = `
+			SELECT i.image_registry_id, COUNT(d.download_stat_id) AS download_count
+			FROM download_stats d
+			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
+			JOIN images i ON a.artifact_image_id = i.image_id
+			JOIN registries r ON i.image_registry_id = r.registry_id
+			WHERE i.image_registry_id IN (?)
+			  AND (a.artifact_deleted_at IS NOT NULL 
+			   OR i.image_deleted_at IS NOT NULL 
+			   OR r.registry_deleted_at IS NOT NULL)
+			GROUP BY i.image_registry_id
+		`
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 	sql, args, err := sqlx.In(query, registryIDs)
@@ -803,42 +768,6 @@ func (r registryDao) fetchDownloadCounts(ctx context.Context, registryIDs []int6
 	return counts, nil
 }
 
-func (r registryDao) CountAll(
-	ctx context.Context, parentIDs []int64,
-	packageTypes []string, search string, repoType string,
-) (int64, error) {
-	stmt := databaseg.Builder.Select("COUNT(*)").
-		From("registries").
-		Where(sq.Eq{"registry_parent_id": parentIDs})
-
-	if !commons.IsEmpty(search) {
-		stmt = stmt.Where("registry_name LIKE ?", "%"+search+"%")
-	}
-
-	if len(packageTypes) > 0 {
-		stmt = stmt.Where(sq.Eq{"registry_package_type": packageTypes})
-	}
-
-	if repoType != "" {
-		stmt = stmt.Where("registry_type = ?", repoType)
-	}
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return -1, errors.Wrap(err, "Failed to convert query to sql")
-	}
-
-	db := dbtx.GetAccessor(ctx, r.db)
-
-	var count int64
-	err = db.QueryRowContext(ctx, sql, args...).Scan(&count)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
-	}
-	return count, nil
-}
-
->>>>>>> a3bf05091cc60024c93fd6d33d0543120141265f
 func (r registryDao) Create(ctx context.Context, registry *types.Registry) (id int64, err error) {
 	const sqlQuery = `
 		INSERT INTO registries ( 
