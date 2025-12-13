@@ -150,7 +150,6 @@ func (c *APIController) GetAllRegistries(
 		regInfo.searchTerm,
 		repoType,
 		registryTypes.SoftDeleteFilterExcludeDeleted,
-		nil,
 	)
 	count, _ = c.RegistryRepository.CountAll(
 		ctx,

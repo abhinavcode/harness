@@ -363,7 +363,6 @@ func (r registryDao) GetAll(
 	search string,
 	repoType string,
 	softDeleteFilter types.SoftDeleteFilter,
-	filters *types.FilterParams,
 ) (repos *[]store.RegistryMetadata, err error) {
 	if limit < 0 || offset < 0 {
 		return nil, fmt.Errorf("limit and offset must be non-negative")

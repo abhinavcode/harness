@@ -204,7 +204,6 @@ func (c *APIController) setUpstreamProxyIDs(
 		"",
 		"",
 		types.SoftDeleteFilterExcludeDeleted,
-		nil,
 	)
 
 	if repos == nil || err != nil {

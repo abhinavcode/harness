@@ -441,7 +441,6 @@ type RegistryRepository interface {
 		search string,
 		repoType string,
 		softDeleteFilter types.SoftDeleteFilter,
-		filters *types.FilterParams,
 	) (repos *[]RegistryMetadata, err error)
 
 	CountAll(
