@@ -71,8 +71,14 @@ func (c *APIController) GetHelmArtifactDetails(
 	version := string(r.Version)
 
 	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterExcludeDeleted)
-
 	if err != nil {
+		if errors.Is(err, store2.ErrResourceNotFound) {
+			return artifact.GetHelmArtifactDetails404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "registry not found"),
+				),
+			}, nil
+		}
 		return artifact.GetHelmArtifactDetails500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),

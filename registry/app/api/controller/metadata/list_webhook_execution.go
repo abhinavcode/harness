@@ -16,6 +16,7 @@ package metadata
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	api "github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/types"
+	"github.com/harness/gitness/store"
 	gitnesstypes "github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
 
@@ -67,6 +69,11 @@ func (c *APIController) ListWebhookExecutions(
 	pageNumber := GetPageNumber(r.Params.Page)
 	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
 	if err != nil {
+		// Note: This endpoint doesn't have a 404 response type in OpenAPI contract
+		// So we return 500 with a descriptive message for both not found and other errors
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return listWebhooksExecutionsInternalErrorResponse(fmt.Errorf("registry not found"))
+		}
 		log.Ctx(ctx).Error().Msgf(listWebhooksErrMsg, regInfo.RegistryRef, r.WebhookIdentifier, err)
 		return listWebhooksExecutionsInternalErrorResponse(fmt.Errorf("failed to find registry: %w", err))
 	}

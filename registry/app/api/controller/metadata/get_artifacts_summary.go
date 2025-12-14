@@ -16,12 +16,14 @@ package metadata
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/types"
+	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/enum"
 )
 
@@ -65,8 +67,14 @@ func (c *APIController) GetArtifactSummary(
 
 	image := string(r.Artifact)
 	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterAll)
-
 	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return artifact.GetArtifactSummary404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "registry not found"),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactSummary500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),

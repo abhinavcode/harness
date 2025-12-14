@@ -16,12 +16,14 @@ package metadata
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/types"
+	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/enum"
 
 	"github.com/rs/zerolog/log"
@@ -65,6 +67,13 @@ func (c *APIController) GetRegistry(
 	}
 	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
 	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return artifact.GetRegistry404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "registry not found"),
+				),
+			}, nil
+		}
 		log.Ctx(ctx).Error().Err(err).Msg("Failed to get registry by parent ID and name")
 		return throwGetRegistry500Error(err), nil
 	}

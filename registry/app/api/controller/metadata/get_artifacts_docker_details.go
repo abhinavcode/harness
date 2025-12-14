@@ -74,8 +74,14 @@ func (c *APIController) GetDockerArtifactDetails(
 	manifestDigest := string(r.Params.Digest)
 
 	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterExcludeDeleted)
-
 	if err != nil {
+		if errors.Is(err, store2.ErrResourceNotFound) {
+			return artifact.GetDockerArtifactDetails404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "registry not found"),
+				),
+			}, nil
+		}
 		return artifact.GetDockerArtifactDetails500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),

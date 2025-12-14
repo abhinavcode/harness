@@ -16,6 +16,7 @@ package metadata
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/harness/gitness/registry/app/api/utils"
 	"github.com/harness/gitness/registry/types"
 	registryTypes "github.com/harness/gitness/registry/types"
+	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/enum"
 
 	"github.com/rs/zerolog/log"
@@ -68,10 +70,18 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 
 	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterExcludeDeleted)
 	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			//nolint:nilerr
+			return artifact.DeleteArtifact404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+				),
+			}, nil
+		}
 		//nolint:nilerr
-		return artifact.DeleteArtifact404JSONResponse{
-			NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-				*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+		return artifact.DeleteArtifact500JSONResponse{
+			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
+				*GetErrorResponse(http.StatusInternalServerError, "failed to get registry"),
 			),
 		}, nil
 	}

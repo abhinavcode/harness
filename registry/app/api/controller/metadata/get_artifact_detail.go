@@ -17,6 +17,7 @@ package metadata
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	apiauth "github.com/harness/gitness/app/api/auth"
@@ -24,6 +25,7 @@ import (
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/metadata"
 	"github.com/harness/gitness/registry/types"
+	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/enum"
 )
 
@@ -69,8 +71,14 @@ func (c *APIController) GetArtifactDetails(
 	version := string(r.Version)
 
 	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
-
 	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return artifact.GetArtifactDetails404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "registry not found"),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactDetails500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),
