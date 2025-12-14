@@ -140,7 +140,7 @@ func (c *APIController) ModifyRegistry(
 		log.Error().Err(err).Msg("failed to report build registry index event")
 	}
 	ref := space.Path + "/" + upstreamproxyEntity.RepoKey
-	jsonResponse, err := c.CreateUpstreamProxyResponseJSONResponse(ctx, modifiedRepoEntity, ref)
+	jsonResponse, err := c.BuildUpstreamProxyResponse(ctx, modifiedRepoEntity, ref)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.ModifyRegistry500JSONResponse{
@@ -210,7 +210,7 @@ func (c *APIController) updateVirtualRegistry(
 		return throwModifyRegistry500Error(err), nil
 	}
 	ref := space.Path + "/" + repoEntity.Name
-	jsonResponse, err := c.CreateVirtualRepositoryResponse(ctx,
+	jsonResponse, err := c.BuildVirtualRepositoryResponse(ctx,
 		modifiedRepoEntity, c.getUpstreamProxyKeys(ctx, modifiedRepoEntity.UpstreamProxies), cleanupPolicies,
 		c.URLProvider.RegistryURL(ctx, regInfo.RootIdentifier, regInfo.RegistryIdentifier), ref)
 	if err != nil {

@@ -315,7 +315,7 @@ func getRepoEntityFields(dto api.RegistryRequest) ([]string, []string, string, [
 	return allowedPattern, blockedPattern, description, labels
 }
 
-func (c *APIController) CreateVirtualRepositoryResponse(
+func (c *APIController) BuildVirtualRepositoryResponse(
 	ctx context.Context,
 	registry *types.Registry,
 	upstreamProxyKeys []string,
@@ -362,7 +362,7 @@ func (c *APIController) CreateVirtualRepositoryResponse(
 	return response, nil
 }
 
-func (c *APIController) CreateUpstreamProxyResponseJSONResponse(
+func (c *APIController) BuildUpstreamProxyResponse(
 	ctx context.Context,
 	upstreamproxy *types.UpstreamProxy,
 	registryRef string,

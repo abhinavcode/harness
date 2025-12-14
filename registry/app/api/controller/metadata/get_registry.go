@@ -82,7 +82,7 @@ func (c *APIController) GetRegistry(
 			}, nil
 		}
 		ref := space.Path + "/" + repoEntity.Name
-		jsonResponse, err := c.CreateVirtualRepositoryResponse(ctx,
+		jsonResponse, err := c.BuildVirtualRepositoryResponse(ctx,
 			repoEntity, c.getUpstreamProxyKeys(ctx, repoEntity.UpstreamProxies), cleanupPolicies,
 			c.URLProvider.RegistryURL(ctx, regInfo.RootIdentifier, regInfo.RegistryIdentifier), ref)
 		if err != nil {
@@ -111,7 +111,7 @@ func (c *APIController) GetRegistry(
 		return throwGetRegistry500Error(err), nil
 	}
 	ref := space.Path + "/" + upstreamproxyEntity.RepoKey
-	jsonResponse, err := c.CreateUpstreamProxyResponseJSONResponse(ctx, upstreamproxyEntity, ref)
+	jsonResponse, err := c.BuildUpstreamProxyResponse(ctx, upstreamproxyEntity, ref)
 	if err != nil {
 		return throwGetRegistry500Error(err), nil
 	}

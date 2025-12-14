@@ -157,7 +157,7 @@ func (c *APIController) CreateRegistry(
 	}
 
 	ref := space.Path + "/" + upstreamproxyEntity.RepoKey
-	jsonResponse, err := c.CreateUpstreamProxyResponseJSONResponse(ctx, upstreamproxyEntity, ref)
+	jsonResponse, err := c.BuildUpstreamProxyResponse(ctx, upstreamproxyEntity, ref)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.CreateRegistry500JSONResponse{
@@ -210,7 +210,7 @@ func (c *APIController) createVirtualRegistry(
 		return throwCreateRegistry400Error(err), nil
 	}
 	ref := space.Path + "/" + repoEntity.Name
-	jsonResponse, err := c.CreateVirtualRepositoryResponse(ctx,
+	jsonResponse, err := c.BuildVirtualRepositoryResponse(ctx,
 		repoEntity, c.getUpstreamProxyKeys(ctx, repoEntity.UpstreamProxies),
 		cleanupPolicies, repoURL, ref)
 	if err != nil {
