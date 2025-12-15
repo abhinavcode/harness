@@ -1158,11 +1158,20 @@ func (r registryDao) mapToRegistryMetadata(ctx context.Context, dst *RegistryMet
 
 // Purge permanently deletes soft-deleted registries older than the given timestamp.
 // Returns the number of registries deleted.
+// accountID is the root parent space UID (space_uid from spaces table).
 func (r registryDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
+	// First get the space_id for the given space_uid
+	var spaceID int64
+	db := dbtx.GetAccessor(ctx, r.db)
+	err := db.QueryRowContext(ctx, "SELECT space_id FROM spaces WHERE space_uid = $1", accountID).Scan(&spaceID)
+	if err != nil {
+		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to find space for account ID")
+	}
+
 	stmt := databaseg.Builder.
 		Delete("registries").
 		Where(sq.And{
-			sq.Eq{"registry_account_identifier": accountID},
+			sq.Eq{"registry_root_parent_id": spaceID},
 			sq.NotEq{"registry_deleted_at": nil},
 			sq.LtOrEq{"registry_deleted_at": deletedBeforeOrAt},
 		})
@@ -1172,7 +1181,6 @@ func (r registryDao) Purge(ctx context.Context, accountID string, deletedBeforeO
 		return 0, fmt.Errorf("failed to convert purge registries query to sql: %w", err)
 	}
 
-	db := dbtx.GetAccessor(ctx, r.db)
 	result, err := db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge registries")
@@ -1186,12 +1194,13 @@ func (r registryDao) Purge(ctx context.Context, accountID string, deletedBeforeO
 	return rowsAffected, nil
 }
 
-// GetDistinctAccountIDs returns a list of distinct account identifiers that have registries.
+// GetDistinctAccountIDs returns a list of distinct account space UIDs that have registries.
 func (r registryDao) GetDistinctAccountIDs(ctx context.Context) ([]string, error) {
 	stmt := databaseg.Builder.
-		Select("DISTINCT registry_account_identifier").
-		From("registries").
-		Where(sq.NotEq{"registry_account_identifier": nil})
+		Select("DISTINCT s.space_uid").
+		From("registries r").
+		Join("spaces s ON r.registry_root_parent_id = s.space_id").
+		Where(sq.NotEq{"r.registry_root_parent_id": nil})
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {

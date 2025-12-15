@@ -1821,8 +1821,17 @@ type downloadCountResult struct {
 
 // Purge permanently deletes soft-deleted artifacts older than the given timestamp.
 // Returns the number of artifacts deleted.
+// accountID is the root parent space UID (space_uid from spaces table).
 func (a ArtifactDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
-	// Delete artifacts that belong to registries of the specified account
+	// First get the space_id for the given space_uid
+	var spaceID int64
+	db := dbtx.GetAccessor(ctx, a.db)
+	err := db.QueryRowContext(ctx, "SELECT space_id FROM spaces WHERE space_uid = $1", accountID).Scan(&spaceID)
+	if err != nil {
+		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to find space for account ID")
+	}
+
+	// Delete artifacts that belong to registries of the specified root parent space
 	// Using JOINs for better performance with large datasets
 	sql := `DELETE FROM artifacts
 		WHERE artifact_id IN (
@@ -1830,13 +1839,12 @@ func (a ArtifactDao) Purge(ctx context.Context, accountID string, deletedBeforeO
 			FROM artifacts a
 			INNER JOIN images i ON a.artifact_image_id = i.image_id
 			INNER JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE r.registry_account_identifier = $1
+			WHERE r.registry_root_parent_id = $1
 			  AND a.artifact_deleted_at IS NOT NULL
 			  AND a.artifact_deleted_at <= $2
 		)`
 
-	db := dbtx.GetAccessor(ctx, a.db)
-	result, err := db.ExecContext(ctx, sql, accountID, deletedBeforeOrAt)
+	result, err := db.ExecContext(ctx, sql, spaceID, deletedBeforeOrAt)
 	if err != nil {
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge artifacts")
 	}
