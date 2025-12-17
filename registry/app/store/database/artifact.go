@@ -66,7 +66,7 @@ type artifactDB struct {
 // artifactWithParentsDB is used for queries that JOIN with images and registries tables
 type artifactWithParentsDB struct {
 	artifactDB               // Embed base struct
-	ImageDeletedAt    *int64 `db:"image_deleted_at"`    // CASCADE from parent image
+	ImageDeletedAt    *int64 `db:"image_deleted_at"` // CASCADE from parent image
 	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from grandparent registry
 }
 
@@ -368,6 +368,9 @@ func (a ArtifactDao) DeleteByVersionAndImageName(
 // SoftDeleteByImageNameAndRegistryID marks image as deleted.
 func (a ArtifactDao) SoftDeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) error {
 	session, _ := request.AuthSessionFrom(ctx)
+	if session == nil {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "authentication required for soft delete operation")
+	}
 	now := time.Now().UnixMilli()
 	userID := session.Principal.ID
 
@@ -403,6 +406,9 @@ func (a ArtifactDao) SoftDeleteByVersionAndImageName(
 	ctx context.Context, image string, version string, regID int64,
 ) error {
 	session, _ := request.AuthSessionFrom(ctx)
+	if session == nil {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "authentication required for soft delete operation")
+	}
 	now := time.Now().UnixMilli()
 	userID := session.Principal.ID
 
@@ -459,6 +465,9 @@ func (a ArtifactDao) SoftDeleteByVersionAndImageName(
 // RestoreByImageNameAndRegistryID restores all soft-deleted artifacts for an image.
 func (a ArtifactDao) RestoreByImageNameAndRegistryID(ctx context.Context, regID int64, image string) error {
 	session, _ := request.AuthSessionFrom(ctx)
+	if session == nil {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "authentication required for restore operation")
+	}
 	userID := session.Principal.ID
 
 	// Enterprise uses PostgreSQL only
@@ -501,6 +510,9 @@ func (a ArtifactDao) RestoreByVersionAndImageName(
 	ctx context.Context, image string, version string, regID int64,
 ) error {
 	session, _ := request.AuthSessionFrom(ctx)
+	if session == nil {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "authentication required for restore operation")
+	}
 	userID := session.Principal.ID
 
 	// Enterprise uses PostgreSQL only
