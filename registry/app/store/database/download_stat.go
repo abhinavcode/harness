@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -29,7 +30,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
 
@@ -139,21 +140,21 @@ func (d DownloadStatDao) GetTotalDownloadsForImage(ctx context.Context, imageID 
 		From("artifacts art").Where("art.artifact_image_id = ?", imageID).
 		LeftJoin("download_stats ds ON ds.download_stat_artifact_id = art.artifact_id")
 
-	sql, args, err := q.ToSql()
+	query, args, err := q.ToSql()
 	if err != nil {
-		return 0, errors.Wrap(err, "Failed to convert query to sql")
+		return 0, pkgerrors.Wrap(err, "Failed to convert query to sql")
 	}
 	// Log the final sql query
-	finalQuery := util.FormatQuery(sql, args)
+	finalQuery := util.FormatQuery(query, args)
 	log.Ctx(ctx).Debug().Str("sql", finalQuery).Msg("Executing GetTotalDownloadsForImage query")
 	// Execute query
 	db := dbtx.GetAccessor(ctx, d.db)
 
 	var count int64
-	err = db.QueryRowContext(ctx, sql, args...).Scan(&count)
+	err = db.QueryRowContext(ctx, query, args...).Scan(&count)
 	if err != nil {
 		// If no rows found (no artifacts or no downloads), return 0 instead of error
-		if err.Error() == "sql: no rows in result set" {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
 		}
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
@@ -167,7 +168,7 @@ func (d DownloadStatDao) GetTotalDownloadsForArtifactID(ctx context.Context, art
 
 	sql, args, err := q.ToSql()
 	if err != nil {
-		return 0, errors.Wrap(err, "Failed to convert query to sql")
+		return 0, pkgerrors.Wrap(err, "Failed to convert query to sql")
 	}
 	// Log the final sql query
 	finalQuery := util.FormatQuery(sql, args)
@@ -197,7 +198,7 @@ func (d DownloadStatDao) GetTotalDownloadsForManifests(
 
 	sql, args, err := q.ToSql()
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to convert query to sql")
+		return nil, pkgerrors.Wrap(err, "Failed to convert query to sql")
 	}
 	// Log the final sql query
 	finalQuery := util.FormatQuery(sql, args)

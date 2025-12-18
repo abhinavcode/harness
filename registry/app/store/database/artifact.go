@@ -196,7 +196,7 @@ func (a ArtifactDao) GetLatestByImageID(ctx context.Context, imageID int64) (*ty
 		Where("r.registry_deleted_at IS NULL").
 		OrderBy("a.artifact_updated_at DESC").Limit(1)
 
-	sql, args, err := q.ToSql()
+	query, args, err := q.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to convert query to sql")
 	}
@@ -204,9 +204,9 @@ func (a ArtifactDao) GetLatestByImageID(ctx context.Context, imageID int64) (*ty
 	db := dbtx.GetAccessor(ctx, a.db)
 
 	dst := new(artifactWithParentsDB)
-	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
+	if err = db.GetContext(ctx, dst, query, args...); err != nil {
 		// If no artifacts found for this image, return nil instead of error
-		if err.Error() == "sql: no rows in result set" {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil //nolint:nilnil
 		}
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact")
