@@ -17,9 +17,9 @@ type ImageRepository struct {
 	mock.Mock
 }
 
-// CountLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, search
-func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, search string) (int64, error) {
-	ret := _m.Called(ctx, parentID, repo, search)
+// CountLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, search, softDeleteFilter
+func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, search string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, parentID, repo, search, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountLabelsByParentIDAndRepo")
@@ -27,17 +27,17 @@ func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, par
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) (int64, error)); ok {
-		return rf(ctx, parentID, repo, search)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, parentID, repo, search, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) int64); ok {
-		r0 = rf(ctx, parentID, repo, search)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, parentID, repo, search, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
-		r1 = rf(ctx, parentID, repo, search)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, repo, search, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -19,9 +19,9 @@ type ArtifactRepository struct {
 	mock.Mock
 }
 
-// Count provides a mock function with given fields: ctx
-func (_m *ArtifactRepository) Count(ctx context.Context) (int64, error) {
-	ret := _m.Called(ctx)
+// Count provides a mock function with given fields: ctx, softDeleteFilter
+func (_m *ArtifactRepository) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Count")
@@ -29,17 +29,17 @@ func (_m *ArtifactRepository) Count(ctx context.Context) (int64, error) {
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -47,9 +47,9 @@ func (_m *ArtifactRepository) Count(ctx context.Context) (int64, error) {
 	return r0, r1
 }
 
-// CountAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes
-func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string) (int64, error) {
-	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
+// CountAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter
+func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAllArtifactsByParentID")
@@ -57,17 +57,17 @@ func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, p
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string) (int64, error)); ok {
-		return rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string) int64); ok {
-		r0 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string) error); ok {
-		r1 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -75,9 +75,9 @@ func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, p
 	return r0, r1
 }
 
-// CountAllVersionsByRepoAndImage provides a mock function with given fields: ctx, parentID, repoKey, image, search, artifactType
-func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context, parentID int64, repoKey string, image string, search string, artifactType *artifact.ArtifactType) (int64, error) {
-	ret := _m.Called(ctx, parentID, repoKey, image, search, artifactType)
+// CountAllVersionsByRepoAndImage provides a mock function with given fields: ctx, parentID, repoKey, image, search, artifactType, softDeleteFilter
+func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context, parentID int64, repoKey string, image string, search string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, parentID, repoKey, image, search, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAllVersionsByRepoAndImage")
@@ -85,17 +85,17 @@ func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) (int64, error)); ok {
-		return rf(ctx, parentID, repoKey, image, search, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, parentID, repoKey, image, search, artifactType, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) int64); ok {
-		r0 = rf(ctx, parentID, repoKey, image, search, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, parentID, repoKey, image, search, artifactType, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) error); ok {
-		r1 = rf(ctx, parentID, repoKey, image, search, artifactType)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, repoKey, image, search, artifactType, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -103,9 +103,9 @@ func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context
 	return r0, r1
 }
 
-// CountArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, artifactType
-func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, artifactType *artifact.ArtifactType) (int64, error) {
-	ret := _m.Called(ctx, parentID, repoKey, search, labels, artifactType)
+// CountArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, artifactType, softDeleteFilter
+func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, parentID, repoKey, search, labels, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountArtifactsByRepo")
@@ -113,17 +113,17 @@ func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType) (int64, error)); ok {
-		return rf(ctx, parentID, repoKey, search, labels, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, parentID, repoKey, search, labels, artifactType, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType) int64); ok {
-		r0 = rf(ctx, parentID, repoKey, search, labels, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, parentID, repoKey, search, labels, artifactType, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType) error); ok {
-		r1 = rf(ctx, parentID, repoKey, search, labels, artifactType)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, repoKey, search, labels, artifactType, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -131,9 +131,9 @@ func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID
 	return r0, r1
 }
 
-// CountByImageName provides a mock function with given fields: ctx, regID, name
-func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64, name string) (int64, error) {
-	ret := _m.Called(ctx, regID, name)
+// CountByImageName provides a mock function with given fields: ctx, regID, name, softDeleteFilter
+func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, regID, name, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountByImageName")
@@ -141,17 +141,17 @@ func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64,
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (int64, error)); ok {
-		return rf(ctx, regID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, regID, name, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) int64); ok {
-		r0 = rf(ctx, regID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, regID, name, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
-		r1 = rf(ctx, regID, name)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, regID, name, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -159,9 +159,9 @@ func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64,
 	return r0, r1
 }
 
-// CountLatestByName provides a mock function with given fields: ctx, regID, name
-func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64, name string) (int64, error) {
-	ret := _m.Called(ctx, regID, name)
+// CountLatestByName provides a mock function with given fields: ctx, regID, name, softDeleteFilter
+func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, regID, name, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountLatestByName")
@@ -169,17 +169,17 @@ func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (int64, error)); ok {
-		return rf(ctx, regID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, regID, name, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) int64); ok {
-		r0 = rf(ctx, regID, name)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, regID, name, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
-		r1 = rf(ctx, regID, name)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, regID, name, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -281,9 +281,9 @@ func (_m *ArtifactRepository) DuplicateArtifact(ctx context.Context, sourceArtif
 	return r0, r1
 }
 
-// GetAllArtifactsByParentID provides a mock function with given fields: ctx, id, i, field, order, limit, offset, term, version, packageTypes
-func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, id int64, i *[]string, field string, order string, limit int, offset int, term string, version bool, packageTypes []string) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, id, i, field, order, limit, offset, term, version, packageTypes)
+// GetAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, softDeleteFilter
+func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllArtifactsByParentID")
@@ -291,19 +291,19 @@ func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, id 
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, id, i, field, order, limit, offset, term, version, packageTypes)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, int, int, types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, id, i, field, order, limit, offset, term, version, packageTypes)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, int, int, types.SoftDeleteFilter) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) error); ok {
-		r1 = rf(ctx, id, i, field, order, limit, offset, term, version, packageTypes)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, int, int, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -341,9 +341,9 @@ func (_m *ArtifactRepository) GetAllArtifactsByRepo(ctx context.Context, registr
 	return r0, r1
 }
 
-// GetAllVersionsByRepoAndImage provides a mock function with given fields: ctx, id, image, field, order, limit, offset, term, artifactType
-func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, id int64, image string, field string, order string, limit int, offset int, term string, artifactType *artifact.ArtifactType) (*[]types.NonOCIArtifactMetadata, error) {
-	ret := _m.Called(ctx, id, image, field, order, limit, offset, term, artifactType)
+// GetAllVersionsByRepoAndImage provides a mock function with given fields: ctx, id, image, field, order, limit, offset, term, artifactType, softDeleteFilter
+func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, id int64, image string, field string, order string, limit int, offset int, term string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (*[]types.NonOCIArtifactMetadata, error) {
+	ret := _m.Called(ctx, id, image, field, order, limit, offset, term, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllVersionsByRepoAndImage")
@@ -351,19 +351,19 @@ func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, 
 
 	var r0 *[]types.NonOCIArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType) (*[]types.NonOCIArtifactMetadata, error)); ok {
-		return rf(ctx, id, image, field, order, limit, offset, term, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType, types.SoftDeleteFilter) (*[]types.NonOCIArtifactMetadata, error)); ok {
+		return rf(ctx, id, image, field, order, limit, offset, term, artifactType, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType) *[]types.NonOCIArtifactMetadata); ok {
-		r0 = rf(ctx, id, image, field, order, limit, offset, term, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType, types.SoftDeleteFilter) *[]types.NonOCIArtifactMetadata); ok {
+		r0 = rf(ctx, id, image, field, order, limit, offset, term, artifactType, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.NonOCIArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType) error); ok {
-		r1 = rf(ctx, id, image, field, order, limit, offset, term, artifactType)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, id, image, field, order, limit, offset, term, artifactType, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -371,9 +371,9 @@ func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, 
 	return r0, r1
 }
 
-// GetArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, version, artifactType
-func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64, identifier string, image string, version string, artifactType *artifact.ArtifactType) (*types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, id, identifier, image, version, artifactType)
+// GetArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, version, artifactType, softDeleteFilter
+func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64, identifier string, image string, version string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (*types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, id, identifier, image, version, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetArtifactMetadata")
@@ -381,19 +381,19 @@ func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64,
 
 	var r0 *types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) (*types.ArtifactMetadata, error)); ok {
-		return rf(ctx, id, identifier, image, version, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) (*types.ArtifactMetadata, error)); ok {
+		return rf(ctx, id, identifier, image, version, artifactType, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) *types.ArtifactMetadata); ok {
-		r0 = rf(ctx, id, identifier, image, version, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) *types.ArtifactMetadata); ok {
+		r0 = rf(ctx, id, identifier, image, version, artifactType, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) error); ok {
-		r1 = rf(ctx, id, identifier, image, version, artifactType)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, id, identifier, image, version, artifactType, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -401,9 +401,9 @@ func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64,
 	return r0, r1
 }
 
-// GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType
-func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, artifactType *artifact.ArtifactType) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
+// GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, softDeleteFilter
+func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, latestVersion bool, limit int, offset int, sortByField string, sortByOrder string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetArtifactsByRepo")
@@ -411,19 +411,19 @@ func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID i
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType) error); ok {
-		r1 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -491,9 +491,9 @@ func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, vers
 	return r0, r1
 }
 
-// GetByRegistryIDAndImage provides a mock function with given fields: ctx, registryID, image
-func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string) (*[]types.Artifact, error) {
-	ret := _m.Called(ctx, registryID, image)
+// GetByRegistryIDAndImage provides a mock function with given fields: ctx, registryID, image, softDeleteFilter
+func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, softDeleteFilter types.SoftDeleteFilter) (*[]types.Artifact, error) {
+	ret := _m.Called(ctx, registryID, image, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRegistryIDAndImage")
@@ -501,19 +501,19 @@ func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, regis
 
 	var r0 *[]types.Artifact
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (*[]types.Artifact, error)); ok {
-		return rf(ctx, registryID, image)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) (*[]types.Artifact, error)); ok {
+		return rf(ctx, registryID, image, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) *[]types.Artifact); ok {
-		r0 = rf(ctx, registryID, image)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, types.SoftDeleteFilter) *[]types.Artifact); ok {
+		r0 = rf(ctx, registryID, image, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.Artifact)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
-		r1 = rf(ctx, registryID, image)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, registryID, image, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -521,9 +521,9 @@ func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, regis
 	return r0, r1
 }
 
-// GetByRegistryImageAndVersion provides a mock function with given fields: ctx, registryID, image, version, includeSoftDeleted
-func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, registryID int64, image string, version string, includeSoftDeleted bool) (*types.Artifact, error) {
-	ret := _m.Called(ctx, registryID, image, version, includeSoftDeleted)
+// GetByRegistryImageAndVersion provides a mock function with given fields: ctx, registryID, image, version, softDeleteFilter
+func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, registryID int64, image string, version string, softDeleteFilter types.SoftDeleteFilter) (*types.Artifact, error) {
+	ret := _m.Called(ctx, registryID, image, version, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRegistryImageAndVersion")
@@ -531,19 +531,19 @@ func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, 
 
 	var r0 *types.Artifact
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, bool) (*types.Artifact, error)); ok {
-		return rf(ctx, registryID, image, version, includeSoftDeleted)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) (*types.Artifact, error)); ok {
+		return rf(ctx, registryID, image, version, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, bool) *types.Artifact); ok {
-		r0 = rf(ctx, registryID, image, version, includeSoftDeleted)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) *types.Artifact); ok {
+		r0 = rf(ctx, registryID, image, version, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Artifact)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, bool) error); ok {
-		r1 = rf(ctx, registryID, image, version, includeSoftDeleted)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, registryID, image, version, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -551,9 +551,9 @@ func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, 
 	return r0, r1
 }
 
-// GetLatestArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image
-func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id int64, identifier string, image string) (*types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, id, identifier, image)
+// GetLatestArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, softDeleteFilter
+func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id int64, identifier string, image string, softDeleteFilter types.SoftDeleteFilter) (*types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, id, identifier, image, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestArtifactMetadata")
@@ -561,19 +561,19 @@ func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id 
 
 	var r0 *types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) (*types.ArtifactMetadata, error)); ok {
-		return rf(ctx, id, identifier, image)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) (*types.ArtifactMetadata, error)); ok {
+		return rf(ctx, id, identifier, image, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) *types.ArtifactMetadata); ok {
-		r0 = rf(ctx, id, identifier, image)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) *types.ArtifactMetadata); ok {
+		r0 = rf(ctx, id, identifier, image, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
-		r1 = rf(ctx, id, identifier, image)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, id, identifier, image, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -641,9 +641,9 @@ func (_m *ArtifactRepository) GetLatestByImageID(ctx context.Context, imageID in
 	return r0, r1
 }
 
-// SearchByImageName provides a mock function with given fields: ctx, regID, name, limit, offset
-func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64, name string, limit int, offset int) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, regID, name, limit, offset)
+// SearchByImageName provides a mock function with given fields: ctx, regID, name, limit, offset, softDeleteFilter
+func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, regID, name, limit, offset, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SearchByImageName")
@@ -651,19 +651,49 @@ func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, regID, name, limit, offset)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, regID, name, limit, offset, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, regID, name, limit, offset)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, types.SoftDeleteFilter) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, regID, name, limit, offset, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int) error); ok {
-		r1 = rf(ctx, regID, name, limit, offset)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, regID, name, limit, offset, softDeleteFilter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SearchLatestByName provides a mock function with given fields: ctx, regID, name, limit, offset, softDeleteFilter
+func (_m *ArtifactRepository) SearchLatestByName(ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter) (*[]types.Artifact, error) {
+	ret := _m.Called(ctx, regID, name, limit, offset, softDeleteFilter)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SearchLatestByName")
+	}
+
+	var r0 *[]types.Artifact
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, types.SoftDeleteFilter) (*[]types.Artifact, error)); ok {
+		return rf(ctx, regID, name, limit, offset, softDeleteFilter)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, types.SoftDeleteFilter) *[]types.Artifact); ok {
+		r0 = rf(ctx, regID, name, limit, offset, softDeleteFilter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*[]types.Artifact)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, regID, name, limit, offset, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}

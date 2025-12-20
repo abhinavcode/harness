@@ -16,9 +16,9 @@ type RegistryRepository struct {
 	mock.Mock
 }
 
-// Count provides a mock function with given fields: ctx
-func (_m *RegistryRepository) Count(ctx context.Context) (int64, error) {
-	ret := _m.Called(ctx)
+// Count provides a mock function with given fields: ctx, softDeleteFilter
+func (_m *RegistryRepository) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+	ret := _m.Called(ctx, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Count")
@@ -26,17 +26,17 @@ func (_m *RegistryRepository) Count(ctx context.Context) (int64, error) {
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, types.SoftDeleteFilter) (int64, error)); ok {
+		return rf(ctx, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, types.SoftDeleteFilter) int64); ok {
+		r0 = rf(ctx, softDeleteFilter)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
