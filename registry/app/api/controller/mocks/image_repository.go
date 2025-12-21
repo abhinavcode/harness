@@ -129,9 +129,9 @@ func (_m *ImageRepository) DuplicateImage(ctx context.Context, sourceImage *type
 	return r0, r1
 }
 
-// Get provides a mock function with given fields: ctx, id, includeSoftDeleted
-func (_m *ImageRepository) Get(ctx context.Context, id int64, includeSoftDeleted bool) (*types.Image, error) {
-	ret := _m.Called(ctx, id, includeSoftDeleted)
+// Get provides a mock function with given fields: ctx, id, softDeleteFilter
+func (_m *ImageRepository) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+	ret := _m.Called(ctx, id, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -139,19 +139,19 @@ func (_m *ImageRepository) Get(ctx context.Context, id int64, includeSoftDeleted
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, bool) (*types.Image, error)); ok {
-		return rf(ctx, id, includeSoftDeleted)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, types.SoftDeleteFilter) (*types.Image, error)); ok {
+		return rf(ctx, id, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, bool) *types.Image); ok {
-		r0 = rf(ctx, id, includeSoftDeleted)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, types.SoftDeleteFilter) *types.Image); ok {
+		r0 = rf(ctx, id, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Image)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, bool) error); ok {
-		r1 = rf(ctx, id, includeSoftDeleted)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, id, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -219,9 +219,9 @@ func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int6
 	return r0, r1
 }
 
-// GetByRepoAndName provides a mock function with given fields: ctx, parentID, repo, name, includeSoftDeleted
-func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64, repo string, name string, includeSoftDeleted bool) (*types.Image, error) {
-	ret := _m.Called(ctx, parentID, repo, name, includeSoftDeleted)
+// GetByRepoAndName provides a mock function with given fields: ctx, parentID, repo, name, softDeleteFilter
+func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64, repo string, name string, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+	ret := _m.Called(ctx, parentID, repo, name, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRepoAndName")
@@ -229,19 +229,19 @@ func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64,
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, bool) (*types.Image, error)); ok {
-		return rf(ctx, parentID, repo, name, includeSoftDeleted)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) (*types.Image, error)); ok {
+		return rf(ctx, parentID, repo, name, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, bool) *types.Image); ok {
-		r0 = rf(ctx, parentID, repo, name, includeSoftDeleted)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, types.SoftDeleteFilter) *types.Image); ok {
+		r0 = rf(ctx, parentID, repo, name, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Image)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, bool) error); ok {
-		r1 = rf(ctx, parentID, repo, name, includeSoftDeleted)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, repo, name, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -249,9 +249,9 @@ func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64,
 	return r0, r1
 }
 
-// GetLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, limit, offset, search
-func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, limit int, offset int, search string) ([]string, error) {
-	ret := _m.Called(ctx, parentID, repo, limit, offset, search)
+// GetLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, limit, offset, search, softDeleteFilter
+func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, limit int, offset int, search string, softDeleteFilter types.SoftDeleteFilter) ([]string, error) {
+	ret := _m.Called(ctx, parentID, repo, limit, offset, search, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLabelsByParentIDAndRepo")
@@ -259,19 +259,19 @@ func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, paren
 
 	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string) ([]string, error)); ok {
-		return rf(ctx, parentID, repo, limit, offset, search)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string, types.SoftDeleteFilter) ([]string, error)); ok {
+		return rf(ctx, parentID, repo, limit, offset, search, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string) []string); ok {
-		r0 = rf(ctx, parentID, repo, limit, offset, search)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string, types.SoftDeleteFilter) []string); ok {
+		r0 = rf(ctx, parentID, repo, limit, offset, search, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, string) error); ok {
-		r1 = rf(ctx, parentID, repo, limit, offset, search)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentID, repo, limit, offset, search, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}

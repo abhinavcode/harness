@@ -238,9 +238,9 @@ func (_m *RegistryRepository) Get(ctx context.Context, id int64, softDeleteFilte
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, filters
-func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, packageTypes []string, sortByField string, sortByOrder string, limit int, offset int, search string, repoType string, filters *types.FilterParams) (*[]store.RegistryMetadata, error) {
-	ret := _m.Called(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, filters)
+// GetAll provides a mock function with given fields: ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, softDeleteFilter
+func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, packageTypes []string, sortByField string, sortByOrder string, limit int, offset int, search string, repoType string, softDeleteFilter types.SoftDeleteFilter) (*[]store.RegistryMetadata, error) {
+	ret := _m.Called(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, softDeleteFilter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAll")
@@ -248,19 +248,19 @@ func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, pac
 
 	var r0 *[]store.RegistryMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string, *types.FilterParams) (*[]store.RegistryMetadata, error)); ok {
-		return rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, filters)
+	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string, types.SoftDeleteFilter) (*[]store.RegistryMetadata, error)); ok {
+		return rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, softDeleteFilter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string, *types.FilterParams) *[]store.RegistryMetadata); ok {
-		r0 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, filters)
+	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string, types.SoftDeleteFilter) *[]store.RegistryMetadata); ok {
+		r0 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, softDeleteFilter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]store.RegistryMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []int64, []string, string, string, int, int, string, string, *types.FilterParams) error); ok {
-		r1 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, filters)
+	if rf, ok := ret.Get(1).(func(context.Context, []int64, []string, string, string, int, int, string, string, types.SoftDeleteFilter) error); ok {
+		r1 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, softDeleteFilter)
 	} else {
 		r1 = ret.Error(1)
 	}
