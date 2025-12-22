@@ -35,7 +35,8 @@ func (c *APIController) GetArtifactVersionSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
 ) (artifact.GetArtifactVersionSummaryResponseObject, error) {
-	image, version, pkgType, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, err := c.FetchArtifactSummary(ctx, r)
+	image, version, pkgType, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, err :=
+		c.FetchArtifactSummary(ctx, r)
 	if err != nil {
 		return artifact.GetArtifactVersionSummary500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
@@ -133,7 +134,9 @@ func (c *APIController) FetchArtifactSummary(
 		}
 
 		// For OCI artifacts, check if artifact or image is deleted
-		isDeleted := ociVersion.ArtifactDeletedAt != nil || ociVersion.ImageDeletedAt != nil || ociVersion.RegistryDeletedAt != nil
+		isDeleted := ociVersion.ArtifactDeletedAt != nil ||
+			ociVersion.ImageDeletedAt != nil ||
+			ociVersion.RegistryDeletedAt != nil
 		var deletedAt *time.Time
 		if ociVersion.ArtifactDeletedAt != nil {
 			timestamp := time.UnixMilli(*ociVersion.ArtifactDeletedAt)
@@ -155,5 +158,6 @@ func (c *APIController) FetchArtifactSummary(
 	// Check if artifact is soft deleted
 	isDeleted := metadata.DeletedAt != nil
 
-	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason, metadata.ArtifactType, metadata.DeletedAt, isDeleted, nil
+	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason,
+		metadata.ArtifactType, metadata.DeletedAt, isDeleted, nil
 }

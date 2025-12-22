@@ -72,12 +72,20 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 		}, err
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, registryTypes.SoftDeleteFilterAll)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(
+		ctx,
+		regInfo.ParentID,
+		regInfo.RegistryIdentifier,
+		registryTypes.SoftDeleteFilterAll,
+	)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifactVersion404JSONResponse{
 			NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-				*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+				*GetErrorResponse(
+					http.StatusNotFound,
+					"registry doesn't exist with this key",
+				),
 			),
 		}, nil
 	}

@@ -26,7 +26,6 @@ import (
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/api/utils"
 	"github.com/harness/gitness/registry/types"
-	registryTypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/enum"
 
@@ -63,12 +62,20 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 	); err != nil {
 		return artifact.DeleteArtifact403JSONResponse{
 			UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
-				*GetErrorResponse(http.StatusForbidden, err.Error()),
+				*GetErrorResponse(
+					http.StatusForbidden,
+					err.Error(),
+				),
 			),
 		}, nil
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterExcludeDeleted)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(
+		ctx,
+		regInfo.ParentID,
+		regInfo.RegistryIdentifier,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			//nolint:nilerr
@@ -147,7 +154,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 
 func (c *APIController) deleteOCIImage(
 	ctx context.Context,
-	regInfo *registryTypes.RegistryRequestBaseInfo,
+	regInfo *types.RegistryRequestBaseInfo,
 	artifactName string,
 ) error {
 	err := c.tx.WithTx(
@@ -185,7 +192,7 @@ func (c *APIController) deleteOCIImage(
 
 func (c *APIController) deleteGenericImage(
 	ctx context.Context,
-	regInfo *registryTypes.RegistryRequestBaseInfo,
+	regInfo *types.RegistryRequestBaseInfo,
 	artifactName string,
 ) error {
 	err := c.tx.WithTx(

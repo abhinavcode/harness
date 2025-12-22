@@ -1001,7 +1001,12 @@ func (l *manifestService) dbPutImageIndex(
 	headers *commons.ResponseHeaders,
 	info pkg.RegistryInfo,
 ) error {
-	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier, types.SoftDeleteFilterExcludeDeleted)
+	r, err := l.registryDao.GetByParentIDAndName(
+		ctx,
+		info.ParentID,
+		info.RegIdentifier,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return err
 	}

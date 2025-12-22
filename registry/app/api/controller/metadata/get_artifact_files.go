@@ -74,7 +74,12 @@ func (c *APIController) GetArtifactFiles(
 	image := string(r.Artifact)
 	version := string(r.Version)
 
-	registry, err := c.RegistryRepository.GetByParentIDAndName(ctx, reqInfo.ParentID, reqInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
+	registry, err := c.RegistryRepository.GetByParentIDAndName(
+		ctx,
+		reqInfo.ParentID,
+		reqInfo.RegistryIdentifier,
+		types.SoftDeleteFilterAll,
+	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetArtifactFiles404JSONResponse{

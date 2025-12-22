@@ -173,8 +173,12 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 
 			metadata := &metadata.MavenMetadata{}
 
-			dbArtifact, err3 := r.DBStore.ArtifactDao.GetByName(ctx, dbImage.ID, info.Version, types.SoftDeleteFilterExcludeDeleted)
-
+			dbArtifact, err3 := r.DBStore.ArtifactDao.GetByName(
+				ctx,
+				dbImage.ID,
+				info.Version,
+				types.SoftDeleteFilterExcludeDeleted,
+			)
 			if err3 != nil && !strings.Contains(err3.Error(), "resource not found") {
 				return err3
 			}

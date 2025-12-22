@@ -206,13 +206,26 @@ func (l *localBase) MoveTempFileAndCreateArtifact(
 		return responseHeaders, fileSha256, 0, true, nil
 	}
 
-	registry, err := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := l.registryDao.GetByRootParentIDAndName(
+		ctx,
+		info.RootParentID,
+		info.RegIdentifier,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return responseHeaders, "", 0, false, errcode.ErrCodeUnknown.WithDetail(err)
 	}
 	session, _ := request.AuthSessionFrom(ctx)
-	err = l.fileManager.MoveTempFile(ctx, path, registry.ID,
-		info.RootParentID, info.RootIdentifier, fileInfo, tempFileName, session.Principal.ID)
+	err = l.fileManager.MoveTempFile(
+		ctx,
+		path,
+		registry.ID,
+		info.RootParentID,
+		info.RootIdentifier,
+		fileInfo,
+		tempFileName,
+		session.Principal.ID,
+	)
 	if err != nil {
 		return responseHeaders, "", 0, false, errcode.ErrCodeUnknown.WithDetail(err)
 	}
@@ -320,7 +333,7 @@ func (l *localBase) updateFilesMetadata(
 ) error {
 	var files []metadata.File
 	if dbArtifact != nil {
-		err := json.Unmarshal(dbArtifact.Metadata, inputMetadata)
+		err := json.Unmarshal(dbArtifact.Metadata, &inputMetadata)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to get metadata for artifact: [%s] with registry: [%s] and"+
 				" error: %v", info.Image, info.RegIdentifier, err)
@@ -373,19 +386,34 @@ func (l *localBase) uploadInternal(
 		err = pkg.GetRegistryCheckAccess(ctx, l.authorizer, l.spaceFinder,
 			info.ParentID, info, enum.PermissionArtifactsDelete)
 		if err != nil {
-			return nil, "", usererror.Forbidden(fmt.Sprintf("Not enough permissions to overwrite file %s "+
-				"(needs DELETE permission).",
-				fileName))
+			return nil, "", usererror.Forbidden(
+				fmt.Sprintf("Not enough permissions to overwrite file %s "+
+					"(needs DELETE permission).",
+					fileName))
 		}
 	}
 
-	registry, err := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := l.registryDao.GetByRootParentIDAndName(
+		ctx,
+		info.RootParentID,
+		info.RegIdentifier,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return responseHeaders, "", errcode.ErrCodeUnknown.WithDetail(err)
 	}
 	session, _ := request.AuthSessionFrom(ctx)
-	fileInfo, err := l.fileManager.UploadFile(ctx, path, registry.ID,
-		info.RootParentID, info.RootIdentifier, file, fileReadCloser, fileName, session.Principal.ID)
+	fileInfo, err := l.fileManager.UploadFile(
+		ctx,
+		path,
+		registry.ID,
+		info.RootParentID,
+		info.RootIdentifier,
+		file,
+		fileReadCloser,
+		fileName,
+		session.Principal.ID,
+	)
 	if err != nil {
 		return responseHeaders, "", errcode.ErrCodeUnknown.WithDetail(err)
 	}
@@ -556,7 +584,11 @@ func (l *localBase) ExistsByFilePath(ctx context.Context, registryID int64, file
 
 func (l *localBase) CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error) {
 	_, err := l.artifactDao.GetByRegistryImageAndVersion(ctx,
-		info.BaseArtifactInfo().RegistryID, info.BaseArtifactInfo().Image, info.GetVersion(), types.SoftDeleteFilterExcludeDeleted)
+		info.BaseArtifactInfo().RegistryID,
+		info.BaseArtifactInfo().Image,
+		info.GetVersion(),
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return false, err
 	}

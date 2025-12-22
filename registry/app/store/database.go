@@ -538,7 +538,12 @@ type ImageRepository interface {
 
 type ArtifactRepository interface {
 	// Get an Artifact specified by ID
-	GetByName(ctx context.Context, imageID int64, version string, softDeleteFilter types.SoftDeleteFilter) (*types.Artifact, error)
+	GetByName(
+		ctx context.Context,
+		imageID int64,
+		version string,
+		softDeleteFilter types.SoftDeleteFilter,
+	) (*types.Artifact, error)
 	// Get an Artifact specified by RegistryID, image name and version
 	GetByRegistryImageAndVersion(
 		ctx context.Context, registryID int64, image string, version string, softDeleteFilter types.SoftDeleteFilter,
@@ -548,12 +553,22 @@ type ArtifactRepository interface {
 	Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error)
 	GetAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
-		registryIDs *[]string, search string, latestVersion bool, packageTypes []string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
+		registryIDs *[]string,
+		search string,
+		latestVersion bool,
+		packageTypes []string,
+		limit int,
+		offset int,
+		softDeleteFilter types.SoftDeleteFilter,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
-		registryIDs *[]string, search string, latestVersion bool, packageTypes []string, softDeleteFilter types.SoftDeleteFilter,
+		registryIDs *[]string,
+		search string,
+		latestVersion bool,
+		packageTypes []string,
+		softDeleteFilter types.SoftDeleteFilter,
 	) (int64, error)
 
 	GetArtifactsByRepo(

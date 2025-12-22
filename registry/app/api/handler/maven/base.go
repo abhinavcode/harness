@@ -99,13 +99,20 @@ func (h *Handler) GetArtifactInfo(r *http.Request, remoteSupport bool) (pkg.Mave
 		return pkg.MavenArtifactInfo{}, errcode.ErrCodeRootNotFound.WithDetail(err)
 	}
 
-	registry, err := h.Controller.DBStore.RegistryDao.GetByRootParentIDAndName(ctx, rootSpace.ID, registryIdentifier, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := h.Controller.DBStore.RegistryDao.GetByRootParentIDAndName(
+		ctx,
+		rootSpace.ID,
+		registryIdentifier,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(
-			"registry %s not found for root: %s. Reason: %s", registryIdentifier, rootSpace.Identifier, err,
+			"registry %s not found for root: %s. Reason: %s",
+			registryIdentifier, rootSpace.Identifier, err,
 		)
 		return pkg.MavenArtifactInfo{}, errcode.ErrCodeRegNotFound
 	}
+
 	_, err = h.SpaceFinder.FindByID(r.Context(), registry.ParentID)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Parent space not found: %d", registry.ParentID)

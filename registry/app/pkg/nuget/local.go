@@ -98,7 +98,12 @@ func (c *localRegistry) ListPackageVersion(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (response *nugettype.PackageVersion, err error) {
-	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(
+		ctx,
+		info.RegistryID,
+		info.Image,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -120,7 +125,12 @@ func (c *localRegistry) ListPackageVersionV2(
 	info nugettype.ArtifactInfo,
 ) (response *nugettype.FeedResponse, err error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(
+		ctx,
+		info.RegistryID,
+		info.Image,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -135,7 +145,12 @@ func (c *localRegistry) CountPackageVersionV2(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (count int64, err error) {
-	count, err2 := c.artifactDao.CountByImageName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	count, err2 := c.artifactDao.CountByImageName(
+		ctx,
+		info.RegistryID,
+		info.Image,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err2 != nil {
 		return 0, fmt.Errorf(
 			"failed to get artifacts count for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -145,7 +160,12 @@ func (c *localRegistry) CountPackageVersionV2(
 
 func (c *localRegistry) CountPackageV2(ctx context.Context, info nugettype.ArtifactInfo,
 	searchTerm string) (count int64, err error) {
-	count, err = c.artifactDao.CountByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), types.SoftDeleteFilterExcludeDeleted)
+	count, err = c.artifactDao.CountByImageName(
+		ctx,
+		info.RegistryID,
+		strings.ToLower(searchTerm),
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return 0, fmt.Errorf(
 			"failed to get artifacts count for registry: %d and image: %s: %w", info.RegistryID, info.Image, err)
@@ -156,7 +176,14 @@ func (c *localRegistry) CountPackageV2(ctx context.Context, info nugettype.Artif
 func (c *localRegistry) SearchPackageV2(ctx context.Context, info nugettype.ArtifactInfo,
 	searchTerm string, limit int, offset int) (*nugettype.FeedResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err := c.artifactDao.SearchByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), limit, offset, types.SoftDeleteFilterExcludeDeleted)
+	artifacts, err := c.artifactDao.SearchByImageName(
+		ctx,
+		info.RegistryID,
+		strings.ToLower(searchTerm),
+		limit,
+		offset,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err)
@@ -168,12 +195,24 @@ func (c *localRegistry) SearchPackage(ctx context.Context,
 	info nugettype.ArtifactInfo,
 	searchTerm string, limit int, offset int) (*nugettype.SearchResultResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err := c.artifactDao.SearchByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), limit, offset, types.SoftDeleteFilterExcludeDeleted)
+	artifacts, err := c.artifactDao.SearchByImageName(
+		ctx,
+		info.RegistryID,
+		strings.ToLower(searchTerm),
+		limit,
+		offset,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err)
 	}
-	count, err2 := c.artifactDao.CountByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), types.SoftDeleteFilterExcludeDeleted)
+	count, err2 := c.artifactDao.CountByImageName(
+		ctx,
+		info.RegistryID,
+		strings.ToLower(searchTerm),
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts count for registry: %d and image: %s: %w",
@@ -187,7 +226,12 @@ func (c *localRegistry) GetPackageMetadata(
 	info nugettype.ArtifactInfo,
 ) (nugettype.RegistrationResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(
+		ctx,
+		info.RegistryID,
+		info.Image,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)

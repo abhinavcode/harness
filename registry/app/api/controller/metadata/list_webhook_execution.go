@@ -67,7 +67,12 @@ func (c *APIController) ListWebhookExecutions(
 	size := GetOffset(r.Params.Size, r.Params.Page)
 	limit := GetPageLimit(r.Params.Size)
 	pageNumber := GetPageNumber(r.Params.Page)
-	reg, err := c.RegistryRepository.GetByParentIDAndName(ctx, space.ID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
+	reg, err := c.RegistryRepository.GetByParentIDAndName(
+		ctx,
+		space.ID,
+		regInfo.RegistryIdentifier,
+		types.SoftDeleteFilterAll,
+	)
 	if err != nil {
 		// Note: This endpoint doesn't have a 404 response type in OpenAPI contract
 		// So we return 500 with a descriptive message for both not found and other errors

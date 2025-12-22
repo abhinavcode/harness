@@ -62,7 +62,15 @@ func (c *controller) SearchPackage(
 		registryList = append(registryList, repoKeys...)
 	}
 	artifacts, err := c.artifactDao.GetAllArtifactsByParentID(
-		ctx, info.ParentID, &registryList, requestInfo.SearchTerm, true, []string{}, requestInfo.Limit, requestInfo.Offset, types.SoftDeleteFilterExcludeDeleted,
+		ctx,
+		info.ParentID,
+		&registryList,
+		requestInfo.SearchTerm,
+		true,
+		[]string{},
+		requestInfo.Limit,
+		requestInfo.Offset,
+		types.SoftDeleteFilterExcludeDeleted,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artifacts %s: %w", info.RegIdentifier, err)

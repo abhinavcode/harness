@@ -159,7 +159,12 @@ func (c *localRegistry) UploadPackageFile(
 func (c *localRegistry) GetPackageMetadata(ctx context.Context, info npm.ArtifactInfo) (npm2.PackageMetadata, error) {
 	packageMetadata := npm2.PackageMetadata{}
 	versions := make(map[string]*npm2.PackageMetadataVersion)
-	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(
+		ctx,
+		info.RegistryID,
+		info.Image,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		log.Ctx(ctx).Warn().Msgf("Failed to fetch artifact for image:[%s], Reg:[%s]",
 			info.BaseArtifactInfo().Image, info.BaseArtifactInfo().RegIdentifier)
@@ -196,7 +201,14 @@ func (c *localRegistry) GetPackageMetadata(ctx context.Context, info npm.Artifac
 
 func (c *localRegistry) SearchPackage(ctx context.Context, info npm.ArtifactInfo,
 	limit int, offset int) (*npm2.PackageSearch, error) {
-	metadataList, err := c.artifactDao.SearchLatestByName(ctx, info.RegistryID, info.Image, limit, offset, types.SoftDeleteFilterExcludeDeleted)
+	metadataList, err := c.artifactDao.SearchLatestByName(
+		ctx,
+		info.RegistryID,
+		info.Image,
+		limit,
+		offset,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 
 	if err != nil {
 		log.Err(err).Msgf("Failed to search package for search term: [%s]", info.Image)
@@ -327,7 +339,13 @@ func (c *localRegistry) ListTags(ctx context.Context, info npm.ArtifactInfo) (ma
 }
 
 func (c *localRegistry) AddTag(ctx context.Context, info npm.ArtifactInfo) (map[string]string, error) {
-	image, err := c.imageDao.GetByRepoAndName(ctx, info.ParentID, info.RegIdentifier, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	image, err := c.imageDao.GetByRepoAndName(
+		ctx,
+		info.ParentID,
+		info.RegIdentifier,
+		info.Image,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return nil, err
 	}

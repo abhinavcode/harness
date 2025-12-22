@@ -1747,7 +1747,12 @@ func (r *LocalRegistry) dbMountBlob(
 		)
 	}
 
-	sourceRepo, err := r.registryDao.GetByParentIDAndName(ctx, info.ParentID, fromRepo, types.SoftDeleteFilterExcludeDeleted)
+	sourceRepo, err := r.registryDao.GetByParentIDAndName(
+		ctx,
+		info.ParentID,
+		fromRepo,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 
 	if err != nil {
 		return err

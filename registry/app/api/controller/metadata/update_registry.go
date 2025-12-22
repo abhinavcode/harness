@@ -72,7 +72,12 @@ func (c *APIController) ModifyRegistry(
 		}, err
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterExcludeDeleted)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(
+		ctx,
+		regInfo.ParentID,
+		regInfo.RegistryIdentifier,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return throwModifyRegistry500Error(err), err
 	}

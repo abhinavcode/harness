@@ -106,7 +106,12 @@ func (c *localRegistry) GetPackageMetadata(
 	ctx context.Context,
 	info pythontype.ArtifactInfo,
 ) (pythontype.PackageMetadata, error) {
-	registry, err := c.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, registrytypes.SoftDeleteFilterExcludeDeleted)
+	registry, err := c.registryDao.GetByRootParentIDAndName(
+		ctx,
+		info.RootParentID,
+		info.RegIdentifier,
+		registrytypes.SoftDeleteFilterExcludeDeleted,
+	)
 	packageMetadata := pythontype.PackageMetadata{}
 	packageMetadata.Name = info.Image
 	packageMetadata.Files = []pythontype.File{}
@@ -115,7 +120,12 @@ func (c *localRegistry) GetPackageMetadata(
 		return packageMetadata, err
 	}
 
-	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(ctx, registry.ID, info.Image, registrytypes.SoftDeleteFilterExcludeDeleted)
+	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(
+		ctx,
+		registry.ID,
+		info.Image,
+		registrytypes.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return packageMetadata, err
 	}

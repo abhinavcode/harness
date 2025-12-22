@@ -149,7 +149,13 @@ func (h *registryHelper) UpdatePackageMetadata(
 		return fmt.Errorf("failed to find registry by ID: %w", err)
 	}
 
-	artifact, err := h.artifactDao.GetByRegistryImageAndVersion(ctx, registryID, image, version, types.SoftDeleteFilterExcludeDeleted)
+	artifact, err := h.artifactDao.GetByRegistryImageAndVersion(
+		ctx,
+		registryID,
+		image,
+		version,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to get artifact by registry, image and version: %w", err)
 	}

@@ -71,7 +71,13 @@ func (c *APIController) UpdateArtifactLabels(
 
 	a := string(r.Artifact)
 
-	artifactEntity, err := c.ImageStore.GetByRepoAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, a, types.SoftDeleteFilterAll)
+	artifactEntity, err := c.ImageStore.GetByRepoAndName(
+		ctx,
+		regInfo.ParentID,
+		regInfo.RegistryIdentifier,
+		a,
+		types.SoftDeleteFilterAll,
+	)
 
 	if len(artifactEntity.Name) == 0 {
 		return artifact.UpdateArtifactLabels404JSONResponse{

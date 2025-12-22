@@ -276,7 +276,13 @@ func (c *Controller) GetOrderedRepos(
 	artInfo pkg.BaseInfo,
 ) ([]registrytypes.Registry, error) {
 	var result []registrytypes.Registry
-	if registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, artInfo.ParentID, repoKey, registrytypes.SoftDeleteFilterExcludeDeleted); err == nil {
+	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(
+		ctx,
+		artInfo.ParentID,
+		repoKey,
+		registrytypes.SoftDeleteFilterExcludeDeleted,
+	)
+	if err == nil {
 		result = append(result, *registry)
 		proxies := registry.UpstreamProxies
 		if len(proxies) > 0 {

@@ -65,7 +65,12 @@ func (c *APIController) GetRegistry(
 			),
 		}, nil
 	}
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, types.SoftDeleteFilterAll)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(
+		ctx,
+		regInfo.ParentID,
+		regInfo.RegistryIdentifier,
+		types.SoftDeleteFilterAll,
+	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetRegistry404JSONResponse{

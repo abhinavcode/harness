@@ -69,18 +69,29 @@ func (c *APIController) DeleteRegistry(
 		//nolint:nilerr
 		return artifact.DeleteRegistry403JSONResponse{
 			UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
-				*GetErrorResponse(http.StatusForbidden, err.Error()),
+				*GetErrorResponse(
+					http.StatusForbidden,
+					err.Error(),
+				),
 			),
 		}, nil
 	}
 
-	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, registrytypes.SoftDeleteFilterAll)
+	repoEntity, err := c.RegistryRepository.GetByParentIDAndName(
+		ctx,
+		regInfo.ParentID,
+		regInfo.RegistryIdentifier,
+		registrytypes.SoftDeleteFilterAll,
+	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			//nolint:nilerr
 			return artifact.DeleteRegistry404JSONResponse{
 				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-					*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+					*GetErrorResponse(
+						http.StatusNotFound,
+						"registry doesn't exist with this key",
+					),
 				),
 			}, nil
 		}

@@ -85,7 +85,14 @@ func (c *APIController) QuarantineFilePath(
 		artifactType = &at
 	}
 
-	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, artifactName, artifactType, types.SoftDeleteFilterExcludeDeleted)
+	img, err := c.ImageStore.GetByNameAndType(
+		ctx,
+		regInfo.RegistryID,
+		artifactName,
+		artifactType,
+		types.SoftDeleteFilterExcludeDeleted,
+	)
+
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.QuarantineFilePath400JSONResponse{

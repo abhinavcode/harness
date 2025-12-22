@@ -393,9 +393,13 @@ func (t tagDao) GetAllArtifactsByParentID(
 	packageTypes []string,
 	softDeleteFilter types.SoftDeleteFilter,
 ) (*[]types.ArtifactMetadata, error) {
-	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(parentID, latestVersion, registryIDs, packageTypes, search, false, softDeleteFilter)
+	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(
+		parentID, latestVersion, registryIDs, packageTypes, search, false, softDeleteFilter,
+	)
 
-	q2 := t.GetAllArtifactsQueryByParentIDForOCI(parentID, latestVersion, registryIDs, packageTypes, search, softDeleteFilter)
+	q2 := t.GetAllArtifactsQueryByParentIDForOCI(
+		parentID, latestVersion, registryIDs, packageTypes, search, softDeleteFilter,
+	)
 
 	q1SQL, q1Args, err := q1.ToSql()
 	if err != nil {
@@ -620,7 +624,11 @@ func (t tagDao) getCoreArtifactsQuery(
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnlyDeleted:
-		query = query.Where("(ar.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		query = query.Where(
+			"(ar.artifact_deleted_at IS NOT NULL OR " +
+				"i.image_deleted_at IS NOT NULL OR " +
+				"r.registry_deleted_at IS NOT NULL)",
+		)
 	case types.SoftDeleteFilterAll:
 		// No filtering
 	}
@@ -863,13 +871,15 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
 				JOIN images i ON i.image_id = ar.artifact_image_id 
 				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a`
+				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL ` +
+				`AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a`
 		case types.SoftDeleteFilterOnlyDeleted:
 			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
 				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
 				JOIN images i ON i.image_id = ar.artifact_image_id 
 				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND (ar.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)) AS a`
+				WHERE r.registry_parent_id = ? AND (ar.artifact_deleted_at IS NOT NULL ` +
+				`OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)) AS a`
 		}
 		q1 = q1.Join(rowNumSubquery+` ON ar.artifact_id = a.id`, parentID).Where("a.rank = 1")
 	}
@@ -894,7 +904,11 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 			Where("r.registry_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnlyDeleted:
 		// Only soft-deleted entities (entity itself OR any parent)
-		q1 = q1.Where("(ar.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		q1 = q1.Where(
+			"(ar.artifact_deleted_at IS NOT NULL OR " +
+				"i.image_deleted_at IS NOT NULL OR " +
+				"r.registry_deleted_at IS NOT NULL)",
+		)
 	case types.SoftDeleteFilterAll:
 		// No filtering - return everything
 	}
@@ -973,7 +987,9 @@ func (t tagDao) CountAllArtifactsByParentID(
 ) (int64, error) {
 	if untaggedImagesEnabled {
 		// Use the new unified count function for all artifacts
-		return t.CountAllArtifactsByParentIDUntagged(ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter)
+		return t.CountAllArtifactsByParentIDUntagged(
+			ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter,
+		)
 	}
 
 	q := databaseg.Builder.Select("COUNT(*)").
@@ -989,7 +1005,11 @@ func (t tagDao) CountAllArtifactsByParentID(
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnlyDeleted:
-		q = q.Where("(ar.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		q = q.Where(
+			"(ar.artifact_deleted_at IS NOT NULL OR " +
+				"i.image_deleted_at IS NOT NULL OR " +
+				"r.registry_deleted_at IS NOT NULL)",
+		)
 	case types.SoftDeleteFilterAll:
 		// No filtering
 	}
@@ -1008,13 +1028,15 @@ func (t tagDao) CountAllArtifactsByParentID(
 				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
 				JOIN images i ON i.image_id = ar.artifact_image_id 
 				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a`
+				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL ` +
+				`AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a`
 		case types.SoftDeleteFilterOnlyDeleted:
 			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
 				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
 				JOIN images i ON i.image_id = ar.artifact_image_id 
 				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND (ar.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)) AS a`
+				WHERE r.registry_parent_id = ? AND (ar.artifact_deleted_at IS NOT NULL ` +
+				`OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)) AS a`
 		}
 		q = q.Join(rowNumSubquery+` ON ar.artifact_id = a.id`, parentID).Where("a.rank = 1")
 	}
@@ -1071,7 +1093,11 @@ func (t tagDao) CountAllArtifactsByParentIDUntagged(
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnlyDeleted:
-		query = query.Where("(ar.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		query = query.Where(
+			"(ar.artifact_deleted_at IS NOT NULL OR " +
+				"i.image_deleted_at IS NOT NULL OR " +
+				"r.registry_deleted_at IS NOT NULL)",
+		)
 	case types.SoftDeleteFilterAll:
 		// No filtering
 	}
@@ -1402,13 +1428,15 @@ func (t tagDao) GetAllArtifactsByRepo(
 			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 			JOIN registries r ON t.tag_registry_id = r.registry_id
 			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND r.registry_deleted_at IS NULL AND i.image_deleted_at IS NULL) AS a`
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? ` +
+			`AND r.registry_deleted_at IS NULL AND i.image_deleted_at IS NULL) AS a`
 	case types.SoftDeleteFilterOnlyDeleted:
 		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
 			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 			JOIN registries r ON t.tag_registry_id = r.registry_id
 			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND (r.registry_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)) AS a`
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? ` +
+			`AND (r.registry_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)) AS a`
 	}
 
 	q := databaseg.Builder.Select(
@@ -1486,13 +1514,15 @@ func (t tagDao) CountAllArtifactsByRepo(
 			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 			JOIN registries r ON t.tag_registry_id = r.registry_id
 			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND r.registry_deleted_at IS NULL AND i.image_deleted_at IS NULL) AS a`
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? ` +
+			`AND r.registry_deleted_at IS NULL AND i.image_deleted_at IS NULL) AS a`
 	case types.SoftDeleteFilterOnlyDeleted:
 		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
 			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 			JOIN registries r ON t.tag_registry_id = r.registry_id
 			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND (r.registry_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)) AS a`
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? ` +
+			`AND (r.registry_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL)) AS a`
 	}
 
 	q := databaseg.Builder.Select("COUNT(*)").

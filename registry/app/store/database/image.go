@@ -64,7 +64,7 @@ type imageDB struct {
 	DeletedBy    *int64                 `db:"image_deleted_by"`
 }
 
-// imageWithParentDB is used for queries that JOIN with registries table
+// imageWithParentDB is used for queries that JOIN with registries table.
 type imageWithParentDB struct {
 	imageDB                  // Embed base struct
 	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from parent registry
@@ -228,8 +228,12 @@ func (i ImageDao) RestoreByImageNameAndRegID(ctx context.Context, regID int64, i
 	return nil
 }
 
-func (i ImageDao) GetByName(ctx context.Context, registryID int64, name string, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
-
+func (i ImageDao) GetByName(
+	ctx context.Context,
+	registryID int64,
+	name string,
+	softDeleteFilter types.SoftDeleteFilter,
+) (*types.Image, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
 		From("images i").
 		Join("registries r ON i.image_registry_id = r.registry_id").
@@ -576,7 +580,7 @@ func (i ImageDao) mapToInternalImage(ctx context.Context, in *types.Image) *imag
 	}
 }
 
-// mapImageWithParent maps imageWithParentDB (from JOIN queries) and computes earliest deletedAt
+// mapImageWithParent maps imageWithParentDB (from JOIN queries) and computes earliest deletedAt.
 func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) (*types.Image, error) {
 	createdBy := dst.CreatedBy
 	updatedBy := dst.UpdatedBy
