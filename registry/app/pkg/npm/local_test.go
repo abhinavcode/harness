@@ -232,16 +232,24 @@ func (m *mockImageDAO) Get(context.Context, int64, types.SoftDeleteFilter) (*typ
 func (m *mockImageDAO) GetByName(context.Context, int64, string, types.SoftDeleteFilter) (*types.Image, error) {
 	return nil, nil //nolint:nilnil
 }
+
+//nolint:lll
 func (m *mockImageDAO) GetByNameAndType(context.Context, int64, string, *artifact.ArtifactType, types.SoftDeleteFilter) (*types.Image, error) {
 	return nil, nil //nolint:nilnil
 }
+
+//nolint:lll
 func (m *mockImageDAO) GetLabelsByParentIDAndRepo(context.Context, int64, string, int, int, string, types.SoftDeleteFilter) ([]string, error) {
 	return nil, nil //nolint:nilnil
 }
+
+//nolint:lll
 func (m *mockImageDAO) CountLabelsByParentIDAndRepo(context.Context, int64, string, string, types.SoftDeleteFilter) (int64, error) {
 	return 0, nil
 }
-func (m *mockImageDAO) GetByRepoAndName(ctx context.Context, parentID int64, repo, name string, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+
+//nolint:lll
+func (m *mockImageDAO) GetByRepoAndName(ctx context.Context, parentID int64, repo, name string, _ types.SoftDeleteFilter) (*types.Image, error) {
 	return m.getByRepoAndName(ctx, parentID, repo, name)
 }
 func (m *mockImageDAO) CreateOrUpdate(context.Context, *types.Image) error             { return nil }
@@ -289,7 +297,7 @@ func (m *mockArtifactDAO) GetLatestArtifactsByRepo(
 
 func (m *mockArtifactDAO) GetByName(
 	ctx context.Context,
-	imageID int64, version string, softDeleteFilter types.SoftDeleteFilter,
+	imageID int64, version string, _ types.SoftDeleteFilter,
 ) (*types.Artifact, error) {
 	return m.getByName(ctx, imageID, version)
 }
@@ -302,7 +310,9 @@ func (m *mockArtifactDAO) GetByRegistryImageAndVersion(
 func (m *mockArtifactDAO) CreateOrUpdate(context.Context, *types.Artifact) (int64, error) {
 	return 0, nil
 }
-func (m *mockArtifactDAO) Count(context.Context, types.SoftDeleteFilter) (int64, error) { return 0, nil }
+func (m *mockArtifactDAO) Count(context.Context, types.SoftDeleteFilter) (int64, error) {
+	return 0, nil
+}
 func (m *mockArtifactDAO) GetLatestArtifactMetadata(
 	context.Context,
 	int64, string, string, types.SoftDeleteFilter,
@@ -333,7 +343,7 @@ func (m *mockArtifactDAO) UpdateArtifactMetadata(context.Context, json.RawMessag
 }
 func (m *mockArtifactDAO) GetByRegistryIDAndImage(
 	ctx context.Context,
-	registryID int64, image string, softDeleteFilter types.SoftDeleteFilter,
+	registryID int64, image string, _ types.SoftDeleteFilter,
 ) (*[]types.Artifact, error) {
 	return m.getByRegistryIDAndImage(ctx, registryID, image)
 }
@@ -371,13 +381,13 @@ func (m *mockArtifactDAO) GetArtifactsByRepoAndImageBatch(
 }
 
 func (m *mockArtifactDAO) SearchLatestByName(
-	ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, regID int64, name string, limit int, offset int, _ types.SoftDeleteFilter,
 ) (*[]types.Artifact, error) {
 	return m.searchLatestByName(ctx, regID, name, limit, offset)
 }
 
 func (m *mockArtifactDAO) CountLatestByName(
-	ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, regID int64, name string, _ types.SoftDeleteFilter,
 ) (int64, error) {
 	return m.countLatestByName(ctx, regID, name)
 }
@@ -404,6 +414,7 @@ func (m *mockArtifactDAO) CountAllArtifactsByParentID(
 }
 
 func (m *mockArtifactDAO) GetArtifactsByRepo(
+	//nolint:lll
 	context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, types.SoftDeleteFilter,
 ) (*[]types.ArtifactMetadata, error) {
 	return &[]types.ArtifactMetadata{}, nil

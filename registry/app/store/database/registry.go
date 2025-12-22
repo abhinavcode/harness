@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"time"
 
-
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/pkg/commons"
@@ -86,7 +85,9 @@ type registryNameID struct {
 	Name string `db:"registry_name"`
 }
 
-func (r registryDao) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Registry, error) {
+func (r registryDao) Get(
+	ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter,
+) (*types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
@@ -305,7 +306,9 @@ func (r registryDao) FetchUpstreamProxyKeys(
 	return orderedRepoKeys, nil
 }
 
-func (r registryDao) GetByIDIn(ctx context.Context, ids []int64, softDeleteFilter types.SoftDeleteFilter) (*[]types.Registry, error) {
+func (r registryDao) GetByIDIn(
+	ctx context.Context, ids []int64, softDeleteFilter types.SoftDeleteFilter,
+) (*[]types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
@@ -506,7 +509,9 @@ func (r registryDao) GetAll(
 }
 
 // fetchArtifactCounts fetches artifact counts for given registry IDs with soft delete filtering.
-func (r registryDao) fetchArtifactCounts(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
+func (r registryDao) fetchArtifactCounts(
+	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
@@ -566,7 +571,9 @@ func (r registryDao) fetchArtifactCounts(ctx context.Context, registryIDs []int6
 }
 
 // fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs with soft delete filtering.
-func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
+func (r registryDao) fetchOCIBlobSizes(
+	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
@@ -631,7 +638,9 @@ func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64,
 }
 
 // fetchGenericBlobSizes fetches generic blob sizes for given registry IDs with soft delete filtering.
-func (r registryDao) fetchGenericBlobSizes(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
+func (r registryDao) fetchGenericBlobSizes(
+	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
@@ -648,6 +657,7 @@ func (r registryDao) fetchGenericBlobSizes(ctx context.Context, registryIDs []in
 			GROUP BY nodes.node_registry_id
 		`
 	case types.SoftDeleteFilterExcludeDeleted:
+		//nolint:lll
 		query = `
 			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
 			FROM nodes n
@@ -699,7 +709,9 @@ func (r registryDao) fetchGenericBlobSizes(ctx context.Context, registryIDs []in
 }
 
 // fetchDownloadCounts fetches download counts for given registry IDs with soft delete filtering.
-func (r registryDao) fetchDownloadCounts(ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter) (map[int64]int64, error) {
+func (r registryDao) fetchDownloadCounts(
+	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
