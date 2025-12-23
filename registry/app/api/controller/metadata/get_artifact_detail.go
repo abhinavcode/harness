@@ -60,6 +60,13 @@ func (c *APIController) GetArtifactDetails(
 		session,
 		permissionChecks...,
 	); err != nil {
+		if errors.Is(err, apiauth.ErrUnauthorized) {
+			return artifact.GetArtifactDetails401JSONResponse{
+				UnauthenticatedJSONResponse: artifact.UnauthenticatedJSONResponse(
+					*GetErrorResponse(http.StatusUnauthorized, err.Error()),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactDetails403JSONResponse{
 			UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
 				*GetErrorResponse(http.StatusForbidden, err.Error()),

@@ -60,11 +60,19 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 		enum.ResourceTypeRegistry,
 		enum.PermissionArtifactsDelete,
 	); err != nil {
+		statusCode, message := HandleAuthError(err)
+		if statusCode == http.StatusUnauthorized {
+			return artifact.DeleteArtifact401JSONResponse{
+				UnauthenticatedJSONResponse: artifact.UnauthenticatedJSONResponse(
+					*GetErrorResponse(http.StatusUnauthorized, message),
+				),
+			}, nil
+		}
 		return artifact.DeleteArtifact403JSONResponse{
 			UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
 				*GetErrorResponse(
 					http.StatusForbidden,
-					err.Error(),
+					message,
 				),
 			),
 		}, nil

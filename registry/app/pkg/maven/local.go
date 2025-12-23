@@ -242,6 +242,7 @@ func (r *LocalRegistry) updateArtifactMetadata(
 			})
 			mavenMetadata.Files = files
 			mavenMetadata.FileCount++
+			mavenMetadata.UpdateSize(fileInfo.Size)
 		}
 	} else {
 		files = append(files, metadata.File{
@@ -250,6 +251,7 @@ func (r *LocalRegistry) updateArtifactMetadata(
 		})
 		mavenMetadata.Files = files
 		mavenMetadata.FileCount++
+		mavenMetadata.UpdateSize(fileInfo.Size)
 	}
 	return nil
 }

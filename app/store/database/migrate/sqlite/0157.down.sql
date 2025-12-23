@@ -1,17 +1,5 @@
+DROP INDEX IF EXISTS idx_registry_tasks_kind;
+DROP INDEX IF EXISTS idx_registry_tasks_created_by;
 
--- Drop indexes first
-DROP INDEX IF EXISTS idx_registries_deleted_at;
-DROP INDEX IF EXISTS idx_images_deleted_at;
-DROP INDEX IF EXISTS idx_artifacts_deleted_at;
-
--- Drop columns from registries table
-ALTER TABLE registries DROP COLUMN registry_deleted_at;
-ALTER TABLE registries DROP COLUMN registry_deleted_by;
-
--- Drop columns from images table
-ALTER TABLE images DROP COLUMN image_deleted_at;
-ALTER TABLE images DROP COLUMN image_deleted_by;
-
--- Drop columns from artifacts table
-ALTER TABLE artifacts DROP COLUMN artifact_deleted_at;
-ALTER TABLE artifacts DROP COLUMN artifact_deleted_by;
+ALTER TABLE registry_tasks DROP COLUMN registry_task_created_by;
+ALTER TABLE registry_tasks DROP COLUMN registry_task_output;

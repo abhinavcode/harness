@@ -66,12 +66,21 @@ func (c *APIController) DeleteRegistry(
 		session,
 		permissionChecks...,
 	); err != nil {
+		statusCode, message := HandleAuthError(err)
+		if statusCode == http.StatusUnauthorized {
+			//nolint:nilerr
+			return artifact.DeleteRegistry401JSONResponse{
+				UnauthenticatedJSONResponse: artifact.UnauthenticatedJSONResponse(
+					*GetErrorResponse(http.StatusUnauthorized, message),
+				),
+			}, nil
+		}
 		//nolint:nilerr
 		return artifact.DeleteRegistry403JSONResponse{
 			UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
 				*GetErrorResponse(
 					http.StatusForbidden,
-					err.Error(),
+					message,
 				),
 			),
 		}, nil
