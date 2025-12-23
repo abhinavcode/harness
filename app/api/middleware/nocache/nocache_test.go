@@ -30,7 +30,7 @@ func TestNoCache(t *testing.T) {
 	}{
 		{
 			name: "sets no-cache headers",
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte("test response"))
 			}),
@@ -39,7 +39,7 @@ func TestNoCache(t *testing.T) {
 		},
 		{
 			name: "preserves handler status code",
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 			}),
 			expectedStatus: http.StatusNotFound,
@@ -47,7 +47,7 @@ func TestNoCache(t *testing.T) {
 		},
 		{
 			name: "works with empty handler",
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler: http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 				// Empty handler
 			}),
 			expectedStatus: http.StatusOK,
@@ -92,7 +92,7 @@ func TestNoCache(t *testing.T) {
 
 func TestNoCachePreservesETag(t *testing.T) {
 	// Create a handler that sets an ETag
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("ETag", `"test-etag-123"`)
 		w.WriteHeader(http.StatusOK)
 	})
@@ -118,7 +118,7 @@ func TestNoCachePreservesETag(t *testing.T) {
 }
 
 func TestNoCacheWithMultipleRequests(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("response"))
 	})
@@ -144,7 +144,7 @@ func TestNoCacheWithMultipleRequests(t *testing.T) {
 }
 
 func TestNoCacheHeaderValues(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 

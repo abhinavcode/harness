@@ -29,6 +29,8 @@ type CloudLocation struct {
 }
 
 // ReplicationDetails represents the ReplicationDetails message from the proto file.
+//
+//nolint:revive // keeping original name for consistency
 type ReplicationDetails struct {
 	AccountID     string          `json:"account_id,omitempty"`
 	Action        BlobAction      `json:"action,omitempty"`

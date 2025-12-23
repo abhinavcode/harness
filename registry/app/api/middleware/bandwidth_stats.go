@@ -207,7 +207,7 @@ func TrackBandwidthStatForMavenArtifacts(h *maven.Handler) func(http.Handler) ht
 func dbBandwidthStatForGenericArtifact(
 	ctx context.Context,
 	c *generic2.Controller,
-	info pkg.GenericArtifactInfo,
+	info pkg.GenericArtifactInfo, //nolint:staticcheck // deprecated type still in use
 	bandwidthType types.BandwidthType,
 ) errcode.Error {
 	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier)

@@ -40,7 +40,7 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - tagliatelle
+    # - tagliatelle  # Disabled: codebase uses snake_case for JSON tags at a lot of places
     - tparallel
     - unconvert
     - unparam

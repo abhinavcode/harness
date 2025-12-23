@@ -203,7 +203,7 @@ func TrackDownloadStatForMavenArtifact(h *maven.Handler) func(http.Handler) http
 func dbDownloadStatForGenericArtifact(
 	ctx context.Context,
 	c *generic2.Controller,
-	info pkg.GenericArtifactInfo,
+	info pkg.GenericArtifactInfo, //nolint:staticcheck // deprecated type still in use
 ) errcode.Error {
 	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier)
 	if err != nil {

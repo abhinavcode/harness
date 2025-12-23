@@ -122,7 +122,8 @@ func (c *Controller) updateResourceIdentifier(
 	gitspaceConfig *gitnessTypes.GitspaceConfig,
 ) error {
 	// Handle resource identifier update similar to create, but only if provided
-	if in.ResourceIdentifier == "" || in.ResourceIdentifier == gitspaceConfig.InfraProviderResource.UID {
+	if in.ResourceIdentifier == "" ||
+		in.ResourceIdentifier == gitspaceConfig.InfraProviderResource.UID {
 		return nil
 	}
 

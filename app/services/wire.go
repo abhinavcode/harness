@@ -112,7 +112,7 @@ func ProvideServices(
 	registryWebhooksService *registrywebhooks.Service,
 	branchSvc *branch.Service,
 	registryAsyncProcessingService *registryasyncprocessing.Service,
-	registryJobRpmRegistryIndex *handler.JobRpmRegistryIndex,
+	_ *handler.JobRpmRegistryIndex,
 ) Services {
 	return Services{
 		Webhook:                        webhooksSvc,

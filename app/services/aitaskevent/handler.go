@@ -149,6 +149,6 @@ func (s *Service) handleStartEvent(
 }
 
 // handleStopEvent is NOOP as we currently do not support stopping of ai task.
-func (s *Service) handleStopEvent(ctx context.Context, eventPayload *aitaskevents.AITaskEventPayload) error {
+func (s *Service) handleStopEvent(_ context.Context, _ *aitaskevents.AITaskEventPayload) error {
 	return nil
 }

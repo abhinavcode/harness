@@ -38,7 +38,7 @@ func TestServeContent_NilReader(t *testing.T) {
 	handler := &Handler{}
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	info := pkg.GenericArtifactInfo{FileName: "test.txt"} //nolint:staticcheck // deprecated type
+	info := pkg.GenericArtifactInfo{FileName: "test.txt"} //nolint:staticcheck // deprecated type still in use
 
 	handler.serveContent(w, req, nil, info)
 
@@ -50,7 +50,7 @@ func TestServeContent_ValidFilename(t *testing.T) {
 	handler := &Handler{}
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	info := pkg.GenericArtifactInfo{FileName: "test.txt"} //nolint:staticcheck // deprecated type
+	info := pkg.GenericArtifactInfo{FileName: "test.txt"} //nolint:staticcheck // deprecated type still in use
 
 	handler.serveContent(w, req, nil, info)
 
@@ -62,7 +62,7 @@ func TestServeContent_EmptyFilename(t *testing.T) {
 	handler := &Handler{}
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	info := pkg.GenericArtifactInfo{FileName: ""} //nolint:staticcheck // deprecated type
+	info := pkg.GenericArtifactInfo{FileName: ""} //nolint:staticcheck // deprecated type still in use
 
 	handler.serveContent(w, req, nil, info)
 

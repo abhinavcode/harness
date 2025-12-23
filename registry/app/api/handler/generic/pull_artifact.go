@@ -25,7 +25,7 @@ import (
 
 func (h *Handler) PullArtifact(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	info, err := h.GetGenericArtifactInfo(r)
+	info, err := h.GetGenericArtifactInfo(r) //nolint:staticcheck // deprecated method still in use
 	if !commons.IsEmptyError(err) {
 		handleErrors(r.Context(), err, w)
 		return
@@ -34,6 +34,7 @@ func (h *Handler) PullArtifact(w http.ResponseWriter, r *http.Request) {
 		info.FileName = r.FormValue("filename")
 	}
 
+	//nolint:staticcheck // deprecated method still in use
 	headers, fileReader, redirectURL, err := h.Controller.PullArtifact(ctx, info)
 	if commons.IsEmptyError(err) {
 		w.Header().Set("Content-Disposition", "attachment; filename="+info.FileName)
@@ -48,6 +49,7 @@ func (h *Handler) PullArtifact(w http.ResponseWriter, r *http.Request) {
 	handleErrors(r.Context(), err, w)
 }
 
+//nolint:staticcheck // deprecated type still in use
 func (h *Handler) serveContent(
 	w http.ResponseWriter, r *http.Request, fileReader *storage.FileReader, info pkg.GenericArtifactInfo,
 ) {

@@ -302,7 +302,7 @@ func (h *Handler) GetPackageArtifactInfo(r *http.Request) (pkg.PackageArtifactIn
 		return nil, err
 	}
 
-	return pkg.GenericArtifactInfo{
+	return pkg.GenericArtifactInfo{ //nolint:staticcheck // deprecated type kept for backward compatibility
 		ArtifactInfo: &info,
 		Version:      version,
 		RegistryID:   info.RegistryID,
