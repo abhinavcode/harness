@@ -25,6 +25,7 @@ import (
 	"github.com/harness/gitness/registry/app/api/controller/mocks"
 	api "github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/types"
+	"github.com/harness/gitness/store"
 	coretypes "github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
 
@@ -104,12 +105,14 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
+					types.SoftDeleteFilterExcludeDeleted,
 				).Return(registry, nil)
 				mockImageStore.On(
 					"GetByName",
 					mock.Anything,
 					int64(1),
 					"test-artifact",
+					types.SoftDeleteFilterAll,
 				).Return(artifact, nil)
 				mockTx.On("WithTx", mock.Anything, mock.AnythingOfType("func(context.Context) error")).Return(nil)
 				mockAuditService.On(
@@ -234,7 +237,8 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
-				).Return(nil, fmt.Errorf("registry doesn't exist with this key"))
+					types.SoftDeleteFilterExcludeDeleted,
+				).Return(nil, store.ErrResourceNotFound)
 
 				c.SpaceFinder = mockSpaceFinder
 				c.RegistryRepository = mockRegistryRepository
@@ -295,12 +299,14 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
+					types.SoftDeleteFilterExcludeDeleted,
 				).Return(registry, nil)
 				mockImageStore.On(
 					"GetByName",
 					mock.Anything,
 					int64(1),
 					"non-existent-artifact",
+					types.SoftDeleteFilterAll,
 				).Return(nil, fmt.Errorf("artifact doesn't exist with this key"))
 
 				c.SpaceFinder = mockSpaceFinder
@@ -364,12 +370,14 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
+					types.SoftDeleteFilterExcludeDeleted,
 				).Return(registry, nil)
 				mockImageStore.On(
 					"GetByName",
 					mock.Anything,
 					int64(1),
 					"deleted-artifact",
+					types.SoftDeleteFilterAll,
 				).Return(nil, fmt.Errorf("artifact is already deleted"))
 
 				c.SpaceFinder = mockSpaceFinder
