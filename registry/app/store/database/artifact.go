@@ -70,6 +70,75 @@ type artifactWithParentsDB struct {
 	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from grandparent registry
 }
 
+// GetByUUID gets an artifact by its UUID (includes soft-deleted artifacts).
+func (a ArtifactDao) GetByUUID(
+	ctx context.Context, uuid string,
+) (*types.Artifact, error) {
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
+		From("artifacts a").
+		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("a.artifact_uuid = ?", uuid)
+
+	sql, args, err := q.ToSql()
+	if err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to convert query to sql")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+
+	dst := new(artifactWithParentsDB)
+	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing find query")
+	}
+
+	return a.mapArtifactWithParents(ctx, dst)
+}
+
+// RestoreByUUID restores a soft-deleted artifact by its UUID.
+func (a ArtifactDao) RestoreByUUID(ctx context.Context, uuid string) error {
+	session, _ := request.AuthSessionFrom(ctx)
+	if session == nil {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "authentication required for restore operation")
+	}
+	userID := session.Principal.ID
+
+	// Enterprise uses PostgreSQL only
+	stmt := databaseg.Builder.Update("artifacts a").
+		Set("artifact_deleted_at", nil).
+		Set("artifact_deleted_by", nil).
+		Set("artifact_updated_at", time.Now().UnixMilli()).
+		Set("artifact_updated_by", userID).
+		From("images i").
+		Where("a.artifact_image_id = i.image_id").
+		Where("a.artifact_uuid = ?", uuid).
+		Where("a.artifact_deleted_at IS NOT NULL").
+		Where("i.image_deleted_at IS NULL").
+		Where("EXISTS (SELECT 1 FROM registries r WHERE r.registry_id = i.image_registry_id AND r.registry_deleted_at IS NULL)") //nolint:lll
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore artifact")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "Artifact not found or not deleted")
+	}
+
+	return nil
+}
+
 func (a ArtifactDao) GetByName(
 	ctx context.Context, imageID int64, version string, softDeleteFilter types.SoftDeleteFilter,
 ) (*types.Artifact, error) {

@@ -228,6 +228,67 @@ func (i ImageDao) RestoreByImageNameAndRegID(ctx context.Context, regID int64, i
 	return nil
 }
 
+// GetByUUID gets an image by its UUID (includes soft-deleted images).
+func (i ImageDao) GetByUUID(
+	ctx context.Context, uuid string,
+) (*types.Image, error) {
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
+		From("images i").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("i.image_uuid = ?", uuid)
+
+	sql, args, err := q.ToSql()
+	if err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to convert query to sql")
+	}
+
+	db := dbtx.GetAccessor(ctx, i.db)
+
+	dst := new(imageWithParentDB)
+	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing find query")
+	}
+
+	return i.mapImageWithParent(ctx, dst)
+}
+
+// RestoreByUUID restores a soft-deleted image by its UUID.
+func (i ImageDao) RestoreByUUID(ctx context.Context, uuid string) error {
+	session, _ := request.AuthSessionFrom(ctx)
+	userID := session.Principal.ID
+
+	stmt := databaseg.Builder.
+		Update("images").
+		Set("image_deleted_at", nil).
+		Set("image_deleted_by", nil).
+		Set("image_updated_at", time.Now().UnixMilli()).
+		Set("image_updated_by", userID).
+		Where("image_uuid = ? AND image_deleted_at IS NOT NULL", uuid).
+		Where("EXISTS (SELECT 1 FROM registries r WHERE r.registry_id = image_registry_id AND r.registry_deleted_at IS NULL)")
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
+	}
+
+	db := dbtx.GetAccessor(ctx, i.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore image")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "Image not found or not deleted")
+	}
+
+	return nil
+}
+
 func (i ImageDao) GetByName(
 	ctx context.Context,
 	registryID int64,

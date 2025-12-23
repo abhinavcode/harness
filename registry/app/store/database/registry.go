@@ -973,6 +973,66 @@ func (r registryDao) Restore(ctx context.Context, parentID int64, name string) e
 	return nil
 }
 
+// GetByUUID gets a registry by its UUID (includes soft-deleted registries).
+func (r registryDao) GetByUUID(
+	ctx context.Context, uuid string,
+) (*types.Registry, error) {
+	stmt := databaseg.Builder.
+		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
+		From("registries").
+		Where("registry_uuid = ?", uuid)
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to convert query to sql")
+	}
+
+	db := dbtx.GetAccessor(ctx, r.db)
+
+	dst := new(registryDB)
+	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing custom find query")
+	}
+
+	return r.mapToRegistry(ctx, dst)
+}
+
+// RestoreByUUID restores a soft-deleted registry by its UUID.
+func (r registryDao) RestoreByUUID(ctx context.Context, uuid string) error {
+	session, _ := request.AuthSessionFrom(ctx)
+	userID := session.Principal.ID
+
+	stmt := databaseg.Builder.
+		Update("registries").
+		Set("registry_deleted_at", nil).
+		Set("registry_deleted_by", nil).
+		Set("registry_updated_at", time.Now().UnixMilli()).
+		Set("registry_updated_by", userID).
+		Where("registry_uuid = ? AND registry_deleted_at IS NOT NULL", uuid)
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
+	}
+
+	db := dbtx.GetAccessor(ctx, r.db)
+	result, err := db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore registry")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return databaseg.ProcessSQLErrorf(ctx, nil, "Registry not found or not deleted")
+	}
+
+	return nil
+}
+
 func (r registryDao) Update(ctx context.Context, registry *types.Registry) (err error) {
 	var sqlQuery = " UPDATE registries SET " + util.GetSetDBKeys(registryDB{}, "registry_id, registry_uuid") +
 		" WHERE registry_id = :registry_id "
