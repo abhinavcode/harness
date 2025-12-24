@@ -37,10 +37,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// httpStatusCodePattern is compiled once for performance
+// httpStatusCodePattern is compiled once for performance.
 var httpStatusCodePattern = regexp.MustCompile(`http status code:\s*(\d+)`)
 
-// maxTranslateDepth prevents infinite recursion in error translation
+// maxTranslateDepth prevents infinite recursion in error translation.
 const maxTranslateDepth = 10
 
 func Translate(ctx context.Context, err error) *Error {
@@ -225,7 +225,7 @@ func httpStatusCode(code errors.Status) int {
 	return http.StatusInternalServerError
 }
 
-// getErrcodeHTTPStatus extracts HTTP status from errcode.Error, defaults to 500
+// getErrcodeHTTPStatus extracts HTTP status from errcode.Error, defaults to 500.
 func getErrcodeHTTPStatus(errcodeError errcode.Error) int {
 	httpStatus := errcodeError.Code.Descriptor().HTTPStatusCode
 	if httpStatus == 0 {
