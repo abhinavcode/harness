@@ -46,7 +46,7 @@ func (h *handler) PackageMetadata(w http.ResponseWriter, r *http.Request) {
 	contextInfo := request.ArtifactInfoFrom(r.Context())
 	info, ok := contextInfo.(*pythontype.ArtifactInfo)
 	if !ok {
-		render.TranslatedUserError(r.Context(), w, fmt.Errorf("invalid request context"))
+		h.HandleError(r.Context(), w, fmt.Errorf("invalid request context"))
 		return
 	}
 
@@ -57,19 +57,19 @@ func (h *handler) PackageMetadata(w http.ResponseWriter, r *http.Request) {
 			render.NotFound(r.Context(), w)
 			return
 		}
-		render.TranslatedUserError(r.Context(), w, packageData.GetError())
+		h.HandleError(r.Context(), w, packageData.GetError())
 		return
 	}
 
 	// Parse and execute the template
 	tmpl, err := template.New("simple").Parse(HTMLTemplate)
 	if err != nil {
-		render.TranslatedUserError(r.Context(), w, fmt.Errorf("template error: %w", err))
+		h.HandleError(r.Context(), w, fmt.Errorf("template error: %w", err))
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.Execute(w, packageData.PackageMetadata); err != nil {
-		render.TranslatedUserError(r.Context(), w, fmt.Errorf("template rendering error: %w", err))
+		h.HandleError(r.Context(), w, fmt.Errorf("template rendering error: %w", err))
 	}
 }

@@ -31,6 +31,7 @@ import (
 	corestore "github.com/harness/gitness/app/store"
 	"github.com/harness/gitness/errors"
 	"github.com/harness/gitness/registry/app/api/controller/metadata"
+	"github.com/harness/gitness/registry/app/api/handler/packages"
 	"github.com/harness/gitness/registry/app/api/handler/utils"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
@@ -228,7 +229,9 @@ func handleErrors(ctx context.Context, errs errcode.Errors, w http.ResponseWrite
 			code := e.Status
 			w.WriteHeader(code)
 		default:
-			render.TranslatedUserError(ctx, w, err)
+			// Use registry error translator for Maven-specific errors
+			translatedErr := packages.TranslateRegistryError(ctx, err)
+			render.UserError(ctx, w, translatedErr)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(errs)

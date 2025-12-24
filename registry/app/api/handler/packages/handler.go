@@ -20,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,6 +48,14 @@ import (
 	"github.com/harness/gitness/types/enum"
 
 	"github.com/rs/zerolog/log"
+)
+
+var (
+	// httpStatusCodePattern is compiled once for performance.
+	httpStatusCodePattern = regexp.MustCompile(`http status code:\s*(\d+)`)
+
+	// maxTranslateDepth prevents infinite recursion in error translation.
+	maxTranslateDepth = 10
 )
 
 func NewHandler(
@@ -329,7 +339,9 @@ func (h *handler) HandleErrors(ctx context.Context, errs errcode.Errors, w http.
 func (h *handler) HandleError(ctx context.Context, w http.ResponseWriter, err error) {
 	if nil != err {
 		log.Error().Err(err).Ctx(ctx).Msgf("error: %v", err)
-		render.TranslatedUserError(ctx, w, err)
+		// Translate registry-specific errors, then delegate to core rendering
+		translatedErr := translateRegistryError(ctx, err, 0)
+		render.UserError(ctx, w, translatedErr)
 		return
 	}
 }
@@ -375,4 +387,84 @@ func (h *handler) GetPackageArtifactInfo(r *http.Request) (pkg.PackageArtifactIn
 	return commons2.ArtifactInfo{
 		ArtifactInfo: info,
 	}, nil
+}
+
+// TranslateRegistryError translates registry-specific errors to usererror.Error.
+// This is exported for use by other registry handlers (OCI, Maven, Generic).
+func TranslateRegistryError(ctx context.Context, err error) *usererror.Error {
+	return translateRegistryError(ctx, err, 0)
+}
+
+// translateRegistryError translates registry-specific errors to usererror.Error.
+// This handles errcode.Error and commons.Error types that the core translator doesn't recognize.
+func translateRegistryError(ctx context.Context, err error, depth int) *usererror.Error {
+	// Prevent infinite recursion
+	if depth >= maxTranslateDepth {
+		log.Ctx(ctx).Warn().Int("depth", depth).Msgf(
+			"Maximum translation depth reached in registry error handler, returning Internal Error",
+		)
+		return usererror.ErrInternal
+	}
+
+	var (
+		commonsError *commons.Error
+		errcodeError errcode.Error
+	)
+
+	log.Ctx(ctx).Info().Err(err).Msgf("translating error to user facing error")
+
+	switch {
+	// Handle registry commons errors
+	case errors.As(err, &commonsError):
+		return usererror.New(commonsError.Status, commonsError.Message)
+
+	// Handle errcode errors (from Docker registry distribution)
+	case errors.As(err, &errcodeError):
+		// Try to translate the wrapped detail error
+		if detailErr, ok := errcodeError.Detail.(error); ok {
+			translated := translateRegistryError(ctx, detailErr, depth+1)
+			if translated.Message != usererror.ErrInternal.Message {
+				return translated
+			}
+			// Extract HTTP status from error message if available
+			httpStatus := extractHTTPStatusFromError(detailErr.Error())
+			if httpStatus == 0 {
+				httpStatus = getErrcodeHTTPStatus(errcodeError)
+			}
+			return usererror.New(httpStatus, detailErr.Error())
+		}
+		// No detail error, use errcode message
+		return usererror.New(getErrcodeHTTPStatus(errcodeError), errcodeError.Message)
+
+	// For all other errors, delegate to core translator
+	default:
+		log.Ctx(ctx).Warn().Err(err).Msgf(
+			"Registry error handler: delegating to core translator for non-registry error",
+		)
+		return usererror.Translate(ctx, err)
+	}
+}
+
+// getErrcodeHTTPStatus extracts HTTP status from errcode.Error, defaults to 500.
+func getErrcodeHTTPStatus(errcodeError errcode.Error) int {
+	httpStatus := errcodeError.Code.Descriptor().HTTPStatusCode
+	if httpStatus == 0 {
+		httpStatus = http.StatusInternalServerError
+	}
+	return httpStatus
+}
+
+// extractHTTPStatusFromError extracts HTTP status code from error messages
+// with pattern "http status code: XXX". Returns 0 if not found.
+func extractHTTPStatusFromError(errMsg string) int {
+	matches := httpStatusCodePattern.FindStringSubmatch(errMsg)
+	if len(matches) > 1 {
+		if status, err := strconv.Atoi(matches[1]); err == nil {
+			// Valid HTTP status codes: 1xx-5xx (100-599)
+			if status >= 100 && status <= 599 {
+				return status
+			}
+		}
+	}
+	return 0
 }

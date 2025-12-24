@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/harness/gitness/app/api/render"
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	rpmtype "github.com/harness/gitness/registry/app/pkg/types/rpm"
 	"github.com/harness/gitness/registry/request"
@@ -31,7 +30,7 @@ func (h *handler) GetRepoData(w http.ResponseWriter, r *http.Request) {
 	contextInfo := request.ArtifactInfoFrom(ctx)
 	info, ok := contextInfo.(*rpmtype.ArtifactInfo)
 	if !ok {
-		render.TranslatedUserError(r.Context(), w, fmt.Errorf("invalid request context"))
+		h.HandleError(r.Context(), w, fmt.Errorf("invalid request context"))
 		return
 	}
 	fileName := r.PathValue("file")
