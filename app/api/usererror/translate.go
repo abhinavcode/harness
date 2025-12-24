@@ -17,6 +17,8 @@ package usererror
 import (
 	"context"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/controller/limiter"
@@ -27,6 +29,8 @@ import (
 	"github.com/harness/gitness/errors"
 	"github.com/harness/gitness/git/api"
 	"github.com/harness/gitness/lock"
+	"github.com/harness/gitness/registry/app/dist_temp/errcode"
+	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/check"
 
@@ -36,6 +40,8 @@ import (
 func Translate(ctx context.Context, err error) *Error {
 	var (
 		rError                   *Error
+		commonsError             *commons.Error
+		errcodeError             errcode.Error
 		checkError               *check.ValidationError
 		appError                 *errors.Error
 		unrelatedHistoriesErr    *api.UnrelatedHistoriesError
@@ -54,6 +60,35 @@ func Translate(ctx context.Context, err error) *Error {
 	// api errors
 	case errors.As(err, &rError):
 		return rError
+
+	// registry commons errors
+	case errors.As(err, &commonsError):
+		return New(commonsError.Status, commonsError.Message)
+
+	// errcode errors (from Docker registry)
+	case errors.As(err, &errcodeError):
+		// Try to translate the wrapped detail error
+		if detailErr, ok := errcodeError.Detail.(error); ok {
+			translated := Translate(ctx, detailErr)
+			if translated.Message != ErrInternal.Message {
+				return translated
+			}
+			// Extract HTTP status from error message if available
+			httpStatus := extractHTTPStatusFromError(detailErr.Error())
+			if httpStatus == 0 {
+				httpStatus = errcodeError.Code.Descriptor().HTTPStatusCode
+				if httpStatus == 0 {
+					httpStatus = http.StatusInternalServerError
+				}
+			}
+			return New(httpStatus, detailErr.Error())
+		}
+		// No detail error, use errcode message
+		httpStatus := errcodeError.Code.Descriptor().HTTPStatusCode
+		if httpStatus == 0 {
+			httpStatus = http.StatusInternalServerError
+		}
+		return New(httpStatus, errcodeError.Message)
 
 	// api auth errors
 	case errors.Is(err, apiauth.ErrForbidden):
@@ -180,4 +215,19 @@ func httpStatusCode(code errors.Status) int {
 		return v
 	}
 	return http.StatusInternalServerError
+}
+
+// extractHTTPStatusFromError extracts HTTP status code from error messages
+// with pattern "http status code: XXX". Returns 0 if not found.
+func extractHTTPStatusFromError(errMsg string) int {
+	re := regexp.MustCompile(`http status code:\s*(\d+)`)
+	matches := re.FindStringSubmatch(errMsg)
+	if len(matches) > 1 {
+		if status, err := strconv.Atoi(matches[1]); err == nil {
+			if status >= 100 && status < 600 {
+				return status
+			}
+		}
+	}
+	return 0
 }
