@@ -37,7 +37,22 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// httpStatusCodePattern is compiled once for performance
+var httpStatusCodePattern = regexp.MustCompile(`http status code:\s*(\d+)`)
+
+// maxTranslateDepth prevents infinite recursion in error translation
+const maxTranslateDepth = 10
+
 func Translate(ctx context.Context, err error) *Error {
+	return translateWithDepth(ctx, err, 0)
+}
+
+func translateWithDepth(ctx context.Context, err error, depth int) *Error {
+	// Prevent infinite recursion
+	if depth >= maxTranslateDepth {
+		log.Ctx(ctx).Warn().Int("depth", depth).Msgf("Maximum translation depth reached, returning Internal Error")
+		return ErrInternal
+	}
 	var (
 		rError                   *Error
 		commonsError             *commons.Error
@@ -69,26 +84,19 @@ func Translate(ctx context.Context, err error) *Error {
 	case errors.As(err, &errcodeError):
 		// Try to translate the wrapped detail error
 		if detailErr, ok := errcodeError.Detail.(error); ok {
-			translated := Translate(ctx, detailErr)
+			translated := translateWithDepth(ctx, detailErr, depth+1)
 			if translated.Message != ErrInternal.Message {
 				return translated
 			}
 			// Extract HTTP status from error message if available
 			httpStatus := extractHTTPStatusFromError(detailErr.Error())
 			if httpStatus == 0 {
-				httpStatus = errcodeError.Code.Descriptor().HTTPStatusCode
-				if httpStatus == 0 {
-					httpStatus = http.StatusInternalServerError
-				}
+				httpStatus = getErrcodeHTTPStatus(errcodeError)
 			}
 			return New(httpStatus, detailErr.Error())
 		}
 		// No detail error, use errcode message
-		httpStatus := errcodeError.Code.Descriptor().HTTPStatusCode
-		if httpStatus == 0 {
-			httpStatus = http.StatusInternalServerError
-		}
-		return New(httpStatus, errcodeError.Message)
+		return New(getErrcodeHTTPStatus(errcodeError), errcodeError.Message)
 
 	// api auth errors
 	case errors.Is(err, apiauth.ErrForbidden):
@@ -217,14 +225,23 @@ func httpStatusCode(code errors.Status) int {
 	return http.StatusInternalServerError
 }
 
+// getErrcodeHTTPStatus extracts HTTP status from errcode.Error, defaults to 500
+func getErrcodeHTTPStatus(errcodeError errcode.Error) int {
+	httpStatus := errcodeError.Code.Descriptor().HTTPStatusCode
+	if httpStatus == 0 {
+		httpStatus = http.StatusInternalServerError
+	}
+	return httpStatus
+}
+
 // extractHTTPStatusFromError extracts HTTP status code from error messages
 // with pattern "http status code: XXX". Returns 0 if not found.
 func extractHTTPStatusFromError(errMsg string) int {
-	re := regexp.MustCompile(`http status code:\s*(\d+)`)
-	matches := re.FindStringSubmatch(errMsg)
+	matches := httpStatusCodePattern.FindStringSubmatch(errMsg)
 	if len(matches) > 1 {
 		if status, err := strconv.Atoi(matches[1]); err == nil {
-			if status >= 100 && status < 600 {
+			// Valid HTTP status codes: 1xx-5xx (100-599)
+			if status >= 100 && status <= 599 {
 				return status
 			}
 		}
