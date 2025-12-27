@@ -47,7 +47,7 @@ func TestNoCache(t *testing.T) {
 		},
 		{
 			name: "works with empty handler",
-			handler: http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+			handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 				// Empty handler
 			}),
 			expectedStatus: http.StatusOK,

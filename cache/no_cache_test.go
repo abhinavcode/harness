@@ -34,7 +34,7 @@ func (m *mockGetter) Find(ctx context.Context, key string) (string, error) {
 
 func TestNewNoCache(t *testing.T) {
 	getter := &mockGetter{
-		findFunc: func(_ context.Context, _ string) (string, error) {
+		findFunc: func(context.Context, string) (string, error) {
 			return testValue, nil
 		},
 	}
@@ -47,7 +47,7 @@ func TestNewNoCache(t *testing.T) {
 
 func TestNoCache_Stats(t *testing.T) {
 	getter := &mockGetter{
-		findFunc: func(_ context.Context, _ string) (string, error) {
+		findFunc: func(context.Context, string) (string, error) {
 			return testValue, nil
 		},
 	}
@@ -88,7 +88,7 @@ func TestNoCache_Get(t *testing.T) {
 	t.Run("get with error", func(t *testing.T) {
 		expectedErr := errors.New("getter error")
 		getter := &mockGetter{
-			findFunc: func(_ context.Context, _ string) (string, error) {
+			findFunc: func(context.Context, string) (string, error) {
 				return "", expectedErr
 			},
 		}
@@ -104,7 +104,7 @@ func TestNoCache_Get(t *testing.T) {
 	t.Run("multiple gets call getter each time", func(t *testing.T) {
 		callCount := 0
 		getter := &mockGetter{
-			findFunc: func(_ context.Context, _ string) (string, error) {
+			findFunc: func(context.Context, string) (string, error) {
 				callCount++
 				return testValue, nil
 			},
@@ -144,7 +144,7 @@ func TestNoCache_Get(t *testing.T) {
 func TestNoCache_Evict(t *testing.T) {
 	t.Run("evict does nothing", func(t *testing.T) {
 		getter := &mockGetter{
-			findFunc: func(_ context.Context, _ string) (string, error) {
+			findFunc: func(context.Context, string) (string, error) {
 				return testValue, nil
 			},
 		}
