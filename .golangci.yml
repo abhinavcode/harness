@@ -40,7 +40,7 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    # - tagliatelle  # Disabled: codebase uses snake_case for JSON tags at a lot of places
+    - tagliatelle
     - tparallel
     - unconvert
     - unparam
@@ -119,6 +119,116 @@ linters:
           mapstructure: snake
           xml: snake
           yaml: snake
+      # Override for packages that need camelCase (external APIs, events, clients)
+      overrides:
+        - pkg: github.com/harness/gitness/app/api/controller
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/api/openapi
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/api/render
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/api/usererror
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/events
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/gitspace
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/jwt
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/pipeline
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/exporter
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/importer
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/instrument
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/metric
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/protection
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/publickey/keypgp
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/rules
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/services/webhook
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/app/sse
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/cli/session
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/client
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/events
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/git
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/job
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/livelog
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/api
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/common/lib/errors
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/dist_temp/errcode
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/driver
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/events
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/manifest
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/metadata
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/pkg
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/app/remote
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/services/webhook
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/tests
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/registry/types
+          rules:
+            json: camel
+        - pkg: github.com/harness/gitness/types
+          rules:
+            json: camel
   exclusions:
     generated: lax
     presets:
