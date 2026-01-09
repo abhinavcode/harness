@@ -106,7 +106,7 @@ func (c *APIController) FetchArtifactSummary(
 		artifactVersion = parsedDigest.String()
 	}
 
-	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterAll)
+	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterInclude)
 	if err != nil {
 		return "", "", "", false, "", nil, nil, false, "", "", err
 	}
@@ -164,7 +164,7 @@ func (c *APIController) FetchArtifactSummary(
 		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt, isDeleted, "", "", nil
 	}
 	metadata, err := c.ArtifactStore.GetArtifactMetadata(
-		ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version, artifactType, types.SoftDeleteFilterAll)
+		ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version, artifactType, types.SoftDeleteFilterInclude)
 
 	if err != nil {
 		return "", "", "", false, "", nil, nil, false, "", "", err

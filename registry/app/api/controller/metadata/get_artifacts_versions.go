@@ -55,7 +55,7 @@ func (c *APIController) GetAllArtifactVersions(
 	regInfo, _ := c.GetRegistryRequestInfo(ctx, *registryRequestParams)
 
 	// Extract soft delete filter from params, default to exclude_deleted
-	softDeleteFilter := types.SoftDeleteFilterExcludeDeleted
+	softDeleteFilter := types.SoftDeleteFilterExclude
 	// todo check this
 	//if r.Params != nil {
 	//	softDeleteFilter = types.SoftDeleteFilter(*r.Params.SoftDeleteFilter)

@@ -163,7 +163,7 @@ func (c *localRegistry) GetPackageMetadata(ctx context.Context, info npm.Artifac
 		ctx,
 		info.RegistryID,
 		info.Image,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		log.Ctx(ctx).Warn().Msgf("Failed to fetch artifact for image:[%s], Reg:[%s]",
@@ -207,14 +207,14 @@ func (c *localRegistry) SearchPackage(ctx context.Context, info npm.ArtifactInfo
 		info.Image,
 		limit,
 		offset,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 
 	if err != nil {
 		log.Err(err).Msgf("Failed to search package for search term: [%s]", info.Image)
 		return &npm2.PackageSearch{}, err
 	}
-	count, err := c.artifactDao.CountLatestByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	count, err := c.artifactDao.CountLatestByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExclude)
 
 	if err != nil {
 		log.Err(err).Msgf("Failed to search package for search term: [%s]", info.Image)
@@ -344,12 +344,12 @@ func (c *localRegistry) AddTag(ctx context.Context, info npm.ArtifactInfo) (map[
 		info.ParentID,
 		info.RegIdentifier,
 		info.Image,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, err
 	}
-	version, err := c.artifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExcludeDeleted)
+	version, err := c.artifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExclude)
 
 	if err != nil {
 		return nil, err

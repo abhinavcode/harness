@@ -73,7 +73,7 @@ func (c *APIController) GetClientSetupDetails(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterAll,
+		types.SoftDeleteFilterInclude,
 	)
 	if err != nil {
 		return artifact.GetClientSetupDetails404JSONResponse{

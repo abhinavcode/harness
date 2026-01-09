@@ -78,9 +78,9 @@ func (c *APIController) ListArtifactLabels(
 	}
 
 	labels, err := c.ImageStore.GetLabelsByParentIDAndRepo(ctx, regInfo.ParentID, regInfo.RegistryIdentifier,
-		regInfo.limit, regInfo.offset, regInfo.searchTerm, types.SoftDeleteFilterExcludeDeleted)
+		regInfo.limit, regInfo.offset, regInfo.searchTerm, types.SoftDeleteFilterExclude)
 	count, _ := c.ImageStore.CountLabelsByParentIDAndRepo(ctx, regInfo.ParentID,
-		regInfo.RegistryIdentifier, regInfo.searchTerm, types.SoftDeleteFilterExcludeDeleted)
+		regInfo.RegistryIdentifier, regInfo.searchTerm, types.SoftDeleteFilterExclude)
 
 	if err != nil {
 		return artifact.ListArtifactLabels500JSONResponse{

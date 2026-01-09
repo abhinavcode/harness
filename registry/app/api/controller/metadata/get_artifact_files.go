@@ -85,7 +85,7 @@ func (c *APIController) GetArtifactFiles(
 		ctx,
 		reqInfo.ParentID,
 		reqInfo.RegistryIdentifier,
-		types.SoftDeleteFilterAll,
+		types.SoftDeleteFilterInclude,
 	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
@@ -112,7 +112,7 @@ func (c *APIController) GetArtifactFiles(
 			}, nil
 		}
 	}
-	img, err := c.ImageStore.GetByNameAndType(ctx, reqInfo.RegistryID, image, artifactType, types.SoftDeleteFilterAll)
+	img, err := c.ImageStore.GetByNameAndType(ctx, reqInfo.RegistryID, image, artifactType, types.SoftDeleteFilterInclude)
 
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
@@ -128,7 +128,7 @@ func (c *APIController) GetArtifactFiles(
 			),
 		}, nil
 	}
-	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, types.SoftDeleteFilterAll)
+	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, types.SoftDeleteFilterInclude)
 
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {

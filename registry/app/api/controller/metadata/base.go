@@ -203,7 +203,7 @@ func (c *APIController) setUpstreamProxyIDs(
 		0,
 		"",
 		"",
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 
 	if repos == nil || err != nil {
@@ -261,7 +261,7 @@ func (c *APIController) assertNoCycleOnAddHelper(
 }
 
 func (c *APIController) getUpstreamProxyIDs(ctx context.Context, registryID int64) ([]int64, error) {
-	registry, err := c.RegistryRepository.Get(ctx, registryID, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := c.RegistryRepository.Get(ctx, registryID, types.SoftDeleteFilterExclude)
 	if err != nil {
 		return nil, err
 	}

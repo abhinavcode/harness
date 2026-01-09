@@ -81,11 +81,11 @@ func (i ImageDao) Get(ctx context.Context, id int64, softDeleteFilter types.Soft
 		Where("i.image_id = ?", id)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filter
 	}
 
@@ -300,12 +300,12 @@ func (i ImageDao) GetByName(
 		Where("i.image_registry_id = ? AND i.image_name = ? AND i.image_type IS NULL", registryID, name)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -339,12 +339,12 @@ func (i ImageDao) GetByNameAndType(
 		Where("i.image_type = ?", *artifactType)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -425,11 +425,11 @@ func (i ImageDao) GetLabelsByParentIDAndRepo(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.image_deleted_at IS NULL").Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -466,11 +466,11 @@ func (i ImageDao) CountLabelsByParentIDAndRepo(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.image_deleted_at IS NULL").Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -501,12 +501,12 @@ func (i ImageDao) GetByRepoAndName(
 			parentID, repo, name)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 

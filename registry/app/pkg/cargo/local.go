@@ -210,7 +210,7 @@ func (c *localRegistry) UpdateYank(
 
 func (c *localRegistry) updateYankInternal(ctx context.Context, info cargotype.ArtifactInfo, yanked bool) error {
 	a, err := c.artifactDao.GetByRegistryImageAndVersion(
-		ctx, info.RegistryID, info.Image, info.Version, registrytypes.SoftDeleteFilterExcludeDeleted,
+		ctx, info.RegistryID, info.Image, info.Version, registrytypes.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to get artifact by image and version: %w", err)

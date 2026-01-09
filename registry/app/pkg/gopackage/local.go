@@ -250,7 +250,7 @@ func (c *localRegistry) DownloadPackageLatestVersionInfo(
 		info.ParentID,
 		info.RegIdentifier,
 		info.Image,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, nil, nil, "", fmt.Errorf("failed to get image: %w", err)

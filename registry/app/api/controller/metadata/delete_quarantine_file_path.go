@@ -92,7 +92,7 @@ func (c *APIController) DeleteQuarantineFilePath(
 		regInfo.RegistryID,
 		string(*artifactName),
 		artifactType,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func (c *APIController) DeleteQuarantineFilePath(
 			digestVal := typesDigest.String()
 			parsedVersion = digestVal
 		}
-		art, err = c.ArtifactStore.GetByName(ctx, img.ID, parsedVersion, types.SoftDeleteFilterExcludeDeleted)
+		art, err = c.ArtifactStore.GetByName(ctx, img.ID, parsedVersion, types.SoftDeleteFilterExclude)
 
 		if err != nil {
 			return artifact.DeleteQuarantineFilePath500JSONResponse{

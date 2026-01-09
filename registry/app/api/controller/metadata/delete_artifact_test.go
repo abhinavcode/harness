@@ -105,14 +105,14 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
-					types.SoftDeleteFilterExcludeDeleted,
+					types.SoftDeleteFilterExclude,
 				).Return(registry, nil)
 				mockImageStore.On(
 					"GetByName",
 					mock.Anything,
 					int64(1),
 					"test-artifact",
-					types.SoftDeleteFilterAll,
+					types.SoftDeleteFilterInclude,
 				).Return(artifact, nil)
 				mockTx.On("WithTx", mock.Anything, mock.AnythingOfType("func(context.Context) error")).Return(nil)
 				mockAuditService.On(
@@ -237,7 +237,7 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
-					types.SoftDeleteFilterExcludeDeleted,
+					types.SoftDeleteFilterExclude,
 				).Return(nil, store.ErrResourceNotFound)
 
 				c.SpaceFinder = mockSpaceFinder
@@ -299,14 +299,14 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
-					types.SoftDeleteFilterExcludeDeleted,
+					types.SoftDeleteFilterExclude,
 				).Return(registry, nil)
 				mockImageStore.On(
 					"GetByName",
 					mock.Anything,
 					int64(1),
 					"non-existent-artifact",
-					types.SoftDeleteFilterAll,
+					types.SoftDeleteFilterInclude,
 				).Return(nil, fmt.Errorf("artifact doesn't exist with this key"))
 
 				c.SpaceFinder = mockSpaceFinder
@@ -370,14 +370,14 @@ func TestDeleteArtifact(t *testing.T) {
 					mock.Anything,
 					int64(2),
 					"reg",
-					types.SoftDeleteFilterExcludeDeleted,
+					types.SoftDeleteFilterExclude,
 				).Return(registry, nil)
 				mockImageStore.On(
 					"GetByName",
 					mock.Anything,
 					int64(1),
 					"deleted-artifact",
-					types.SoftDeleteFilterAll,
+					types.SoftDeleteFilterInclude,
 				).Return(nil, fmt.Errorf("artifact is already deleted"))
 
 				c.SpaceFinder = mockSpaceFinder

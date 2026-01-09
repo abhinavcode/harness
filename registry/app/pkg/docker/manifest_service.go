@@ -497,7 +497,7 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 	}
 
 	// Check if image already exists and is soft-deleted
-	existingImage, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.SoftDeleteFilterAll)
+	existingImage, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.SoftDeleteFilterInclude)
 	if err == nil && existingImage.DeletedAt != nil {
 		return fmt.Errorf("cannot upload manifest to soft-deleted image: %s", info.Image)
 	}
@@ -518,7 +518,7 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 	}
 
 	// Check if artifact version already exists and is soft-deleted
-	existingArtifact, err := l.artifactDao.GetByName(ctx, dbImage.ID, dgst.String(), types.SoftDeleteFilterAll)
+	existingArtifact, err := l.artifactDao.GetByName(ctx, dbImage.ID, dgst.String(), types.SoftDeleteFilterInclude)
 	if err == nil && existingArtifact.DeletedAt != nil {
 		return fmt.Errorf("cannot upload manifest to soft-deleted artifact version: %s", dgst.String())
 	}
@@ -539,7 +539,7 @@ func (l *manifestService) UpsertImage(
 	info pkg.RegistryInfo,
 ) error {
 	dbRepo := info.Registry
-	image, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.SoftDeleteFilterAll)
+	image, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.SoftDeleteFilterInclude)
 	if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 		return err
 	} else if image != nil {
@@ -717,7 +717,7 @@ func (l *manifestService) AddManifestAssociation(
 	if err2 != nil {
 		return fmt.Errorf("failed to create digest: %s %w", childDigest, err2)
 	}
-	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
+	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExclude)
 	if err != nil {
 		return fmt.Errorf("failed to get registry: %s %w", repoKey, err)
 	}
@@ -1005,7 +1005,7 @@ func (l *manifestService) dbPutImageIndex(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return err
@@ -1186,7 +1186,7 @@ func (l *manifestService) DeleteTag(
 	info pkg.RegistryInfo,
 ) (bool, error) {
 	// Fetch the registry by parent ID and name
-	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExclude)
 	if err != nil {
 		return false, err
 	}
@@ -1233,7 +1233,7 @@ func (l *manifestService) DeleteTagsByManifestID(
 	manifestID int64,
 	info pkg.RegistryInfo,
 ) (bool, error) {
-	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExclude)
 
 	if err != nil {
 		return false, err
@@ -1250,7 +1250,7 @@ func (l *manifestService) DeleteManifest(
 ) error {
 	log.Ctx(ctx).Debug().Msg("deleting manifest from repository in database")
 
-	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExcludeDeleted)
+	registry, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, repoKey, types.SoftDeleteFilterExclude)
 	imageName := info.Image
 
 	if registry == nil || err != nil {

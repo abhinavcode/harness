@@ -102,7 +102,7 @@ func (c *localRegistry) ListPackageVersion(
 		ctx,
 		info.RegistryID,
 		info.Image,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
@@ -129,7 +129,7 @@ func (c *localRegistry) ListPackageVersionV2(
 		ctx,
 		info.RegistryID,
 		info.Image,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
@@ -149,7 +149,7 @@ func (c *localRegistry) CountPackageVersionV2(
 		ctx,
 		info.RegistryID,
 		info.Image,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err2 != nil {
 		return 0, fmt.Errorf(
@@ -164,7 +164,7 @@ func (c *localRegistry) CountPackageV2(ctx context.Context, info nugettype.Artif
 		ctx,
 		info.RegistryID,
 		strings.ToLower(searchTerm),
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return 0, fmt.Errorf(
@@ -182,7 +182,7 @@ func (c *localRegistry) SearchPackageV2(ctx context.Context, info nugettype.Arti
 		strings.ToLower(searchTerm),
 		limit,
 		offset,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -201,7 +201,7 @@ func (c *localRegistry) SearchPackage(ctx context.Context,
 		strings.ToLower(searchTerm),
 		limit,
 		offset,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -211,7 +211,7 @@ func (c *localRegistry) SearchPackage(ctx context.Context,
 		ctx,
 		info.RegistryID,
 		strings.ToLower(searchTerm),
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
@@ -230,7 +230,7 @@ func (c *localRegistry) GetPackageMetadata(
 		ctx,
 		info.RegistryID,
 		info.Image,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err2 != nil {
 		return nil, fmt.Errorf(
@@ -247,12 +247,12 @@ func (c *localRegistry) GetPackageVersionMetadataV2(
 	info nugettype.ArtifactInfo,
 ) (*nugettype.FeedEntryResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExclude)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get image for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
-	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExcludeDeleted)
+	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExclude)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -265,12 +265,12 @@ func (c *localRegistry) GetPackageVersionMetadata(
 	info nugettype.ArtifactInfo,
 ) (*nugettype.RegistrationLeafResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExcludeDeleted)
+	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterExclude)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get image for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
-	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExcludeDeleted)
+	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExclude)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)

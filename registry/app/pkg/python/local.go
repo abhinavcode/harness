@@ -110,7 +110,7 @@ func (c *localRegistry) GetPackageMetadata(
 		ctx,
 		info.RootParentID,
 		info.RegIdentifier,
-		registrytypes.SoftDeleteFilterExcludeDeleted,
+		registrytypes.SoftDeleteFilterExclude,
 	)
 	packageMetadata := pythontype.PackageMetadata{}
 	packageMetadata.Name = info.Image
@@ -124,7 +124,7 @@ func (c *localRegistry) GetPackageMetadata(
 		ctx,
 		registry.ID,
 		info.Image,
-		registrytypes.SoftDeleteFilterExcludeDeleted,
+		registrytypes.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return packageMetadata, err

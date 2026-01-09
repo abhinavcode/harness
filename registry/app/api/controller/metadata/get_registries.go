@@ -159,7 +159,7 @@ func (c *APIController) GetAllRegistries(
 		regInfo.offset,
 		regInfo.searchTerm,
 		repoType,
-		registryTypes.SoftDeleteFilterExcludeDeleted,
+		registryTypes.SoftDeleteFilterExclude,
 	)
 	count, _ = c.RegistryRepository.CountAll(
 		ctx,
@@ -167,7 +167,7 @@ func (c *APIController) GetAllRegistries(
 		regInfo.packageTypes,
 		regInfo.searchTerm,
 		repoType,
-		registryTypes.SoftDeleteFilterExcludeDeleted,
+		registryTypes.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return artifact.GetAllRegistries500JSONResponse{

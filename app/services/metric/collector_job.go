@@ -165,12 +165,12 @@ func (c *CollectorJob) Handle(ctx context.Context, _ string, _ job.ProgressRepor
 		return "", fmt.Errorf("failed to get gitspace count: %w", err)
 	}
 
-	totalRegistries, err := c.registryStore.Count(ctx, registrytypes.SoftDeleteFilterExcludeDeleted)
+	totalRegistries, err := c.registryStore.Count(ctx, registrytypes.SoftDeleteFilterExclude)
 	if err != nil {
 		return "", fmt.Errorf("failed to get registries count: %w", err)
 	}
 
-	totalArtifacts, err := c.artifactStore.Count(ctx, registrytypes.SoftDeleteFilterExcludeDeleted)
+	totalArtifacts, err := c.artifactStore.Count(ctx, registrytypes.SoftDeleteFilterExclude)
 	if err != nil {
 		return "", fmt.Errorf("failed to get artifacts count: %w", err)
 	}

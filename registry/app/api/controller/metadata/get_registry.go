@@ -85,7 +85,7 @@ func (c *APIController) GetRegistry(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterAll,
+		types.SoftDeleteFilterInclude,
 	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {

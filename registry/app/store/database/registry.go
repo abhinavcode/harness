@@ -94,11 +94,11 @@ func (r registryDao) Get(
 		Where("registry_id = ?", id)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filter
 	}
 
@@ -128,11 +128,11 @@ func (r registryDao) GetByParentIDAndName(
 		Where("registry_parent_id = ? AND registry_name = ?", parentID, name)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -161,11 +161,11 @@ func (r registryDao) GetByRootParentIDAndName(
 		Where("registry_root_parent_id = ? AND registry_name = ?", parentID, name)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -189,11 +189,11 @@ func (r registryDao) Count(ctx context.Context, softDeleteFilter types.SoftDelet
 		From("registries")
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -225,11 +225,11 @@ func (r registryDao) CountAll(
 		Where(sq.Eq{"registry_parent_id": parentIDs})
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -315,11 +315,11 @@ func (r registryDao) GetByIDIn(
 		Where(sq.Eq{"registry_id": ids})
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -397,11 +397,11 @@ func (r registryDao) GetAll(
 
 	// Apply soft delete filter for registries
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		query = query.Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		query = query.Where("r.registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filter - include all
 	}
 
@@ -520,14 +520,14 @@ func (r registryDao) fetchArtifactCounts(
 
 	var query string
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		query = `
 			SELECT image_registry_id, COUNT(images.image_id) AS count
 			FROM images
 			WHERE image_registry_id IN (?)
 			GROUP BY image_registry_id
 		`
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		query = `
 			SELECT i.image_registry_id, COUNT(i.image_id) AS count
 			FROM images i
@@ -537,7 +537,7 @@ func (r registryDao) fetchArtifactCounts(
 			  AND r.registry_deleted_at IS NULL
 			GROUP BY i.image_registry_id
 		`
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		query = `
 			SELECT i.image_registry_id, COUNT(i.image_id) AS count
 			FROM images i
@@ -582,7 +582,7 @@ func (r registryDao) fetchOCIBlobSizes(
 
 	var query string
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		query = `
 			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
 			FROM registry_blobs rb
@@ -590,7 +590,7 @@ func (r registryDao) fetchOCIBlobSizes(
 			WHERE rb.rblob_registry_id IN (?)
 			GROUP BY rb.rblob_registry_id
 		`
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		query = `
 			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
 			FROM registry_blobs rb
@@ -602,7 +602,7 @@ func (r registryDao) fetchOCIBlobSizes(
 			  AND (rb.rblob_image_name IS NULL OR i.image_deleted_at IS NULL)
 			GROUP BY rb.rblob_registry_id
 		`
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		query = `
 			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
 			FROM registry_blobs rb
@@ -649,7 +649,7 @@ func (r registryDao) fetchGenericBlobSizes(
 
 	var query string
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		query = `
 			SELECT nodes.node_registry_id, COALESCE(SUM(generic_blobs.generic_blob_size), 0) AS total_size
 			FROM nodes
@@ -658,7 +658,7 @@ func (r registryDao) fetchGenericBlobSizes(
 			  AND node_registry_id IN (?)
 			GROUP BY nodes.node_registry_id
 		`
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		//nolint:lll
 		query = `
 			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
@@ -673,7 +673,7 @@ func (r registryDao) fetchGenericBlobSizes(
 			  AND (i.image_id IS NULL OR (i.image_deleted_at IS NULL AND (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL)))
 			GROUP BY n.node_registry_id
 		`
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		query = `
 			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
 			FROM nodes n
@@ -720,7 +720,7 @@ func (r registryDao) fetchDownloadCounts(
 
 	var query string
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		query = `
 			SELECT i.image_registry_id, COUNT(d.download_stat_id) AS download_count
 			FROM download_stats d
@@ -729,7 +729,7 @@ func (r registryDao) fetchDownloadCounts(
 			WHERE i.image_registry_id IN (?)
 			GROUP BY i.image_registry_id
 		`
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		query = `
 			SELECT i.image_registry_id, COUNT(d.download_stat_id) AS download_count
 			FROM download_stats d
@@ -742,7 +742,7 @@ func (r registryDao) fetchDownloadCounts(
 			  AND r.registry_deleted_at IS NULL
 			GROUP BY i.image_registry_id
 		`
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		query = `
 			SELECT i.image_registry_id, COUNT(d.download_stat_id) AS download_count
 			FROM download_stats d

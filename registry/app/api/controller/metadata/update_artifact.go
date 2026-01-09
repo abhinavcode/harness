@@ -84,7 +84,7 @@ func (c *APIController) UpdateArtifactLabels(
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
 		a,
-		types.SoftDeleteFilterAll,
+		types.SoftDeleteFilterInclude,
 	)
 
 	if len(artifactEntity.Name) == 0 {

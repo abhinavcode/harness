@@ -113,7 +113,7 @@ func (r *GitnessRegistryMetadataHelper) GetRegistryRequestBaseInfo(
 			ctx,
 			parentID,
 			regIdentifier,
-			registrytypes.SoftDeleteFilterAll,
+			registrytypes.SoftDeleteFilterInclude,
 		)
 		if getRegistryErr != nil {
 			return nil, fmt.Errorf("registry not found: %w", getRegistryErr)

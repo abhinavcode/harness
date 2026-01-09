@@ -57,7 +57,7 @@ func (c registryRootRefCacheGetter) Find(ctx context.Context, key types.Registry
 		ctx,
 		key.RootParentID,
 		key.RegistryIdentifier,
-		types.SoftDeleteFilterAll,
+		types.SoftDeleteFilterInclude,
 	)
 	if err != nil {
 		return -1, fmt.Errorf("failed to find repo by %d:%s %w", key.RootParentID, key.RegistryIdentifier, err)

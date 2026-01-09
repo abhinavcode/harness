@@ -210,7 +210,7 @@ func (l *localBase) MoveTempFileAndCreateArtifact(
 		ctx,
 		info.RootParentID,
 		info.RegIdentifier,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return responseHeaders, "", 0, false, errcode.ErrCodeUnknown.WithDetail(err)
@@ -286,7 +286,7 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 					info.Image, err)
 			}
 
-			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterExcludeDeleted)
+			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterExclude)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				log.Ctx(ctx).Error().Msgf("Failed to fetch artifact : [%s] with error: %v", version, err)
@@ -397,7 +397,7 @@ func (l *localBase) uploadInternal(
 		ctx,
 		info.RootParentID,
 		info.RegIdentifier,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return responseHeaders, "", errcode.ErrCodeUnknown.WithDetail(err)
@@ -442,7 +442,7 @@ func (l *localBase) postUploadArtifact(
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
 			// Check if image already exists and is soft-deleted
-			existingImage, err := l.imageDao.GetByName(ctx, registry.ID, info.Image, types.SoftDeleteFilterAll)
+			existingImage, err := l.imageDao.GetByName(ctx, registry.ID, info.Image, types.SoftDeleteFilterInclude)
 			if err == nil && existingImage.DeletedAt != nil {
 				return fmt.Errorf("cannot upload to soft-deleted image: %s", info.Image)
 			}
@@ -458,13 +458,13 @@ func (l *localBase) postUploadArtifact(
 			}
 
 			// Check if artifact version already exists and is soft-deleted
-			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterAll)
+			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterInclude)
 			if err == nil && dbArtifact.DeletedAt != nil {
 				return fmt.Errorf("cannot upload to soft-deleted artifact version: %s", version)
 			}
 
 			// Fetch artifact without soft-deleted ones for metadata update
-			dbArtifact, err = l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterExcludeDeleted)
+			dbArtifact, err = l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterExclude)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				return fmt.Errorf("failed to fetch artifact : [%s] with error: %w", info.Image, err)
@@ -509,7 +509,7 @@ func (l *localBase) Download(
 	}
 
 	path := "/" + info.Image + "/" + version + "/" + fileName
-	reg, _ := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, types.SoftDeleteFilterAll)
+	reg, _ := l.registryDao.GetByRootParentIDAndName(ctx, info.RootParentID, info.RegIdentifier, types.SoftDeleteFilterInclude)
 
 	fileReader, _, redirectURL, err := l.fileManager.DownloadFile(ctx, path, reg.ID,
 		info.RegIdentifier, info.RootIdentifier, true)
@@ -587,7 +587,7 @@ func (l *localBase) CheckIfVersionExists(ctx context.Context, info pkg.PackageAr
 		info.BaseArtifactInfo().RegistryID,
 		info.BaseArtifactInfo().Image,
 		info.GetVersion(),
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return false, err
@@ -673,7 +673,7 @@ func (l *localBase) CheckIfFileAlreadyExist(
 	fileName string,
 	path string,
 ) error {
-	image, err := l.imageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterAll)
+	image, err := l.imageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterInclude)
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch the image for artifact : [%s] with registry : [%s]", info.Image,
 			info.RegIdentifier)
@@ -682,7 +682,7 @@ func (l *localBase) CheckIfFileAlreadyExist(
 		return nil
 	}
 
-	dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterAll)
+	dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.SoftDeleteFilterInclude)
 
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch artifact : [%s] with registry : [%s]", info.Image, info.RegIdentifier)

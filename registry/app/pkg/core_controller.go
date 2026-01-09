@@ -71,7 +71,7 @@ func (c *CoreController) GetOrderedRepos(ctx context.Context, artInfo RegistryIn
 	result = append(result, registry)
 	proxies := registry.UpstreamProxies
 	if len(proxies) > 0 {
-		upstreamRepos, err2 := c.RegistryDao.GetByIDIn(ctx, proxies, types.SoftDeleteFilterExcludeDeleted)
+		upstreamRepos, err2 := c.RegistryDao.GetByIDIn(ctx, proxies, types.SoftDeleteFilterExclude)
 		if err2 != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to get upstream proxies for %s: %v", registry.Name, err2)
 			return result, err2

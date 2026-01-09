@@ -174,13 +174,13 @@ func (a ArtifactDao) GetByName(
 		Where("a.artifact_version = ?", version)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -208,13 +208,13 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 		Where("i.image_registry_id = ? AND i.image_name = ? AND a.artifact_version = ?", registryID, image, version)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -245,13 +245,13 @@ func (a ArtifactDao) GetByRegistryIDAndImage(
 		Where("i.image_registry_id = ? AND i.image_name = ?", registryID, image)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -359,13 +359,13 @@ func (a ArtifactDao) Count(ctx context.Context, softDeleteFilter types.SoftDelet
 		Join("registries r ON i.image_registry_id = r.registry_id")
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -760,13 +760,13 @@ func (a ArtifactDao) SearchLatestByName(
 		Where("i.image_name LIKE ? AND r.registry_id = ?", "%"+name+"%", regID)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -817,13 +817,13 @@ func (a ArtifactDao) CountLatestByName(
 		Where("i.image_name LIKE ? AND r.registry_id = ?", "%"+name+"%", regID)
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -862,13 +862,13 @@ func (a ArtifactDao) SearchByImageName(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -904,13 +904,13 @@ func (a ArtifactDao) CountByImageName(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -971,20 +971,20 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	if latestVersion {
 		var rowNumSubquery string
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterAll:
+		case types.SoftDeleteFilterInclude:
 			rowNumSubquery = `(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 				ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
 				JOIN images i ON t.artifact_image_id = i.image_id
 				JOIN registries r ON i.image_registry_id = r.registry_id
 				WHERE r.registry_parent_id = ?) AS a1`
-		case types.SoftDeleteFilterExcludeDeleted:
+		case types.SoftDeleteFilterExclude:
 			//nolint:lll
 			rowNumSubquery = `(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 				ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
 				JOIN images i ON t.artifact_image_id = i.image_id
 				JOIN registries r ON i.image_registry_id = r.registry_id
 				WHERE r.registry_parent_id = ? AND t.artifact_deleted_at IS NULL AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a1`
-		case types.SoftDeleteFilterOnlyDeleted:
+		case types.SoftDeleteFilterOnly:
 			//nolint:lll
 			rowNumSubquery = `(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 				ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
@@ -1008,13 +1008,13 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -1049,20 +1049,20 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 	if latestVersion {
 		var rowNumSubquery string
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterAll:
+		case types.SoftDeleteFilterInclude:
 			rowNumSubquery = `(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 				ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
 				JOIN images i ON t.artifact_image_id = i.image_id
 				JOIN registries r ON i.image_registry_id = r.registry_id
 				WHERE r.registry_parent_id = ?) AS a1`
-		case types.SoftDeleteFilterExcludeDeleted:
+		case types.SoftDeleteFilterExclude:
 			//nolint:lll
 			rowNumSubquery = `(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 				ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
 				JOIN images i ON t.artifact_image_id = i.image_id
 				JOIN registries r ON i.image_registry_id = r.registry_id
 				WHERE r.registry_parent_id = ? AND t.artifact_deleted_at IS NULL AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a1`
-		case types.SoftDeleteFilterOnlyDeleted:
+		case types.SoftDeleteFilterOnly:
 			//nolint:lll
 			rowNumSubquery = `(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 				ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
@@ -1086,13 +1086,13 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -1117,20 +1117,20 @@ func (a ArtifactDao) GetArtifactsByRepo(
 ) (*[]types.ArtifactMetadata, error) {
 	var rowNumSubquery string
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		rowNumSubquery = `(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id
 			ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
 			JOIN images i ON i.image_id = a.artifact_image_id  
 			JOIN registries r ON i.image_registry_id = r.registry_id  
 			WHERE r.registry_parent_id = ? AND r.registry_name = ?) AS a1`
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		//nolint:lll
 		rowNumSubquery = `(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id
 			ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
 			JOIN images i ON i.image_id = a.artifact_image_id  
 			JOIN registries r ON i.image_registry_id = r.registry_id  
 			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND a.artifact_deleted_at IS NULL AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a1`
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		//nolint:lll
 		rowNumSubquery = `(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id
 			ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
@@ -1181,13 +1181,13 @@ func (a ArtifactDao) GetArtifactsByRepo(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -1241,13 +1241,13 @@ func (a ArtifactDao) CountArtifactsByRepo(
 	}
 
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL").
 			Where("i.image_deleted_at IS NULL").
 			Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("(a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)") //nolint:lll
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -1275,7 +1275,7 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 	// Precomputed download count subquery with soft delete filtering
 	var downloadCountSubquery string
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		downloadCountSubquery = `
 			SELECT 
 				i.image_name, 
@@ -1299,7 +1299,7 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 			GROUP BY 
 				i.image_name, i.image_registry_id
 		`
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		downloadCountSubquery = `
 			SELECT 
 				i.image_name, 
@@ -1323,7 +1323,7 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 			GROUP BY 
 				i.image_name, i.image_registry_id
 		`
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		downloadCountSubquery = `
 			SELECT 
 				i.image_name, 
@@ -1366,11 +1366,11 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 		// For metadata queries, only check artifact deletion (not parents)
 		// Download counts in subquery already apply full cascade filtering
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterExcludeDeleted:
+		case types.SoftDeleteFilterExclude:
 			q = q.Where("a.artifact_deleted_at IS NULL")
-		case types.SoftDeleteFilterOnlyDeleted:
+		case types.SoftDeleteFilterOnly:
 			q = q.Where("a.artifact_deleted_at IS NOT NULL")
-		case types.SoftDeleteFilterAll:
+		case types.SoftDeleteFilterInclude:
 			// No filtering
 		}
 		q = q.OrderBy("a.artifact_updated_at DESC").Limit(1)
@@ -1396,11 +1396,11 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 		// For metadata queries, only check artifact deletion (not parents)
 		// Download counts in subquery already apply full cascade filtering
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterExcludeDeleted:
+		case types.SoftDeleteFilterExclude:
 			q = q.Where("a.artifact_deleted_at IS NULL")
-		case types.SoftDeleteFilterOnlyDeleted:
+		case types.SoftDeleteFilterOnly:
 			q = q.Where("a.artifact_deleted_at IS NOT NULL")
-		case types.SoftDeleteFilterAll:
+		case types.SoftDeleteFilterInclude:
 			// No filtering
 		}
 		q = q.OrderBy("a.artifact_updated_at DESC").Limit(1)
@@ -1490,11 +1490,11 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 	// When listing versions of a specific image, only check artifact deletion (not parent image)
 	// This allows viewing versions even if the parent image is deleted
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -1602,11 +1602,11 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 	// When counting versions of a specific image, only check artifact deletion (not parents)
 	// Must match GetAllVersionsByRepoAndImage filtering logic
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("a.artifact_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		stmt = stmt.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 
@@ -1652,11 +1652,11 @@ func (a ArtifactDao) GetArtifactMetadata(
 	// For metadata queries on specific versions, only check the artifact itself (not parents)
 	// This allows retrieving metadata even if parent image/registry is soft-deleted
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
+	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
+	case types.SoftDeleteFilterOnly:
 		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
+	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
 

@@ -204,7 +204,7 @@ func (c *APIController) createVirtualRegistry(
 		}
 		return throwCreateRegistry400Error(err), nil
 	}
-	repoEntity, err := c.RegistryRepository.Get(ctx, id, registrytypes.SoftDeleteFilterExcludeDeleted)
+	repoEntity, err := c.RegistryRepository.Get(ctx, id, registrytypes.SoftDeleteFilterExclude)
 	if err != nil {
 		return throwCreateRegistry400Error(err), nil
 	}
@@ -489,7 +489,7 @@ func (c *APIController) handleDuplicateRegistryError(ctx context.Context, regist
 		ctx,
 		registry.RootParentID,
 		registry.Name,
-		registrytypes.SoftDeleteFilterAll,
+		registrytypes.SoftDeleteFilterInclude,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to fetch existing registry details: %w", err)

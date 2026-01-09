@@ -103,7 +103,7 @@ func (h *Handler) GetArtifactInfo(r *http.Request, remoteSupport bool) (pkg.Mave
 		ctx,
 		rootSpace.ID,
 		registryIdentifier,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(

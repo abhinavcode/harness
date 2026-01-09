@@ -135,7 +135,7 @@ func (h *Handler) GetGenericArtifactInfo(r *http.Request) (
 		ctx,
 		rootSpace.ID,
 		registryIdentifier,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(

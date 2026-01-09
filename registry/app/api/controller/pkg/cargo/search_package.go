@@ -70,14 +70,14 @@ func (c *controller) SearchPackage(
 		[]string{},
 		requestInfo.Limit,
 		requestInfo.Offset,
-		types.SoftDeleteFilterExcludeDeleted,
+		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artifacts %s: %w", info.RegIdentifier, err)
 	}
 
 	count, err := c.artifactDao.CountAllArtifactsByParentID(
-		ctx, info.ParentID, &registryList, requestInfo.SearchTerm, true, []string{}, types.SoftDeleteFilterExcludeDeleted,
+		ctx, info.ParentID, &registryList, requestInfo.SearchTerm, true, []string{}, types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artifacts count %s: %w", info.RegIdentifier, err)

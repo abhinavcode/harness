@@ -18,10 +18,10 @@ package types
 type SoftDeleteFilter string
 
 const (
-	// SoftDeleteFilterExcludeDeleted excludes soft-deleted entities (default behavior).
-	SoftDeleteFilterExcludeDeleted SoftDeleteFilter = "exclude_deleted"
-	// SoftDeleteFilterOnlyDeleted returns only soft-deleted entities.
-	SoftDeleteFilterOnlyDeleted SoftDeleteFilter = "only_deleted"
-	// SoftDeleteFilterAll returns all entities regardless of soft-delete status.
-	SoftDeleteFilterAll SoftDeleteFilter = "all"
+	// SoftDeleteFilterExclude excludes soft-deleted entities (default behavior).
+	SoftDeleteFilterExclude SoftDeleteFilter = "exclude"
+	// SoftDeleteFilterOnly returns only soft-deleted entities.
+	SoftDeleteFilterOnly SoftDeleteFilter = "only"
+	// SoftDeleteFilterInclude returns all entities regardless of soft-delete status.
+	SoftDeleteFilterInclude SoftDeleteFilter = "include"
 )

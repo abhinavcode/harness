@@ -71,7 +71,7 @@ func (c *APIController) ListWebhookExecutions(
 		ctx,
 		space.ID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterAll,
+		types.SoftDeleteFilterInclude,
 	)
 	if err != nil {
 		// Note: This endpoint doesn't have a 404 response type in OpenAPI contract

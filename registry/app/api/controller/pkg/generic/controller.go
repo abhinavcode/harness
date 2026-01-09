@@ -146,7 +146,7 @@ func (c Controller) UploadArtifact(
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
 
-			dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExcludeDeleted)
+			dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterExclude)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				return fmt.Errorf("failed to fetch artifact : [%s] with "+
@@ -253,7 +253,7 @@ func (c Controller) PullArtifact(ctx context.Context, info pkg.GenericArtifactIn
 
 func (c Controller) CheckIfFileAlreadyExist(ctx context.Context,
 	info pkg.GenericArtifactInfo) error { //nolint:staticcheck
-	image, err := c.DBStore.ImageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterAll)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, info.RegistryID, info.Image, types.SoftDeleteFilterInclude)
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch the image for artifact : [%s] with "+
 			regNameFormat, info.Image, info.RegIdentifier)
@@ -262,7 +262,7 @@ func (c Controller) CheckIfFileAlreadyExist(ctx context.Context,
 		return nil
 	}
 
-	dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterAll)
+	dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, types.SoftDeleteFilterInclude)
 
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch artifact : [%s] with "+
