@@ -74,10 +74,15 @@ export class RPMVersionType extends VersionStep<ArtifactVersionSummary> {
     VersionAction.Delete,
     VersionAction.SetupClient,
     VersionAction.ViewVersionDetails,
-    VersionAction.Quarantine
+    VersionAction.Quarantine,
+    VersionAction.Download
   ]
 
-  protected allowedActionsOnVersionDetailsPage = [VersionAction.Delete, VersionAction.Quarantine]
+  protected allowedActionsOnVersionDetailsPage = [
+    VersionAction.Delete,
+    VersionAction.Quarantine,
+    VersionAction.Download
+  ]
 
   renderVersionListTable(props: VersionListTableProps): JSX.Element {
     return <VersionListTable {...props} columnConfigs={this.versionListTableColumnConfig} />
@@ -116,8 +121,11 @@ export class RPMVersionType extends VersionStep<ArtifactVersionSummary> {
   }
 
   renderArtifactActions(props: ArtifactActionProps): JSX.Element {
-    if (props.pageType === PageType.Details) return <></>
-    return <ArtifactActions {...props} allowedActions={[ArtifactActionsEnum.SetupClient]} />
+    if (props.pageType === PageType.Details)
+      return <ArtifactActions {...props} allowedActions={[ArtifactActionsEnum.Download]} />
+    return (
+      <ArtifactActions {...props} allowedActions={[ArtifactActionsEnum.SetupClient, ArtifactActionsEnum.Download]} />
+    )
   }
 
   renderVersionActions(props: VersionActionProps): JSX.Element {

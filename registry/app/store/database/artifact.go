@@ -66,7 +66,7 @@ type artifactDB struct {
 // artifactWithParentsDB is used for queries that JOIN with images and registries tables.
 type artifactWithParentsDB struct {
 	artifactDB               // Embed base struct
-	ImageDeletedAt    *int64 `db:"image_deleted_at"`    // CASCADE from parent image
+	ImageDeletedAt    *int64 `db:"image_deleted_at"` // CASCADE from parent image
 	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from grandparent registry
 }
 
@@ -79,6 +79,30 @@ func (a ArtifactDao) GetByUUID(
 		Join("images i ON a.artifact_image_id = i.image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("a.artifact_uuid = ?", uuid)
+
+	sql, args, err := q.ToSql()
+	if err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to convert query to sql")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+
+	dst := new(artifactWithParentsDB)
+	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing find query")
+	}
+
+	return a.mapArtifactWithParents(ctx, dst)
+}
+
+func (a ArtifactDao) Get(
+	ctx context.Context, id int64,
+) (*types.Artifact, error) {
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
+		From("artifacts a").
+		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("a.artifact_id = ?", id)
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -934,14 +958,14 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 		Join("registries r ON r.registry_id = i.image_registry_id").
 		Where("r.registry_parent_id = ?", parentID).
 		LeftJoin(
-			`( SELECT i.image_name, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
+			`( SELECT i.image_id, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
 			( SELECT a.artifact_image_id, COUNT(d.download_stat_id) as download_count 
 			FROM artifacts a JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id 
 			GROUP BY a.artifact_image_id ) as t1 
 			JOIN images i ON i.image_id = t1.artifact_image_id 
 			JOIN registries r ON r.registry_id = i.image_registry_id 
-			WHERE r.registry_parent_id = ? GROUP BY i.image_name) as t2 
-			ON i.image_name = t2.image_name`, parentID,
+			WHERE r.registry_parent_id = ? GROUP BY i.image_id) as t2 
+			ON i.image_id = t2.image_id`, parentID,
 		)
 
 	if latestVersion {
@@ -1116,7 +1140,8 @@ func (a ArtifactDao) GetArtifactsByRepo(
 	}
 
 	q := databaseg.Builder.Select(
-		`r.registry_name as repo_name, i.image_name as name, 
+		`r.registry_name as repo_name, i.image_name as name, i.image_uuid as uuid,
+		r.registry_uuid as registry_uuid,
 		r.registry_package_type as package_type, a.artifact_version as latest_version, 
 		a.artifact_updated_at as modified_at, i.image_labels as labels, i.image_type as artifact_type,
 		COALESCE(t2.download_count, 0) as download_count,
@@ -1129,15 +1154,15 @@ func (a ArtifactDao) GetArtifactsByRepo(
 		Join("images i ON i.image_id = a.artifact_image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
 		LeftJoin(
-			`( SELECT i.image_name, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
+			`( SELECT i.image_id, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
 			( SELECT a.artifact_image_id, COUNT(d.download_stat_id) as download_count 
 			FROM artifacts a 
 			JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id GROUP BY 
 			a.artifact_image_id ) as t1 
 			JOIN images i ON i.image_id = t1.artifact_image_id 
 			JOIN registries r ON r.registry_id = i.image_registry_id 
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? GROUP BY i.image_name) as t2 
-			ON i.image_name = t2.image_name`, parentID, repoKey,
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? GROUP BY i.image_id) as t2 
+			ON i.image_id = t2.image_id`, parentID, repoKey,
 		).
 		Where("a1.rank = 1 ")
 
@@ -1422,6 +1447,7 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 	q := databaseg.Builder.
 		Select(`
         a.artifact_id as id,
+				a.artifact_uuid as uuid,
         a.artifact_version AS name, 
         a.artifact_metadata ->> 'size' AS size, 
         a.artifact_metadata ->> 'file_count' AS file_count,
@@ -1434,6 +1460,7 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 	if a.db.DriverName() == SQLITE3 {
 		q = databaseg.Builder.Select(`
         a.artifact_id as id,
+				a.artifact_uuid as uuid,
         a.artifact_version AS name, 
         json_extract(a.artifact_metadata, '$.size') AS size,
         json_extract(a.artifact_metadata, '$.file_count') AS file_count,
@@ -1836,6 +1863,8 @@ func (a ArtifactDao) mapToArtifactMetadata(
 
 	artifactMetadata := &types.ArtifactMetadata{
 		ID:               dst.ID,
+		UUID:             dst.UUID,
+		RegistryUUID:     dst.RegistryUUID,
 		Name:             dst.Name,
 		RepoName:         dst.RepoName,
 		DownloadCount:    dst.DownloadCount,
@@ -1871,6 +1900,7 @@ func (a ArtifactDao) mapToNonOCIMetadata(
 	}
 	return &types.NonOCIArtifactMetadata{
 		Name:             dst.Name,
+		UUID:             dst.UUID,
 		DownloadCount:    dst.DownloadCount,
 		PackageType:      dst.PackageType,
 		Size:             size,
@@ -1895,6 +1925,7 @@ func (a ArtifactDao) mapToNonOCIMetadataList(
 
 type nonOCIArtifactMetadataDB struct {
 	ID               string                 `db:"id"`
+	UUID             string                 `db:"uuid"`
 	Name             string                 `db:"name"`
 	Size             *string                `db:"size"`
 	PackageType      artifact.PackageType   `db:"package_type"`

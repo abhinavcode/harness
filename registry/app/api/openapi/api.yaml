@@ -630,7 +630,6 @@ paths:
         - $ref: "#/components/parameters/sortOrder"
         - $ref: "#/components/parameters/sortField"
         - $ref: "#/components/parameters/searchTerm"
-        - $ref: "#/components/parameters/softDeleteFilterParam"
       responses:
         200:
           $ref: "#/components/responses/ListArtifactVersionResponse"
@@ -1052,6 +1051,8 @@ paths:
           $ref: "#/components/responses/Unauthenticated"
         403:
           $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/NotFound"
         500:
           $ref: "#/components/responses/InternalServerError"
     get:
@@ -1072,6 +1073,8 @@ paths:
           $ref: "#/components/responses/Unauthenticated"
         403:
           $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/NotFound"
         500:
           $ref: "#/components/responses/InternalServerError"
     delete:
@@ -1117,6 +1120,8 @@ paths:
           $ref: "#/components/responses/Unauthenticated"
         403:
           $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/NotFound"
         500:
           $ref: "#/components/responses/InternalServerError"
   /registry/{registry_ref}/webhooks/{webhook_identifier}/executions/{webhook_execution_id}:
@@ -1139,6 +1144,8 @@ paths:
           $ref: "#/components/responses/Unauthenticated"
         403:
           $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/NotFound"
         500:
           $ref: "#/components/responses/InternalServerError"
   /registry/{registry_ref}/webhooks/{webhook_identifier}/executions/{webhook_execution_id}/retrigger:
@@ -1161,6 +1168,8 @@ paths:
           $ref: "#/components/responses/Unauthenticated"
         403:
           $ref: "#/components/responses/Unauthorized"
+        404:
+          $ref: "#/components/responses/NotFound"
         500:
           $ref: "#/components/responses/InternalServerError"
   /registry/{registry_ref}/quarantine:
@@ -1199,7 +1208,7 @@ paths:
         - $ref: "#/components/parameters/artifactTypeParam"
       responses:
         200:
-          $ref:  "#/components/responses/Success"
+          $ref: "#/components/responses/Success"
         400:
           $ref: "#/components/responses/BadRequest"
         401:
@@ -2219,6 +2228,8 @@ components:
           type: string
         isPublic:
           type: boolean
+        uuid:
+          type: string
         deletedAt:
           type: string
           description: Timestamp in milliseconds when the registry was soft-deleted
@@ -2231,6 +2242,7 @@ components:
         - identifier
         - url
         - isPublic
+        - uuid
         - isDeleted
     ClientSetupDetails:
       type: object
@@ -2339,18 +2351,24 @@ components:
           $ref: "#/components/schemas/ArtifactType"
         metadata:
           $ref: "#/components/schemas/ArtifactEntityMetadata"
+        uuid:
+          type: string
+        registryUUID:
+          type: string
         deletedAt:
           type: string
-          description: Timestamp in milliseconds when the artifact was soft-deleted
+          description: Timestamp in milliseconds when the registry was soft-deleted
         isDeleted:
           type: boolean
-          description: True if the artifact, its parent image, or registry is soft-deleted (cascade)
+          description: True if the registry is soft-deleted
       required:
         - name
         - registryIdentifier
         - latestVersion
         - registryPath
         - packageType
+        - uuid
+        - registryUUID
         - isDeleted
     RegistryArtifactMetadata:
       type: object
@@ -2381,12 +2399,16 @@ components:
           $ref: "#/components/schemas/PackageType"
         artifactType:
           $ref: "#/components/schemas/ArtifactType"
+        uuid:
+          type: string
+        registryUUID:
+          type: string
         deletedAt:
           type: string
-          description: Timestamp in milliseconds when the package (image) was soft-deleted
+          description: Timestamp in milliseconds when the registry was soft-deleted
         isDeleted:
           type: boolean
-          description: True if the package or its parent registry is soft-deleted (cascade)
+          description: True if the registry is soft-deleted
       required:
         - name
         - registryIdentifier
@@ -2394,6 +2416,8 @@ components:
         - registryPath
         - packageType
         - isPublic
+        - uuid
+        - registryUUID
         - isDeleted
     ArtifactVersionMetadata:
       type: object
@@ -2429,12 +2453,18 @@ components:
           $ref: "#/components/schemas/ArtifactType"
         metadata:
           $ref: "#/components/schemas/ArtifactEntityMetadata"
+        uuid:
+          type: string
+        registryUUID:
+          type: string
       required:
         - name
         - registryIdentifier
         - latestVersion
         - registryPath
         - packageType
+        - uuid
+        - registryUUID
     OciArtifactTag:
       type: object
       description: OCI Artifact Tag info
@@ -2486,12 +2516,14 @@ components:
           type: string
         isPublic:
           type: boolean
+        uuid:
+          type: string
         deletedAt:
           type: string
-          description: Timestamp in milliseconds when the registry was soft deleted. Null if not deleted.
+          description: Timestamp in milliseconds when the registry was soft-deleted
         isDeleted:
           type: boolean
-          description: Indicates if the registry is soft deleted
+          description: True if the registry is soft-deleted
       required:
         - name
         - identifier
@@ -2499,6 +2531,8 @@ components:
         - url
         - packageType
         - isPublic
+        - uuid
+        - isDeleted
     ArtifactDetail:
       type: object
       description: Artifact Detail
@@ -2881,15 +2915,22 @@ components:
           type: string
         modifiedAt:
           type: string
+        uuid:
+          type: string
+        registryUUID:
+          type: string
         deletedAt:
           type: string
-          description: Timestamp in milliseconds when the artifact (image) was soft deleted. Null if not deleted.
+          description: Timestamp in milliseconds when the registry was soft-deleted
         isDeleted:
           type: boolean
-          description: Indicates if the artifact (image) is soft deleted
+          description: True if the registry is soft-deleted
       required:
         - imageName
         - packageType
+        - uuid
+        - registryUUID
+        - isDeleted
     ArtifactVersionSummary:
       type: object
       description: Docker Artifact Version Summary
@@ -2906,16 +2947,23 @@ components:
           $ref: "#/components/schemas/PackageType"
         artifactType:
           $ref: "#/components/schemas/ArtifactType"
+        uuid:
+          type: string
+        registryUUID:
+          type: string
         deletedAt:
           type: string
-          description: Timestamp in milliseconds when the artifact was soft deleted. Null if not deleted.
+          description: Timestamp in milliseconds when the registry was soft-deleted
         isDeleted:
           type: boolean
-          description: Indicates if the artifact version is soft deleted
+          description: True if the registry is soft-deleted
       required:
         - imageName
         - version
         - packageType
+        - uuid
+        - registryUUID
+        - isDeleted
     DockerArtifactManifest:
       type: object
       description: Docker Artifact Manifest
@@ -3577,15 +3625,3 @@ components:
       description: Date. Format - MM/DD/YYYY
       schema:
         type: string
-    softDeleteFilterParam:
-      name: soft_delete_filter
-      in: query
-      required: false
-      description: Filter for soft-deleted entities
-      schema:
-        type: string
-        enum:
-          - exclude_deleted
-          - only_deleted
-          - all
-        default: exclude_deleted

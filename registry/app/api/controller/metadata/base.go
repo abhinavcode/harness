@@ -342,6 +342,7 @@ func (c *APIController) BuildVirtualRepositoryResponse(
 	_ = config.FromVirtualConfig(api.VirtualConfig{UpstreamProxies: &upstreamProxyKeys})
 	response := &api.RegistryResponseJSONResponse{
 		Data: api.Registry{
+			Uuid:           registry.UUID,
 			Identifier:     registry.Name,
 			Description:    &registry.Description,
 			Url:            registryURL,
@@ -420,6 +421,7 @@ func (c *APIController) BuildUpstreamProxyResponse(
 
 	response := &api.RegistryResponseJSONResponse{
 		Data: api.Registry{
+			Uuid:           upstreamproxy.RegistryUUID,
 			Identifier:     upstreamproxy.RepoKey,
 			PackageType:    upstreamproxy.PackageType,
 			Url:            upstreamproxy.RepoURL,

@@ -386,6 +386,7 @@ type UpstreamProxyConfigRepository interface {
 }
 
 type RegistryMetadata struct {
+	RegUUID       string
 	RegID         string
 	ParentID      int64
 	RegIdentifier string
@@ -404,6 +405,7 @@ type RegistryMetadata struct {
 }
 
 type RegistryRepository interface {
+	GetByUUID(ctx context.Context, uuid string) (*types.Registry, error)
 	// Get the repository specified by ID
 	Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (repository *types.Registry, err error)
 	// GetByName gets the repository specified by name
@@ -489,6 +491,7 @@ type RegistryBlobRepository interface {
 }
 
 type ImageRepository interface {
+	GetByUUID(ctx context.Context, uuid string) (*types.Image, error)
 	// Get an Artifact specified by ID
 	Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error)
 	// Get an Artifact specified by Artifact Name
@@ -545,6 +548,8 @@ type ImageRepository interface {
 }
 
 type ArtifactRepository interface {
+	GetByUUID(ctx context.Context, uuid string) (*types.Artifact, error)
+	Get(ctx context.Context, id int64) (*types.Artifact, error)
 	// Get an Artifact specified by ID
 	GetByName(
 		ctx context.Context,
@@ -725,7 +730,7 @@ type GCManifestTaskRepository interface {
 
 type NodesRepository interface {
 	// Get a node specified by ID
-	Get(ctx context.Context, id int64) (*types.Node, error)
+	Get(ctx context.Context, id string) (*types.Node, error)
 	// Get a node specified by node Name and registry id
 	GetByNameAndRegistryID(
 		ctx context.Context, registryID int64,
@@ -864,12 +869,14 @@ type TaskRepository interface {
 
 	UpdateStatus(ctx context.Context, taskKey string, status types.TaskStatus) error
 
-	CompleteTask(ctx context.Context, key string, status types.TaskStatus, output json.RawMessage) (bool, error)
+	CompleteTask(ctx context.Context, key string, status types.TaskStatus) (bool, error)
 
 	ListPendingTasks(ctx context.Context, limit int) ([]*types.Task, error)
 }
 
 type TaskSourceRepository interface {
+	FindByTaskKeyAndSourceType(ctx context.Context, key string, sourceType string) (*types.TaskSource, error)
+
 	InsertSource(ctx context.Context, key string, source types.SourceRef) error
 
 	ClaimSources(ctx context.Context, key string, runID string) error

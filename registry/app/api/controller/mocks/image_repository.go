@@ -129,9 +129,104 @@ func (_m *ImageRepository) DuplicateImage(ctx context.Context, sourceImage *type
 	return r0, r1
 }
 
+<<<<<<< HEAD
 // Get provides a mock function with given fields: ctx, id, softDeleteFilter
 func (_m *ImageRepository) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
 	ret := _m.Called(ctx, id, softDeleteFilter)
+=======
+// ImageRepository_DuplicateImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DuplicateImage'
+type ImageRepository_DuplicateImage_Call struct {
+	*mock.Call
+}
+
+// DuplicateImage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - sourceImage *types.Image
+//   - targetRegistryID int64
+func (_e *ImageRepository_Expecter) DuplicateImage(ctx interface{}, sourceImage interface{}, targetRegistryID interface{}) *ImageRepository_DuplicateImage_Call {
+	return &ImageRepository_DuplicateImage_Call{Call: _e.mock.On("DuplicateImage", ctx, sourceImage, targetRegistryID)}
+}
+
+func (_c *ImageRepository_DuplicateImage_Call) Run(run func(ctx context.Context, sourceImage *types.Image, targetRegistryID int64)) *ImageRepository_DuplicateImage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*types.Image), args[2].(int64))
+	})
+	return _c
+}
+
+func (_c *ImageRepository_DuplicateImage_Call) Return(_a0 *types.Image, _a1 error) *ImageRepository_DuplicateImage_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ImageRepository_DuplicateImage_Call) RunAndReturn(run func(context.Context, *types.Image, int64) (*types.Image, error)) *ImageRepository_DuplicateImage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetByUUID provides a mock function with given fields: ctx, uuid
+func (_m *ImageRepository) GetByUUID(ctx context.Context, uuid string) (*types.Image, error) {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByUUID")
+	}
+
+	var r0 *types.Image
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*types.Image, error)); ok {
+		return rf(ctx, uuid)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *types.Image); ok {
+		r0 = rf(ctx, uuid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Image)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, uuid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ImageRepository_GetByUUID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByUUID'
+type ImageRepository_GetByUUID_Call struct {
+	*mock.Call
+}
+
+// GetByUUID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - uuid string
+func (_e *ImageRepository_Expecter) GetByUUID(ctx interface{}, uuid interface{}) *ImageRepository_GetByUUID_Call {
+	return &ImageRepository_GetByUUID_Call{Call: _e.mock.On("GetByUUID", ctx, uuid)}
+}
+
+func (_c *ImageRepository_GetByUUID_Call) Run(run func(ctx context.Context, uuid string)) *ImageRepository_GetByUUID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ImageRepository_GetByUUID_Call) Return(image *types.Image, err error) *ImageRepository_GetByUUID_Call {
+	_c.Call.Return(image, err)
+	return _c
+}
+
+func (_c *ImageRepository_GetByUUID_Call) RunAndReturn(run func(context.Context, string) (*types.Image, error)) *ImageRepository_GetByUUID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Get provides a mock function with given fields: ctx, id
+func (_m *ImageRepository) Get(ctx context.Context, id int64) (*types.Image, error) {
+	ret := _m.Called(ctx, id)
+>>>>>>> ce583c3ef0355a3eb5f009fe6570055c33a02f1c
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -323,6 +418,82 @@ func (_m *ImageRepository) RestoreByImageNameAndRegID(ctx context.Context, regID
 	}
 
 	return r0
+}
+
+// RestoreByUUID provides a mock function with given fields: ctx, uuid
+func (_m *ImageRepository) RestoreByUUID(ctx context.Context, uuid string) error {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RestoreByUUID")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, uuid)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DuplicateImage provides a mock function with given fields: ctx, sourceImage, targetRegistryID
+func (_m *ImageRepository) DuplicateImage(ctx context.Context, sourceImage *types.Image, targetRegistryID int64) (*types.Image, error) {
+	ret := _m.Called(ctx, sourceImage, targetRegistryID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DuplicateImage")
+	}
+
+	var r0 *types.Image
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *types.Image, int64) (*types.Image, error)); ok {
+		return rf(ctx, sourceImage, targetRegistryID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *types.Image, int64) *types.Image); ok {
+		r0 = rf(ctx, sourceImage, targetRegistryID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Image)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *types.Image, int64) error); ok {
+		r1 = rf(ctx, sourceImage, targetRegistryID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Purge provides a mock function with given fields: ctx, accountID, deletedBeforeOrAt
+func (_m *ImageRepository) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
+	ret := _m.Called(ctx, accountID, deletedBeforeOrAt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Purge")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64) (int64, error)); ok {
+		return rf(ctx, accountID, deletedBeforeOrAt)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64) int64); ok {
+		r0 = rf(ctx, accountID, deletedBeforeOrAt)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int64) error); ok {
+		r1 = rf(ctx, accountID, deletedBeforeOrAt)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // SoftDeleteByImageNameAndRegID provides a mock function with given fields: ctx, regID, image

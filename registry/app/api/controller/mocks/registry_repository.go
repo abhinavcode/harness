@@ -208,9 +208,103 @@ func (_m *RegistryRepository) FetchUpstreamProxyKeys(ctx context.Context, ids []
 	return r0, r1
 }
 
+<<<<<<< HEAD
 // Get provides a mock function with given fields: ctx, id, softDeleteFilter
 func (_m *RegistryRepository) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Registry, error) {
 	ret := _m.Called(ctx, id, softDeleteFilter)
+=======
+// RegistryRepository_FetchUpstreamProxyKeys_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchUpstreamProxyKeys'
+type RegistryRepository_FetchUpstreamProxyKeys_Call struct {
+	*mock.Call
+}
+
+// FetchUpstreamProxyKeys is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ids []int64
+func (_e *RegistryRepository_Expecter) FetchUpstreamProxyKeys(ctx interface{}, ids interface{}) *RegistryRepository_FetchUpstreamProxyKeys_Call {
+	return &RegistryRepository_FetchUpstreamProxyKeys_Call{Call: _e.mock.On("FetchUpstreamProxyKeys", ctx, ids)}
+}
+
+func (_c *RegistryRepository_FetchUpstreamProxyKeys_Call) Run(run func(ctx context.Context, ids []int64)) *RegistryRepository_FetchUpstreamProxyKeys_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]int64))
+	})
+	return _c
+}
+
+func (_c *RegistryRepository_FetchUpstreamProxyKeys_Call) Return(repokeys []string, err error) *RegistryRepository_FetchUpstreamProxyKeys_Call {
+	_c.Call.Return(repokeys, err)
+	return _c
+}
+
+func (_c *RegistryRepository_FetchUpstreamProxyKeys_Call) RunAndReturn(run func(context.Context, []int64) ([]string, error)) *RegistryRepository_FetchUpstreamProxyKeys_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetByUUID provides a mock function with given fields: ctx, uuid
+func (_m *RegistryRepository) GetByUUID(ctx context.Context, uuid string) (*types.Registry, error) {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByUUID")
+	}
+
+	var r0 *types.Registry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*types.Registry, error)); ok {
+		return rf(ctx, uuid)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *types.Registry); ok {
+		r0 = rf(ctx, uuid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Registry)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, uuid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RegistryRepository_GetByUUID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByUUID'
+type RegistryRepository_GetByUUID_Call struct {
+	*mock.Call
+}
+
+// GetByUUID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - uuid string
+func (_e *RegistryRepository_Expecter) GetByUUID(ctx interface{}, uuid interface{}) *RegistryRepository_GetByUUID_Call {
+	return &RegistryRepository_GetByUUID_Call{Call: _e.mock.On("GetByUUID", ctx, uuid)}
+}
+
+func (_c *RegistryRepository_GetByUUID_Call) Run(run func(ctx context.Context, uuid string)) *RegistryRepository_GetByUUID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *RegistryRepository_GetByUUID_Call) Return(registry *types.Registry, err error) *RegistryRepository_GetByUUID_Call {
+	_c.Call.Return(registry, err)
+	return _c
+}
+
+func (_c *RegistryRepository_GetByUUID_Call) RunAndReturn(run func(context.Context, string) (*types.Registry, error)) *RegistryRepository_GetByUUID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Get provides a mock function with given fields: ctx, id
+func (_m *RegistryRepository) Get(ctx context.Context, id int64) (*types.Registry, error) {
+	ret := _m.Called(ctx, id)
+>>>>>>> ce583c3ef0355a3eb5f009fe6570055c33a02f1c
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -427,6 +521,24 @@ func (_m *RegistryRepository) Restore(ctx context.Context, parentID int64, name 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
 		r0 = rf(ctx, parentID, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RestoreByUUID provides a mock function with given fields: ctx, uuid
+func (_m *RegistryRepository) RestoreByUUID(ctx context.Context, uuid string) error {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RestoreByUUID")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, uuid)
 	} else {
 		r0 = ret.Error(0)
 	}

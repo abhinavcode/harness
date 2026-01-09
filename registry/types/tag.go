@@ -36,6 +36,8 @@ type Tag struct {
 
 type ArtifactMetadata struct {
 	ID               int64
+	UUID             string
+	RegistryUUID     string
 	Name             string
 	RepoName         string
 	DownloadCount    int64
@@ -56,6 +58,8 @@ type ArtifactMetadata struct {
 
 type ImageMetadata struct {
 	Name          string
+	RegistryUUID  string
+	UUID          string
 	RepoName      string
 	DownloadCount int64
 	PackageType   artifact.PackageType
@@ -88,13 +92,11 @@ type OciVersionMetadata struct {
 }
 
 type TagDetail struct {
-	ID            int64
-	Name          string
-	ImageName     string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	Size          string
-	DownloadCount int64
+	ID        int64
+	Name      string
+	ImageName string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type TagInfo struct {

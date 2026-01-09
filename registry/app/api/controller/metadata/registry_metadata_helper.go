@@ -116,7 +116,7 @@ func (r *GitnessRegistryMetadataHelper) GetRegistryRequestBaseInfo(
 			registrytypes.SoftDeleteFilterAll,
 		)
 		if getRegistryErr != nil {
-			return nil, fmt.Errorf("registry not found: %w", err)
+			return nil, fmt.Errorf("registry not found: %w", getRegistryErr)
 		}
 
 		baseInfo.RegistryRef = regRef
@@ -161,7 +161,10 @@ func (r *GitnessRegistryMetadataHelper) MapToWebhookCore(
 	}
 
 	if webhookRequest.Triggers != nil {
-		triggers := r.MapToInternalWebhookTriggers(*webhookRequest.Triggers)
+		triggers, err := r.MapToInternalWebhookTriggers(*webhookRequest.Triggers)
+		if err != nil {
+			return nil, fmt.Errorf("failed to map to internal webhook triggers: %w", err)
+		}
 		webhook.Triggers = deduplicateTriggers(triggers)
 	}
 
@@ -260,17 +263,26 @@ func (r *GitnessRegistryMetadataHelper) MapToWebhookResponseEntity(
 
 func (r *GitnessRegistryMetadataHelper) MapToInternalWebhookTriggers(
 	triggers []api.Trigger,
-) []enum.WebhookTrigger {
+) ([]enum.WebhookTrigger, error) {
 	var webhookTriggers = make([]enum.WebhookTrigger, 0)
+	var invalidTriggers []string
+
 	for _, trigger := range triggers {
 		switch trigger {
 		case api.TriggerARTIFACTCREATION:
 			webhookTriggers = append(webhookTriggers, enum.WebhookTriggerArtifactCreated)
 		case api.TriggerARTIFACTDELETION:
 			webhookTriggers = append(webhookTriggers, enum.WebhookTriggerArtifactDeleted)
+		default:
+			invalidTriggers = append(invalidTriggers, string(trigger))
 		}
 	}
-	return webhookTriggers
+
+	if len(invalidTriggers) > 0 {
+		return nil, fmt.Errorf("invalid webhook triggers: %v", invalidTriggers)
+	}
+
+	return webhookTriggers, nil
 }
 
 func (r *GitnessRegistryMetadataHelper) MapToAPIExecutionResult(

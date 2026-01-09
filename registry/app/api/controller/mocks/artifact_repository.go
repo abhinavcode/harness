@@ -19,9 +19,69 @@ type ArtifactRepository struct {
 	mock.Mock
 }
 
-// Count provides a mock function with given fields: ctx, softDeleteFilter
-func (_m *ArtifactRepository) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
-	ret := _m.Called(ctx, softDeleteFilter)
+// GetByUUID provides a mock function with given fields: ctx, uuid
+func (_m *ArtifactRepository) GetByUUID(ctx context.Context, uuid string) (*types.Artifact, error) {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByUUID")
+	}
+
+	var r0 *types.Artifact
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*types.Artifact, error)); ok {
+		return rf(ctx, uuid)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *types.Artifact); ok {
+		r0 = rf(ctx, uuid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Artifact)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, uuid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Get provides a mock function with given fields: ctx, id
+func (_m *ArtifactRepository) Get(ctx context.Context, id int64) (*types.Artifact, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
+	var r0 *types.Artifact
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*types.Artifact, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *types.Artifact); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*types.Artifact)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Count provides a mock function with given fields: ctx
+func (_m *ArtifactRepository) Count(ctx context.Context) (int64, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Count")
@@ -29,17 +89,17 @@ func (_m *ArtifactRepository) Count(ctx context.Context, softDeleteFilter types.
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.SoftDeleteFilter) (int64, error)); ok {
-		return rf(ctx, softDeleteFilter)
+	if rf, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, types.SoftDeleteFilter) int64); ok {
-		r0 = rf(ctx, softDeleteFilter)
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, types.SoftDeleteFilter) error); ok {
-		r1 = rf(ctx, softDeleteFilter)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -794,6 +854,24 @@ func (_m *ArtifactRepository) SoftDeleteByVersionAndImageName(ctx context.Contex
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
 		r0 = rf(ctx, image, version, regID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RestoreByUUID provides a mock function with given fields: ctx, uuid
+func (_m *ArtifactRepository) RestoreByUUID(ctx context.Context, uuid string) error {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RestoreByUUID")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, uuid)
 	} else {
 		r0 = ret.Error(0)
 	}

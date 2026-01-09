@@ -119,6 +119,8 @@ func mapToArtifactMetadata(
 	pullCommand := GetPullCommand(ctx, artifact.Name, artifact.Version,
 		string(packageType), registryURL, setupDetailsAuthHeaderPrefix, artifact.ArtifactType, !untaggedImagesEnabled)
 	return &artifactapi.ArtifactMetadata{
+		RegistryUUID:       artifact.RegistryUUID,
+		Uuid:               artifact.UUID,
 		RegistryIdentifier: artifact.RepoName,
 		Name:               artifact.Name,
 		Version:            &artifact.Version,
@@ -145,6 +147,8 @@ func mapToRegistryArtifactMetadata(artifact types.ArtifactMetadata) *artifactapi
 	packageType := artifact.PackageType
 	return &artifactapi.RegistryArtifactMetadata{
 		RegistryIdentifier: artifact.RepoName,
+		RegistryUUID:       artifact.RegistryUUID,
+		Uuid:               artifact.UUID,
 		Name:               artifact.Name,
 		LatestVersion:      artifact.LatestVersion,
 		Labels:             &artifact.Labels,
@@ -486,9 +490,10 @@ func GetNonOCIAllArtifactVersionResponse(
 	setupDetailsAuthHeaderPrefix string,
 	pkgType string,
 	packageWrapper interfaces.PackageWrapper,
+	registryUUID string,
 ) *artifactapi.ListArtifactVersionResponseJSONResponse {
 	artifactVersionMetadataList := GetNonOCIArtifactMetadata(
-		ctx, artifacts, image, registryURL, setupDetailsAuthHeaderPrefix, pkgType, packageWrapper)
+		ctx, artifacts, image, registryURL, setupDetailsAuthHeaderPrefix, pkgType, packageWrapper, registryUUID)
 	pageCount := GetPageCount(count, pageSize)
 	listArtifactVersions := &artifactapi.ListArtifactVersion{
 		ItemCount:        &count,
@@ -512,11 +517,13 @@ func GetNonOCIArtifactMetadata(
 	setupDetailsAuthHeaderPrefix string,
 	pkgType string,
 	packageWrapper interfaces.PackageWrapper,
+	registryUUID string,
 ) []artifactapi.ArtifactVersionMetadata {
 	artifactVersionMetadataList := []artifactapi.ArtifactVersionMetadata{}
 	for _, tag := range *tags {
 		metadata := packageWrapper.GetArtifactVersionMetadata(pkgType, image, tag)
 		if metadata != nil {
+			metadata.RegistryUUID = registryUUID
 			artifactVersionMetadataList = append(artifactVersionMetadataList, *metadata)
 			continue
 		}
@@ -535,6 +542,8 @@ func GetNonOCIArtifactMetadata(
 			PackageType:      packageType,
 			FileCount:        &fileCount,
 			Name:             tag.Name,
+			RegistryUUID:     registryUUID,
+			Uuid:             tag.UUID,
 			Size:             &size,
 			LastModified:     &modifiedAt,
 			PullCommand:      &command,
@@ -838,6 +847,8 @@ func GetArtifactSummary(artifact types.ImageMetadata) *artifactapi.ArtifactSumma
 		ArtifactType:   artifact.ArtifactType,
 		DeletedAt:      deletedAt,
 		IsDeleted:      &artifact.IsDeleted,
+		RegistryUUID:   artifact.RegistryUUID,
+		Uuid:           artifact.UUID,
 	}
 	response := &artifactapi.ArtifactSummaryResponseJSONResponse{
 		Data:   *artifactVersionSummary,
@@ -855,6 +866,8 @@ func GetArtifactVersionSummary(
 	artifactType *artifactapi.ArtifactType,
 	deletedAt *time.Time,
 	isDeleted bool,
+	artifactUUID string,
+	registryUUID string,
 ) *artifactapi.ArtifactVersionSummaryResponseJSONResponse {
 	var deletedAtStr *string
 	if deletedAt != nil {
@@ -871,6 +884,8 @@ func GetArtifactVersionSummary(
 		ArtifactType:     artifactType,
 		DeletedAt:        deletedAtStr,
 		IsDeleted:        &isDeleted,
+		Uuid:             artifactUUID,
+		RegistryUUID:     registryUUID,
 	}
 	response := &artifactapi.ArtifactVersionSummaryResponseJSONResponse{
 		Data:   *artifactVersionSummary,

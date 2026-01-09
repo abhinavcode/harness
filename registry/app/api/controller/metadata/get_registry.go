@@ -35,6 +35,14 @@ func (c *APIController) GetRegistry(
 ) (artifact.GetRegistryResponseObject, error) {
 	regInfo, err := c.RegistryMetadataHelper.GetRegistryRequestBaseInfo(ctx, "", string(r.RegistryRef))
 	if err != nil {
+		// Check if registry not found - error is properly wrapped with %w through the chain
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return artifact.GetRegistry404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "Registry not found"),
+				),
+			}, nil
+		}
 		return artifact.GetRegistry400JSONResponse{
 			BadRequestJSONResponse: artifact.BadRequestJSONResponse(
 				*GetErrorResponse(http.StatusBadRequest, err.Error()),

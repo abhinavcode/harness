@@ -78,7 +78,9 @@ type tagDB struct {
 
 type artifactMetadataDB struct {
 	ID                int64                  `db:"artifact_id"`
+	UUID              string                 `db:"uuid"`
 	Name              string                 `db:"name"`
+	RegistryUUID      string                 `db:"registry_uuid"`
 	RepoName          string                 `db:"repo_name"`
 	DownloadCount     int64                  `db:"download_count"`
 	PackageType       artifact.PackageType   `db:"package_type"`
@@ -133,13 +135,11 @@ type ociVersionMetadataDB struct {
 }
 
 type tagDetailDB struct {
-	ID            int64  `db:"id"`
-	Name          string `db:"name"`
-	ImageName     string `db:"image_name"`
-	CreatedAt     int64  `db:"created_at"`
-	UpdatedAt     int64  `db:"updated_at"`
-	Size          string `db:"size"`
-	DownloadCount int64  `db:"download_count"`
+	ID        int64  `db:"id"`
+	Name      string `db:"name"`
+	ImageName string `db:"image_name"`
+	CreatedAt int64  `db:"created_at"`
+	UpdatedAt int64  `db:"updated_at"`
 }
 
 type tagInfoDB struct {
@@ -415,7 +415,8 @@ func (t tagDao) GetAllArtifactsByParentID(
 	finalQuery := fmt.Sprintf(`
     SELECT repo_name, name, package_type, version, modified_at,
            labels, download_count, is_quarantined, quarantine_reason, artifact_type,
-           artifact_deleted_at, image_deleted_at, registry_deleted_at
+           artifact_deleted_at, image_deleted_at, registry_deleted_at,
+		   registry_uuid, uuid
     FROM (%s UNION ALL %s) AS combined
 `, q1SQL, q2SQL)
 
@@ -449,11 +450,14 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 	parentID int64, latestVersion bool, registryIDs *[]string,
 	packageTypes []string, search string, softDeleteFilter types.SoftDeleteFilter,
 ) sq.SelectBuilder {
+	// TODO: update query to return correct artifact uuid
 	q2 := databaseg.Builder.Select(
-		`r.registry_name as repo_name, 
+		`r.registry_name as repo_name,
+		r.registry_uuid as registry_uuid,
 		t.tag_image_name as name, 
 		r.registry_package_type as package_type, 
 		t.tag_name as version, 
+		i.image_uuid as uuid,
 		t.tag_updated_at as modified_at, 
 		i.image_labels as labels, 
 		COALESCE(t2.download_count,0) as download_count,
@@ -472,14 +476,14 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 				" i.image_name = t.tag_image_name",
 		).
 		LeftJoin(
-			`( SELECT i.image_name, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
+			`( SELECT i.image_id, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
 			( SELECT a.artifact_image_id, COUNT(d.download_stat_id) as download_count 
 			FROM artifacts a JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id 
 			GROUP BY a.artifact_image_id ) as t1 
 			JOIN images i ON i.image_id = t1.artifact_image_id 
 			JOIN registries r ON r.registry_id = i.image_registry_id 
-			WHERE r.registry_parent_id = ? GROUP BY i.image_name) as t2 
-			ON t.tag_image_name = t2.image_name`, parentID,
+			WHERE r.registry_parent_id = ? GROUP BY i.image_id) as t2 
+			ON i.image_id = t2.image_id`, parentID,
 		)
 
 	if latestVersion {
@@ -601,6 +605,8 @@ func (t tagDao) getCoreArtifactsQuery(
 ) sq.SelectBuilder {
 	query := databaseg.Builder.Select(
 		`ar.artifact_id,
+		ar.artifact_uuid as uuid,
+		r.registry_uuid as registry_uuid,
 		r.registry_name as repo_name, 
 		i.image_name as name, 
 		r.registry_package_type as package_type,
@@ -825,9 +831,11 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 	}
 	q1 := databaseg.Builder.Select(
 		`r.registry_name as repo_name, 
-		i.image_name as name, 
+		r.registry_uuid as registry_uuid,
+		i.image_name as name,
 		r.registry_package_type as package_type,
-		ar.artifact_version as version, 
+		ar.artifact_version as version,
+		ar.artifact_uuid as uuid, 
 		ar.artifact_updated_at as modified_at, 
 		i.image_labels as labels, 
 		COALESCE(t2.download_count, 0) as download_count,
@@ -846,15 +854,15 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 			"OR qp.quarantined_path_artifact_id IS NULL) "+
 			"AND qp.quarantined_path_image_id = i.image_id) AND qp.quarantined_path_registry_id = r.registry_id").
 		LeftJoin(
-			`( SELECT a.artifact_version, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
+			`( SELECT a.artifact_id, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
 			( SELECT a.artifact_id, COUNT(d.download_stat_id) as download_count 
 			FROM artifacts a JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id 
 			GROUP BY a.artifact_id ) as t1 
             JOIN artifacts a ON a.artifact_id = t1.artifact_id 
 			JOIN images i ON i.image_id = a.artifact_image_id 
 			JOIN registries r ON r.registry_id = i.image_registry_id 
-			WHERE r.registry_parent_id = ? GROUP BY a.artifact_version) as t2 
-			ON ar.artifact_version = t2.artifact_version`, parentID,
+			WHERE r.registry_parent_id = ? GROUP BY a.artifact_id) as t2 
+			ON ar.artifact_id = t2.artifact_id`, parentID,
 		)
 
 	if latestVersion {
@@ -1133,33 +1141,15 @@ func (t tagDao) GetTagDetail(
 	ctx context.Context, repoID int64, imageName string,
 	name string,
 ) (*types.TagDetail, error) {
-	// Define subquery for download counts
-	downloadCountSubquery := `
-        SELECT 
-            a.artifact_image_id, 
-            COUNT(d.download_stat_id) AS download_count, 
-            i.image_name, 
-            i.image_registry_id
-        FROM artifacts a
-        JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id
-        JOIN images i ON i.image_id = a.artifact_image_id
-        GROUP BY a.artifact_image_id, i.image_name, i.image_registry_id
-    `
-	// Build main query
 	q := databaseg.Builder.
 		Select(`
             t.tag_id AS id, 
             t.tag_name AS name, 
             t.tag_image_name AS image_name, 
             t.tag_created_at AS created_at, 
-            t.tag_updated_at AS updated_at, 
-            m.manifest_total_size AS size, 
-            COALESCE(dc.download_count, 0) AS download_count
+            t.tag_updated_at AS updated_at
         `).
 		From("tags AS t").
-		Join("manifests AS m ON m.manifest_id = t.tag_manifest_id").
-		LeftJoin(fmt.Sprintf("(%s) AS dc ON t.tag_image_name = dc.image_name "+
-			"AND t.tag_registry_id = dc.image_registry_id", downloadCountSubquery)).
 		Where(
 			"t.tag_registry_id = ? AND t.tag_image_name = ? AND t.tag_name = ?",
 			repoID, imageName, name,
@@ -1453,15 +1443,15 @@ func (t tagDao) GetAllArtifactsByRepo(
 				" AND ar.image_name = t.tag_image_name",
 		).
 		LeftJoin(
-			`( SELECT i.image_name, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
+			`( SELECT i.image_id, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
 			( SELECT a.artifact_image_id, COUNT(d.download_stat_id) as download_count 
 			FROM artifacts a 
 			JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id GROUP BY 
 			a.artifact_image_id ) as t1 
 			JOIN images i ON i.image_id = t1.artifact_image_id 
 			JOIN registries r ON r.registry_id = i.image_registry_id 
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? GROUP BY i.image_name) as t2 
-			ON t.tag_image_name = t2.image_name`, parentID, repoKey,
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? GROUP BY i.image_id) as t2 
+			ON ar.image_id = t2.image_id`, parentID, repoKey,
 		).
 		Where("a.rank = 1 ")
 
@@ -2078,6 +2068,8 @@ func (t tagDao) mapToArtifactMetadata(
 
 	artifactMetadata := &types.ArtifactMetadata{
 		Name:             dst.Name,
+		UUID:             dst.UUID,
+		RegistryUUID:     dst.RegistryUUID,
 		RepoName:         dst.RepoName,
 		DownloadCount:    dst.DownloadCount,
 		PackageType:      dst.PackageType,
@@ -2216,12 +2208,10 @@ func (t tagDao) mapToTagDetail(
 	dst *tagDetailDB,
 ) (*types.TagDetail, error) {
 	return &types.TagDetail{
-		ID:            dst.ID,
-		Name:          dst.Name,
-		ImageName:     dst.ImageName,
-		Size:          dst.Size,
-		CreatedAt:     time.UnixMilli(dst.CreatedAt),
-		UpdatedAt:     time.UnixMilli(dst.UpdatedAt),
-		DownloadCount: dst.DownloadCount,
+		ID:        dst.ID,
+		Name:      dst.Name,
+		ImageName: dst.ImageName,
+		CreatedAt: time.UnixMilli(dst.CreatedAt),
+		UpdatedAt: time.UnixMilli(dst.UpdatedAt),
 	}, nil
 }

@@ -20,7 +20,8 @@ import type { PageType } from '@ar/common/types'
 
 export enum ArtifactActionsEnum {
   Delete = 'delete',
-  SetupClient = 'setupClient'
+  SetupClient = 'setupClient',
+  Download = 'download'
 }
 
 export interface ArtifactActionProps {

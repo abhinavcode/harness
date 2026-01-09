@@ -111,6 +111,13 @@ func (c *APIController) GetArtifactDetails(
 	img, err := c.ImageStore.GetByNameAndType(ctx, regInfo.RegistryID, image, artifactType, types.SoftDeleteFilterAll)
 
 	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return artifact.GetArtifactDetails404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "Artifact not found"),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactDetails500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),
@@ -120,6 +127,13 @@ func (c *APIController) GetArtifactDetails(
 	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, types.SoftDeleteFilterAll)
 
 	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return artifact.GetArtifactDetails404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "Artifact version not found"),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactDetails500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),

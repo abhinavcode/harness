@@ -86,21 +86,12 @@ type registryNameID struct {
 }
 
 func (r registryDao) Get(
-	ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, id int64,
 ) (*types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_id = ?", id)
-
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExcludeDeleted:
-		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnlyDeleted:
-		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterAll:
-		// No filtering
-	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 
@@ -339,6 +330,7 @@ func (r registryDao) GetByIDIn(
 }
 
 type RegistryMetadataDB struct {
+	RegUUID       string                `db:"registry_uuid"`
 	RegID         string                `db:"registry_id"`
 	ParentID      int64                 `db:"parent_id"`
 	RegIdentifier string                `db:"reg_identifier"`
@@ -373,6 +365,7 @@ func (r registryDao) GetAll(
 
 	// Step 1: Fetch base registry data.
 	selectFields := `
+		r.registry_uuid AS registry_uuid,
 		r.registry_id AS registry_id,
 		r.registry_parent_id AS parent_id,
 		r.registry_name AS reg_identifier,
@@ -1210,6 +1203,7 @@ func (r registryDao) mapToRegistryMetadata(ctx context.Context, dst *RegistryMet
 	}
 
 	return &store.RegistryMetadata{
+		RegUUID:       dst.RegUUID,
 		RegID:         dst.RegID,
 		ParentID:      dst.ParentID,
 		RegIdentifier: dst.RegIdentifier,

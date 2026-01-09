@@ -16,6 +16,7 @@ package metadata
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -35,9 +36,23 @@ func (c *APIController) GetArtifactVersionSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
 ) (artifact.GetArtifactVersionSummaryResponseObject, error) {
-	image, version, pkgType, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, err :=
+	image, version, pkgType, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, artifactUUID, registryUUID, err :=
 		c.FetchArtifactSummary(ctx, r)
 	if err != nil {
+		if errors.Is(err, apiauth.ErrUnauthorized) {
+			return artifact.GetArtifactVersionSummary401JSONResponse{
+				UnauthenticatedJSONResponse: artifact.UnauthenticatedJSONResponse(
+					*GetErrorResponse(http.StatusUnauthorized, err.Error()),
+				),
+			}, nil
+		}
+		if errors.Is(err, apiauth.ErrForbidden) {
+			return artifact.GetArtifactVersionSummary403JSONResponse{
+				UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
+					*GetErrorResponse(http.StatusForbidden, err.Error()),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactVersionSummary500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),
@@ -47,7 +62,7 @@ func (c *APIController) GetArtifactVersionSummary(
 
 	return artifact.GetArtifactVersionSummary200JSONResponse{
 		ArtifactVersionSummaryResponseJSONResponse: *GetArtifactVersionSummary(image,
-			pkgType, version, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted),
+			pkgType, version, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, artifactUUID, registryUUID),
 	}, nil
 }
 
@@ -55,16 +70,16 @@ func (c *APIController) GetArtifactVersionSummary(
 func (c *APIController) FetchArtifactSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
-) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, *time.Time, bool, error) {
+) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, *time.Time, bool, string, string, error) {
 	regInfo, err := c.RegistryMetadataHelper.GetRegistryRequestBaseInfo(ctx, "", string(r.RegistryRef))
 
 	if err != nil {
-		return "", "", "", false, "", nil, nil, false, fmt.Errorf("failed to get registry request base info: %w", err)
+		return "", "", "", false, "", nil, nil, false, "", "", fmt.Errorf("failed to get registry request base info: %w", err)
 	}
 
 	space, err := c.SpaceFinder.FindByRef(ctx, regInfo.ParentRef)
 	if err != nil {
-		return "", "", "", false, "", nil, nil, false, err
+		return "", "", "", false, "", nil, nil, false, "", "", err
 	}
 
 	session, _ := request.AuthSessionFrom(ctx)
@@ -76,7 +91,7 @@ func (c *APIController) FetchArtifactSummary(
 		session,
 		permissionChecks...,
 	); err != nil {
-		return "", "", "", false, "", nil, nil, false, err
+		return "", "", "", false, "", nil, nil, false, "", "", err
 	}
 
 	image := string(r.Artifact)
@@ -93,14 +108,14 @@ func (c *APIController) FetchArtifactSummary(
 
 	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterAll)
 	if err != nil {
-		return "", "", "", false, "", nil, nil, false, err
+		return "", "", "", false, "", nil, nil, false, "", "", err
 	}
 
 	var artifactType *artifact.ArtifactType
 	if r.Params.ArtifactType != nil {
 		artifactType, err = ValidateAndGetArtifactType(registry.PackageType, string(*r.Params.ArtifactType))
 		if err != nil {
-			return "", "", "", false, "", nil, nil, false, err
+			return "", "", "", false, "", nil, nil, false, "", "", err
 		}
 	}
 
@@ -124,12 +139,12 @@ func (c *APIController) FetchArtifactSummary(
 		if c.UntaggedImagesEnabled(ctx) {
 			ociVersion, err = c.TagStore.GetOCIVersionMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version)
 			if err != nil {
-				return "", "", "", false, "", nil, nil, false, err
+				return "", "", "", false, "", nil, nil, false, "", "", err
 			}
 		} else {
 			ociVersion, err = c.TagStore.GetTagMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version)
 			if err != nil {
-				return "", "", "", false, "", nil, nil, false, err
+				return "", "", "", false, "", nil, nil, false, "", "", err
 			}
 		}
 
@@ -146,18 +161,18 @@ func (c *APIController) FetchArtifactSummary(
 			deletedAt = &timestamp
 		}
 
-		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt, isDeleted, nil
+		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt, isDeleted, "", "", nil
 	}
 	metadata, err := c.ArtifactStore.GetArtifactMetadata(
 		ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version, artifactType, types.SoftDeleteFilterAll)
 
 	if err != nil {
-		return "", "", "", false, "", nil, nil, false, err
+		return "", "", "", false, "", nil, nil, false, "", "", err
 	}
 
 	// Check if artifact is soft deleted
 	isDeleted := metadata.DeletedAt != nil
 
 	return image, metadata.Name, metadata.PackageType, isQuarantined, quarantineReason,
-		metadata.ArtifactType, metadata.DeletedAt, isDeleted, nil
+		metadata.ArtifactType, metadata.DeletedAt, isDeleted, metadata.UUID, registry.UUID, nil
 }

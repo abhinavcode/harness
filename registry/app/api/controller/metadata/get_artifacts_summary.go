@@ -58,6 +58,13 @@ func (c *APIController) GetArtifactSummary(
 		session,
 		permissionChecks...,
 	); err != nil {
+		if errors.Is(err, apiauth.ErrUnauthorized) {
+			return artifact.GetArtifactSummary401JSONResponse{
+				UnauthenticatedJSONResponse: artifact.UnauthenticatedJSONResponse(
+					*GetErrorResponse(http.StatusUnauthorized, err.Error()),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactSummary403JSONResponse{
 			UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
 				*GetErrorResponse(http.StatusForbidden, err.Error()),
@@ -95,6 +102,13 @@ func (c *APIController) GetArtifactSummary(
 	}
 	metadata, err := c.getImageMetadata(ctx, registry, image, artifactType)
 	if err != nil {
+		if errors.Is(err, store.ErrResourceNotFound) {
+			return artifact.GetArtifactSummary404JSONResponse{
+				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
+					*GetErrorResponse(http.StatusNotFound, "Artifact not found"),
+				),
+			}, nil
+		}
 		return artifact.GetArtifactSummary500JSONResponse{
 			InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 				*GetErrorResponse(http.StatusInternalServerError, err.Error()),
@@ -120,6 +134,8 @@ func (c *APIController) getImageMetadata(
 	}
 	imgMetadata := &types.ImageMetadata{
 		Name:          image,
+		RegistryUUID:  registry.UUID,
+		UUID:          img.UUID,
 		DownloadCount: downloadCount,
 		RepoName:      registry.Name,
 		PackageType:   registry.PackageType,

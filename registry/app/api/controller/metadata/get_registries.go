@@ -77,17 +77,9 @@ func (c *APIController) GetAllRegistries(
 		enum.ResourceTypeRegistry,
 		enum.PermissionRegistryView,
 	); err != nil {
-		statusCode, message := HandleAuthError(err)
-		if statusCode == http.StatusUnauthorized {
-			return artifact.GetAllRegistries401JSONResponse{
-				UnauthenticatedJSONResponse: artifact.UnauthenticatedJSONResponse(
-					*GetErrorResponse(http.StatusUnauthorized, message),
-				),
-			}, nil
-		}
 		return artifact.GetAllRegistries403JSONResponse{
 			UnauthorizedJSONResponse: artifact.UnauthorizedJSONResponse(
-				*GetErrorResponse(http.StatusForbidden, message),
+				*GetErrorResponse(http.StatusForbidden, err.Error()),
 			),
 		}, nil
 	}
@@ -97,6 +89,16 @@ func (c *APIController) GetAllRegistries(
 	if r.Params.Type != nil {
 		repoType = string(*r.Params.Type)
 	}
+
+	// Validate pagination parameters
+	if regInfo.limit < 0 || regInfo.offset < 0 {
+		return artifact.GetAllRegistries400JSONResponse{
+			BadRequestJSONResponse: artifact.BadRequestJSONResponse(
+				*GetErrorResponse(http.StatusBadRequest, "page and size must be non-negative"),
+			),
+		}, nil
+	}
+
 	ok := c.PackageWrapper.IsValidPackageTypes(regInfo.packageTypes)
 	if !ok {
 		return artifact.GetAllRegistries400JSONResponse{
@@ -264,6 +266,7 @@ func (c *APIController) GetRegistryMetadata(
 			log.Ctx(ctx).Error().Msgf("error in fetching public access for registry %s: %v", path, err)
 		}
 		repoMetadata := artifact.RegistryMetadata{
+			Uuid:           reg.RegUUID,
 			Identifier:     reg.RegIdentifier,
 			Description:    &description,
 			PackageType:    reg.PackageType,

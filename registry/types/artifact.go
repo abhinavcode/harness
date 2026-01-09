@@ -39,6 +39,7 @@ type Artifact struct {
 
 type NonOCIArtifactMetadata struct {
 	ID               string
+	UUID             string
 	Name             string
 	Size             string
 	PackageType      artifact.PackageType

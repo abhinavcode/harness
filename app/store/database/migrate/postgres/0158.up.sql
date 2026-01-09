@@ -1,22 +1,5 @@
--- Add deleted_at and deleted_by columns to registries, images, and artifacts tables
+DROP INDEX IF EXISTS idx_registry_tasks_kind;
+DROP INDEX IF EXISTS idx_registry_tasks_created_by;
 
--- Add to registries table
-ALTER TABLE registries 
-    ADD COLUMN IF NOT EXISTS registry_deleted_at BIGINT,
-    ADD COLUMN IF NOT EXISTS registry_deleted_by INTEGER;
-
-CREATE INDEX IF NOT EXISTS idx_registries_deleted_at ON registries(registry_deleted_at);
-
--- Add to images table
-ALTER TABLE images 
-    ADD COLUMN IF NOT EXISTS image_deleted_at BIGINT,
-    ADD COLUMN IF NOT EXISTS image_deleted_by INTEGER;
-
-CREATE INDEX IF NOT EXISTS idx_images_deleted_at ON images(image_deleted_at);
-
--- Add to artifacts table
-ALTER TABLE artifacts 
-    ADD COLUMN IF NOT EXISTS artifact_deleted_at BIGINT,
-    ADD COLUMN IF NOT EXISTS artifact_deleted_by INTEGER;
-
-CREATE INDEX IF NOT EXISTS idx_artifacts_deleted_at ON artifacts(artifact_deleted_at);
+ALTER TABLE registry_tasks DROP COLUMN registry_task_created_by;
+ALTER TABLE registry_tasks DROP COLUMN registry_task_output;

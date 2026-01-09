@@ -41,19 +41,21 @@ func (c *APIController) ModifyRegistry(
 ) (artifact.ModifyRegistryResponseObject, error) {
 	regInfo, err := c.RegistryMetadataHelper.GetRegistryRequestBaseInfo(ctx, "", string(r.RegistryRef))
 	if err != nil {
+		//nolint:nilerr // Error is encoded in response, not returned separately
 		return artifact.ModifyRegistry400JSONResponse{
 			BadRequestJSONResponse: artifact.BadRequestJSONResponse(
 				*GetErrorResponse(http.StatusBadRequest, err.Error()),
 			),
-		}, err
+		}, nil
 	}
 	space, err := c.SpaceFinder.FindByRef(ctx, regInfo.ParentRef)
 	if err != nil {
+		//nolint:nilerr // Error is encoded in response, not returned separately
 		return artifact.ModifyRegistry400JSONResponse{
 			BadRequestJSONResponse: artifact.BadRequestJSONResponse(
 				*GetErrorResponse(http.StatusBadRequest, err.Error()),
 			),
-		}, err
+		}, nil
 	}
 
 	session, _ := request.AuthSessionFrom(ctx)
@@ -113,7 +115,8 @@ func (c *APIController) ModifyRegistry(
 		regInfo.ParentID, regInfo.RootIdentifierID, upstreamproxyEntity,
 	)
 	if err != nil {
-		return throwModifyRegistry500Error(err), err
+		//nolint:nilerr
+		return throwModifyRegistry400Error(err), nil
 	}
 	registry.ID = repoEntity.ID
 	upstreamproxy.ID = upstreamproxyEntity.ID
@@ -212,7 +215,11 @@ func (c *APIController) updateVirtualRegistry(
 	}
 	err = c.updateCleanupPolicy(ctx, r.Body, registry.ID)
 	if err != nil {
-		return throwModifyRegistry500Error(err), nil
+		return artifact.ModifyRegistry400JSONResponse{
+			BadRequestJSONResponse: artifact.BadRequestJSONResponse(
+				*GetErrorResponse(http.StatusBadRequest, err.Error()),
+			),
+		}, nil
 	}
 	modifiedRepoEntity, err := c.RegistryRepository.Get(ctx, registry.ID, types.SoftDeleteFilterAll)
 	if err != nil {
@@ -391,6 +398,14 @@ func throwModifyRegistry500Error(err error) artifact.ModifyRegistry500JSONRespon
 	}
 }
 
+func throwModifyRegistry400Error(err error) artifact.ModifyRegistry400JSONResponse {
+	return artifact.ModifyRegistry400JSONResponse{
+		BadRequestJSONResponse: artifact.BadRequestJSONResponse(
+			*GetErrorResponse(http.StatusBadRequest, err.Error()),
+		),
+	}
+}
+
 func (c *APIController) updateCleanupPolicy(
 	ctx context.Context, config *artifact.ModifyRegistryJSONRequestBody, registryID int64,
 ) error {
@@ -398,7 +413,10 @@ func (c *APIController) updateCleanupPolicy(
 	if err != nil {
 		return err
 	}
-	currentCleanupPolicyEntities := CreateCleanupPolicyEntity(config, registryID)
+	currentCleanupPolicyEntities, err := CreateCleanupPolicyEntity(config, registryID)
+	if err != nil {
+		return err
+	}
 
 	err = c.CleanupPolicyStore.ModifyCleanupPolicies(ctx, currentCleanupPolicyEntities, existingCleanupPolicies)
 
@@ -464,6 +482,10 @@ func (c *APIController) UpdateUpstreamProxyEntity(
 	if e != nil {
 		return nil, nil, e
 	}
+	e = ValidateUpstream(c.PackageWrapper, dto.PackageType, dto.Config)
+	if e != nil {
+		return nil, nil, e
+	}
 	config, _ := dto.Config.AsUpstreamConfig()
 
 	registryConfig := &types.RegistryConfig{}
@@ -486,10 +508,12 @@ func (c *APIController) UpdateUpstreamProxyEntity(
 	}
 	CleanURLPath(config.Url)
 	upstreamProxyConfigEntity := &types.UpstreamProxyConfig{
-		URL:        *config.Url,
 		AuthType:   string(config.AuthType),
 		RegistryID: u.RegistryID,
 		CreatedAt:  u.CreatedAt,
+	}
+	if config.Url != nil {
+		upstreamProxyConfigEntity.URL = *config.Url
 	}
 	if config.Source != nil && len(string(*config.Source)) > 0 {
 		ok := c.PackageWrapper.ValidateUpstreamSource(string(u.PackageType), string(*config.Source))
@@ -498,7 +522,9 @@ func (c *APIController) UpdateUpstreamProxyEntity(
 		}
 		upstreamProxyConfigEntity.Source = string(*config.Source)
 	}
-	if string(artifact.UpstreamConfigSourceDockerhub) == string(*config.Source) {
+	// For sources that don't require URL (like Dockerhub, PyPi, etc.), clear the URL
+	if config.Source != nil &&
+		!c.PackageWrapper.IsURLRequiredForUpstreamSource(string(u.PackageType), string(*config.Source)) {
 		upstreamProxyConfigEntity.URL = ""
 	}
 	if u.ID != -1 {
