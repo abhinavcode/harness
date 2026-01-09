@@ -138,6 +138,13 @@ const (
 	None        ScopeParam = "none"
 )
 
+// Defines values for SoftDeleteFilterParam.
+const (
+	Exclude SoftDeleteFilterParam = "exclude"
+	Include SoftDeleteFilterParam = "include"
+	Only    SoftDeleteFilterParam = "only"
+)
+
 // Defines values for VersionTypeParam.
 const (
 	DIGEST VersionTypeParam = "DIGEST"
@@ -214,6 +221,13 @@ const (
 const (
 	GetAllArtifactVersionsParamsArtifactTypeDataset GetAllArtifactVersionsParamsArtifactType = "dataset"
 	GetAllArtifactVersionsParamsArtifactTypeModel   GetAllArtifactVersionsParamsArtifactType = "model"
+)
+
+// Defines values for GetAllArtifactVersionsParamsDeleted.
+const (
+	GetAllArtifactVersionsParamsDeletedExclude GetAllArtifactVersionsParamsDeleted = "exclude"
+	GetAllArtifactVersionsParamsDeletedInclude GetAllArtifactVersionsParamsDeleted = "include"
+	GetAllArtifactVersionsParamsDeletedOnly    GetAllArtifactVersionsParamsDeleted = "only"
 )
 
 // Defines values for GetAllArtifactsByRegistryParamsArtifactType.
@@ -1201,6 +1215,9 @@ type ScopeParam string
 // SearchTerm defines model for searchTerm.
 type SearchTerm string
 
+// SoftDeleteFilterParam defines model for softDeleteFilterParam.
+type SoftDeleteFilterParam string
+
 // SortField defines model for sortField.
 type SortField string
 
@@ -1714,10 +1731,16 @@ type GetAllArtifactVersionsParams struct {
 
 	// SearchTerm search Term.
 	SearchTerm *SearchTerm `form:"search_term,omitempty" json:"search_term,omitempty"`
+
+	// Deleted Filter for soft-deleted entities
+	Deleted *GetAllArtifactVersionsParamsDeleted `form:"deleted,omitempty" json:"deleted,omitempty"`
 }
 
 // GetAllArtifactVersionsParamsArtifactType defines parameters for GetAllArtifactVersions.
 type GetAllArtifactVersionsParamsArtifactType string
+
+// GetAllArtifactVersionsParamsDeleted defines parameters for GetAllArtifactVersions.
+type GetAllArtifactVersionsParamsDeleted string
 
 // GetAllArtifactsByRegistryParams defines parameters for GetAllArtifactsByRegistry.
 type GetAllArtifactsByRegistryParams struct {

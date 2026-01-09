@@ -630,6 +630,7 @@ paths:
         - $ref: "#/components/parameters/sortOrder"
         - $ref: "#/components/parameters/sortField"
         - $ref: "#/components/parameters/searchTerm"
+        - $ref: "#/components/parameters/softDeleteFilterParam"
       responses:
         200:
           $ref: "#/components/responses/ListArtifactVersionResponse"
@@ -3625,3 +3626,15 @@ components:
       description: Date. Format - MM/DD/YYYY
       schema:
         type: string
+    softDeleteFilterParam:
+      name: deleted
+      in: query
+      required: false
+      description: Filter for soft-deleted entities
+      schema:
+        type: string
+        enum:
+          - exclude
+          - include
+          - only
+        default: exclude
