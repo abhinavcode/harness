@@ -86,12 +86,21 @@ type registryNameID struct {
 }
 
 func (r registryDao) Get(
-	ctx context.Context, id int64,
+	ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter,
 ) (*types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_id = ?", id)
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		stmt = stmt.Where("registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterAll:
+		// No filter
+	}
 
 	db := dbtx.GetAccessor(ctx, r.db)
 

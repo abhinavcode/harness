@@ -405,7 +405,6 @@ type RegistryMetadata struct {
 }
 
 type RegistryRepository interface {
-	GetByUUID(ctx context.Context, uuid string) (*types.Registry, error)
 	// Get the repository specified by ID
 	Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (repository *types.Registry, err error)
 	// GetByName gets the repository specified by name
@@ -491,8 +490,7 @@ type RegistryBlobRepository interface {
 }
 
 type ImageRepository interface {
-	GetByUUID(ctx context.Context, uuid string) (*types.Image, error)
-	// Get an Artifact specified by ID
+	// Get an Image specified by ID
 	Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error)
 	// Get an Artifact specified by Artifact Name
 	GetByName(
@@ -548,7 +546,6 @@ type ImageRepository interface {
 }
 
 type ArtifactRepository interface {
-	GetByUUID(ctx context.Context, uuid string) (*types.Artifact, error)
 	Get(ctx context.Context, id int64) (*types.Artifact, error)
 	// Get an Artifact specified by ID
 	GetByName(

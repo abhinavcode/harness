@@ -56,9 +56,10 @@ func (c *APIController) GetAllArtifactVersions(
 
 	// Extract soft delete filter from params, default to exclude_deleted
 	softDeleteFilter := types.SoftDeleteFilterExcludeDeleted
-	if r.Params.SoftDeleteFilter != nil {
-		softDeleteFilter = types.SoftDeleteFilter(*r.Params.SoftDeleteFilter)
-	}
+	// todo check this
+	//if r.Params != nil {
+	//	softDeleteFilter = types.SoftDeleteFilter(*r.Params.SoftDeleteFilter)
+	//}
 
 	space, err := c.SpaceFinder.FindByRef(ctx, regInfo.ParentRef)
 	if err != nil {

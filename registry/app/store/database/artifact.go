@@ -66,7 +66,7 @@ type artifactDB struct {
 // artifactWithParentsDB is used for queries that JOIN with images and registries tables.
 type artifactWithParentsDB struct {
 	artifactDB               // Embed base struct
-	ImageDeletedAt    *int64 `db:"image_deleted_at"` // CASCADE from parent image
+	ImageDeletedAt    *int64 `db:"image_deleted_at"`    // CASCADE from parent image
 	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from grandparent registry
 }
 

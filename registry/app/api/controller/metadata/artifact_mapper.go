@@ -846,7 +846,7 @@ func GetArtifactSummary(artifact types.ImageMetadata) *artifactapi.ArtifactSumma
 		PackageType:    artifact.PackageType,
 		ArtifactType:   artifact.ArtifactType,
 		DeletedAt:      deletedAt,
-		IsDeleted:      &artifact.IsDeleted,
+		IsDeleted:      artifact.IsDeleted,
 		RegistryUUID:   artifact.RegistryUUID,
 		Uuid:           artifact.UUID,
 	}
@@ -883,7 +883,7 @@ func GetArtifactVersionSummary(
 		QuarantineReason: &quarantineReason,
 		ArtifactType:     artifactType,
 		DeletedAt:        deletedAtStr,
-		IsDeleted:        &isDeleted,
+		IsDeleted:        isDeleted,
 		Uuid:             artifactUUID,
 		RegistryUUID:     registryUUID,
 	}

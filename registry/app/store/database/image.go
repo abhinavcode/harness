@@ -74,11 +74,20 @@ type imageLabelDB struct {
 	Labels sql.NullString `db:"labels"`
 }
 
-func (i ImageDao) Get(ctx context.Context, id int64) (*types.Image, error) {
+func (i ImageDao) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
 		From("images i").
 		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("i.image_id = ?", id)
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExcludeDeleted:
+		q = q.Where("i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnlyDeleted:
+		q = q.Where("i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterAll:
+		// No filter
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {

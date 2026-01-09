@@ -356,7 +356,7 @@ func (c *APIController) BuildVirtualRepositoryResponse(
 			Labels:         &labels,
 			IsPublic:       isPublic,
 			DeletedAt:      deletedAt,
-			IsDeleted:      &registry.IsDeleted,
+			IsDeleted:      registry.IsDeleted,
 		},
 		Status: api.StatusSUCCESS,
 	}
@@ -432,7 +432,7 @@ func (c *APIController) BuildUpstreamProxyResponse(
 			Config:         registryConfig,
 			IsPublic:       isPublic,
 			DeletedAt:      deletedAt,
-			IsDeleted:      &upstreamproxy.IsDeleted,
+			IsDeleted:      upstreamproxy.IsDeleted,
 		},
 		Status: api.StatusSUCCESS,
 	}
