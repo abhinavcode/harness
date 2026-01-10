@@ -424,14 +424,8 @@ type RegistryRepository interface {
 	Create(ctx context.Context, repository *types.Registry) (id int64, err error)
 	// Delete the repository specified by ID (hard delete)
 	Delete(ctx context.Context, parentID int64, name string) (err error)
-	// SoftDelete performs soft delete by setting deleted_at (enterprise only - not implemented in gitness)
-	SoftDelete(ctx context.Context, parentID int64, name string) (err error)
-	// Restore restores a soft-deleted registry (enterprise only - not implemented in gitness)
-	Restore(ctx context.Context, parentID int64, name string) (err error)
 	// GetByUUID gets a registry by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Registry, error)
-	// RestoreByUUID restores a soft-deleted registry by its UUID (enterprise only - not implemented in gitness)
-	RestoreByUUID(ctx context.Context, uuid string) error
 	// Update updates the repository. Only the properties specified by "props" will be updated if it is set
 	Update(ctx context.Context, repository *types.Registry) (err error)
 
@@ -530,15 +524,8 @@ type ImageRepository interface {
 	DeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
 	DeleteByImageNameIfNoLinkedArtifacts(ctx context.Context, regID int64, image string) (err error)
 
-	// Soft delete methods (enterprise only - not implemented in gitness)
-	SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
-
-	// Restore methods (enterprise only - not implemented in gitness)
-	RestoreByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error)
 	// GetByUUID gets an image by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Image, error)
-	// RestoreByUUID restores a soft-deleted image by its UUID (enterprise only - not implemented in gitness)
-	RestoreByUUID(ctx context.Context, uuid string) error
 	DuplicateImage(ctx context.Context, sourceImage *types.Image, targetRegistryID int64) (*types.Image, error)
 
 	// Purge permanently deletes soft-deleted images older than the given timestamp for a specific account
@@ -622,17 +609,8 @@ type ArtifactRepository interface {
 	DeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) (err error)
 	DeleteByVersionAndImageName(ctx context.Context, image string, version string, regID int64) (err error)
 
-	// Soft delete methods (enterprise only - not implemented in gitness)
-	SoftDeleteByImageNameAndRegistryID(ctx context.Context, regID int64, image string) (err error)
-	SoftDeleteByVersionAndImageName(ctx context.Context, image string, version string, regID int64) (err error)
-
-	// Restore methods (enterprise only - not implemented in gitness)
-	RestoreByImageNameAndRegistryID(ctx context.Context, regID int64, image string) (err error)
-	RestoreByVersionAndImageName(ctx context.Context, image string, version string, regID int64) (err error)
 	// GetByUUID gets an artifact by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Artifact, error)
-	// RestoreByUUID restores a soft-deleted artifact by its UUID (enterprise only - not implemented in gitness)
-	RestoreByUUID(ctx context.Context, uuid string) error
 
 	GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error)
 

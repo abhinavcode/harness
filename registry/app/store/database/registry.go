@@ -898,83 +898,6 @@ func (r registryDao) Delete(ctx context.Context, parentID int64, name string) (e
 	return nil
 }
 
-// SoftDelete marks a registry as deleted without actually removing the data.
-func (r registryDao) SoftDelete(ctx context.Context, parentID int64, name string) error {
-	session, _ := request.AuthSessionFrom(ctx)
-	now := time.Now().UnixMilli()
-	userID := session.Principal.ID
-
-	stmt := databaseg.Builder.
-		Update("registries").
-		Set("registry_deleted_at", now).
-		Set("registry_deleted_by", userID).
-		Where(sq.Eq{
-			"registry_parent_id": parentID,
-			"registry_name":      name,
-		}).
-		Where("registry_deleted_at IS NULL")
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build soft delete query")
-	}
-
-	db := dbtx.GetAccessor(ctx, r.db)
-	result, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("Failed to execute soft delete for registry: %s", name)
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to soft delete registry")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
-	}
-
-	if rowsAffected == 0 {
-		log.Ctx(ctx).Warn().Msgf("Soft delete affected 0 rows for registry: %s (already deleted or not found)", name)
-		return databaseg.ProcessSQLErrorf(ctx, nil, "Registry not found or already deleted")
-	}
-
-	return nil
-}
-
-// Restore restores a soft-deleted registry.
-func (r registryDao) Restore(ctx context.Context, parentID int64, name string) error {
-	session, _ := request.AuthSessionFrom(ctx)
-	userID := session.Principal.ID
-
-	stmt := databaseg.Builder.
-		Update("registries").
-		Set("registry_deleted_at", nil).
-		Set("registry_deleted_by", nil).
-		Set("registry_updated_at", time.Now().UnixMilli()).
-		Set("registry_updated_by", userID).
-		Where("registry_parent_id = ? AND registry_name = ? AND registry_deleted_at IS NOT NULL", parentID, name)
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
-	}
-
-	db := dbtx.GetAccessor(ctx, r.db)
-	result, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore registry")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
-	}
-
-	if rowsAffected == 0 {
-		return databaseg.ProcessSQLErrorf(ctx, nil, "Registry not found or not deleted")
-	}
-
-	return nil
-}
-
 // GetByUUID gets a registry by its UUID (includes soft-deleted registries).
 func (r registryDao) GetByUUID(
 	ctx context.Context, uuid string,
@@ -997,42 +920,6 @@ func (r registryDao) GetByUUID(
 	}
 
 	return r.mapToRegistry(ctx, dst)
-}
-
-// RestoreByUUID restores a soft-deleted registry by its UUID.
-func (r registryDao) RestoreByUUID(ctx context.Context, uuid string) error {
-	session, _ := request.AuthSessionFrom(ctx)
-	userID := session.Principal.ID
-
-	stmt := databaseg.Builder.
-		Update("registries").
-		Set("registry_deleted_at", nil).
-		Set("registry_deleted_by", nil).
-		Set("registry_updated_at", time.Now().UnixMilli()).
-		Set("registry_updated_by", userID).
-		Where("registry_uuid = ? AND registry_deleted_at IS NOT NULL", uuid)
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
-	}
-
-	db := dbtx.GetAccessor(ctx, r.db)
-	result, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore registry")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
-	}
-
-	if rowsAffected == 0 {
-		return databaseg.ProcessSQLErrorf(ctx, nil, "Registry not found or not deleted")
-	}
-
-	return nil
 }
 
 func (r registryDao) Update(ctx context.Context, registry *types.Registry) (err error) {

@@ -31,11 +31,9 @@ import (
 	databaseg "github.com/harness/gitness/store/database"
 	"github.com/harness/gitness/store/database/dbtx"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 type ImageDao struct {
@@ -144,89 +142,6 @@ func (i ImageDao) DeleteByImageNameIfNoLinkedArtifacts(
 	return nil
 }
 
-// SoftDeleteByImageNameAndRegID marks an image as deleted (soft delete).
-func (i ImageDao) SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) error {
-	session, _ := request.AuthSessionFrom(ctx)
-	now := time.Now().UnixMilli()
-	userID := session.Principal.ID
-
-	log.Ctx(ctx).Info().Msgf("SoftDelete image: regID=%d, image=%s, userID=%d", regID, image, userID)
-
-	stmt := databaseg.Builder.
-		Update("images").
-		Set("image_deleted_at", now).
-		Set("image_deleted_by", userID).
-		Where(sq.Eq{
-			"image_registry_id": regID,
-			"image_name":        image,
-		}).
-		Where("image_deleted_at IS NULL")
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build soft delete query")
-	}
-
-	log.Ctx(ctx).Debug().Msgf("Executing soft delete image SQL: %s, args: %v", sql, args)
-
-	db := dbtx.GetAccessor(ctx, i.db)
-	result, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("Failed to execute soft delete for image: %s", image)
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to soft delete image")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
-	}
-
-	if rowsAffected == 0 {
-		log.Ctx(ctx).Warn().Msgf("Soft delete affected 0 rows for image: %s (already deleted or not found)", image)
-		return databaseg.ProcessSQLErrorf(ctx, nil, "Image not found or already deleted")
-	}
-
-	log.Ctx(ctx).Info().Msgf("Successfully soft deleted image: %s, rows affected: %d", image, rowsAffected)
-	return nil
-}
-
-// RestoreByImageNameAndRegID restores a soft-deleted image.
-func (i ImageDao) RestoreByImageNameAndRegID(ctx context.Context, regID int64, image string) error {
-	session, _ := request.AuthSessionFrom(ctx)
-	userID := session.Principal.ID
-
-	stmt := databaseg.Builder.
-		Update("images").
-		Set("image_deleted_at", nil).
-		Set("image_deleted_by", nil).
-		Set("image_updated_at", time.Now().UnixMilli()).
-		Set("image_updated_by", userID).
-		Where("image_registry_id = ? AND image_name = ? AND image_deleted_at IS NOT NULL", regID, image).
-		Where("EXISTS (SELECT 1 FROM registries r WHERE r.registry_id = image_registry_id AND r.registry_deleted_at IS NULL)")
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
-	}
-
-	db := dbtx.GetAccessor(ctx, i.db)
-	result, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore image")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
-	}
-
-	if rowsAffected == 0 {
-		return databaseg.ProcessSQLErrorf(ctx, nil, "Image not found or not deleted")
-	}
-
-	return nil
-}
-
 // GetByUUID gets an image by its UUID (includes soft-deleted images).
 func (i ImageDao) GetByUUID(
 	ctx context.Context, uuid string,
@@ -249,43 +164,6 @@ func (i ImageDao) GetByUUID(
 	}
 
 	return i.mapImageWithParent(ctx, dst)
-}
-
-// RestoreByUUID restores a soft-deleted image by its UUID.
-func (i ImageDao) RestoreByUUID(ctx context.Context, uuid string) error {
-	session, _ := request.AuthSessionFrom(ctx)
-	userID := session.Principal.ID
-
-	stmt := databaseg.Builder.
-		Update("images").
-		Set("image_deleted_at", nil).
-		Set("image_deleted_by", nil).
-		Set("image_updated_at", time.Now().UnixMilli()).
-		Set("image_updated_by", userID).
-		Where("image_uuid = ? AND image_deleted_at IS NOT NULL", uuid).
-		Where("EXISTS (SELECT 1 FROM registries r WHERE r.registry_id = image_registry_id AND r.registry_deleted_at IS NULL)")
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build restore query")
-	}
-
-	db := dbtx.GetAccessor(ctx, i.db)
-	result, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to restore image")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to get rows affected")
-	}
-
-	if rowsAffected == 0 {
-		return databaseg.ProcessSQLErrorf(ctx, nil, "Image not found or not deleted")
-	}
-
-	return nil
 }
 
 func (i ImageDao) GetByName(
