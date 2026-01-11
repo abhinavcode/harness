@@ -73,7 +73,7 @@ func (c *APIController) GetArtifactSummary(
 	}
 
 	image := string(r.Artifact)
-	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.SoftDeleteFilterInclude)
+	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, types.WithAllDeleted())
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetArtifactSummary404JSONResponse{
@@ -124,7 +124,7 @@ func (c *APIController) getImageMetadata(
 	ctx context.Context, registry *types.Registry, image string,
 	artifactType *artifact.ArtifactType,
 ) (*types.ImageMetadata, error) {
-	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, types.SoftDeleteFilterInclude)
+	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, types.WithAllDeleted())
 	if err != nil {
 		return nil, err
 	}

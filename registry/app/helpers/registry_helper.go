@@ -92,7 +92,7 @@ func (r *registryHelper) DeleteVersion(ctx context.Context,
 	artifactName string,
 	versionName string,
 	filePath string) error {
-	_, err := r.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName, types.SoftDeleteFilterInclude)
+	_, err := r.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName, types.WithAllDeleted())
 	if err != nil {
 		return fmt.Errorf("version doesn't exist for image %v: %w", imageInfo.Name, err)
 	}

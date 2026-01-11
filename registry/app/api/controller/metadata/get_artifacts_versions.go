@@ -54,13 +54,6 @@ func (c *APIController) GetAllArtifactVersions(
 	}
 	regInfo, _ := c.GetRegistryRequestInfo(ctx, *registryRequestParams)
 
-	// Extract soft delete filter from params, default to exclude_deleted
-	softDeleteFilter := types.SoftDeleteFilterExclude
-	// todo check this
-	//if r.Params != nil {
-	//	softDeleteFilter = types.SoftDeleteFilter(*r.Params.SoftDeleteFilter)
-	//}
-
 	space, err := c.SpaceFinder.FindByRef(ctx, regInfo.ParentRef)
 	if err != nil {
 		return artifact.GetAllArtifactVersions400JSONResponse{
@@ -97,7 +90,7 @@ func (c *APIController) GetAllArtifactVersions(
 
 	image := string(r.Artifact)
 
-	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID, softDeleteFilter)
+	registry, err := c.RegistryRepository.Get(ctx, regInfo.RegistryID)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetAllArtifactVersions404JSONResponse{
@@ -120,7 +113,7 @@ func (c *APIController) GetAllArtifactVersions(
 		}
 	}
 
-	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType, softDeleteFilter)
+	img, err := c.ImageStore.GetByNameAndType(ctx, registry.ID, image, artifactType)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.GetAllArtifactVersions404JSONResponse{
@@ -206,13 +199,13 @@ func (c *APIController) GetAllArtifactVersions(
 	}
 	metadata, err := c.ArtifactStore.GetAllVersionsByRepoAndImage(ctx, regInfo.RegistryID, image,
 		regInfo.sortByField, regInfo.sortByOrder, regInfo.limit, regInfo.offset,
-		regInfo.searchTerm, artifactType, softDeleteFilter)
+		regInfo.searchTerm, artifactType)
 	if err != nil {
 		return throw500Error(err)
 	}
 
 	cnt, _ := c.ArtifactStore.CountAllVersionsByRepoAndImage(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image,
-		regInfo.searchTerm, artifactType, softDeleteFilter)
+		regInfo.searchTerm, artifactType)
 
 	registryURL := c.URLProvider.RegistryURL(ctx, regInfo.RootIdentifier, regInfo.RegistryIdentifier)
 	if registry.PackageType == artifact.PackageTypeGENERIC {

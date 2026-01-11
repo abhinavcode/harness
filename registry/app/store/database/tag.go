@@ -391,14 +391,14 @@ func (t tagDao) GetAllArtifactsByParentID(
 	search string,
 	latestVersion bool,
 	packageTypes []string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(
-		parentID, latestVersion, registryIDs, packageTypes, search, false, softDeleteFilter,
+		parentID, latestVersion, registryIDs, packageTypes, search, false, opts...,
 	)
 
 	q2 := t.GetAllArtifactsQueryByParentIDForOCI(
-		parentID, latestVersion, registryIDs, packageTypes, search, softDeleteFilter,
+		parentID, latestVersion, registryIDs, packageTypes, search, opts...,
 	)
 
 	q1SQL, q1Args, err := q1.ToSql()
@@ -448,8 +448,9 @@ func (t tagDao) GetAllArtifactsByParentID(
 
 func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 	parentID int64, latestVersion bool, registryIDs *[]string,
-	packageTypes []string, search string, softDeleteFilter types.SoftDeleteFilter,
+	packageTypes []string, search string, opts ...types.QueryOption,
 ) sq.SelectBuilder {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	// TODO: update query to return correct artifact uuid
 	q2 := databaseg.Builder.Select(
 		`r.registry_name as repo_name,
@@ -545,11 +546,11 @@ func (t tagDao) GetAllArtifactsByParentIDUntagged(
 	offset int,
 	search string,
 	packageTypes []string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	// Query 1: Get core artifact data with pagination
 	coreQuery := t.getCoreArtifactsQuery(
-		parentID, registryIDs, packageTypes, search, sortByField, sortByOrder, limit, offset, softDeleteFilter)
+		parentID, registryIDs, packageTypes, search, sortByField, sortByOrder, limit, offset, opts...)
 
 	coreSQL, coreArgs, err := coreQuery.ToSql()
 	if err != nil {
@@ -601,8 +602,9 @@ func (t tagDao) getCoreArtifactsQuery(
 	sortByOrder string,
 	limit int,
 	offset int,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) sq.SelectBuilder {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	query := databaseg.Builder.Select(
 		`ar.artifact_id,
 		ar.artifact_uuid as uuid,
@@ -823,8 +825,9 @@ func (t tagDao) getArtifactEnrichmentData(ctx context.Context, artifactIDs []int
 
 func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 	parentID int64, latestVersion bool, registryIDs *[]string,
-	packageTypes []string, search string, queryTags bool, softDeleteFilter types.SoftDeleteFilter,
+	packageTypes []string, search string, queryTags bool, opts ...types.QueryOption,
 ) sq.SelectBuilder {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	suffix := " "
 	if queryTags {
 		suffix = ", NULL AS tags "
@@ -927,8 +930,9 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 func (t tagDao) CountAllOCIArtifactsByParentID(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, latestVersion bool, packageTypes []string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	// nolint:goconst
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("tags t").
@@ -991,12 +995,13 @@ func (t tagDao) CountAllOCIArtifactsByParentID(
 func (t tagDao) CountAllArtifactsByParentID(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if untaggedImagesEnabled {
 		// Use the new unified count function for all artifacts
 		return t.CountAllArtifactsByParentIDUntagged(
-			ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter,
+			ctx, parentID, registryIDs, search, latestVersion, packageTypes, opts...,
 		)
 	}
 
@@ -1075,7 +1080,7 @@ func (t tagDao) CountAllArtifactsByParentID(
 
 	var ociCount int64
 	ociCount, err = t.CountAllOCIArtifactsByParentID(ctx, parentID, registryIDs, search,
-		latestVersion, packageTypes, softDeleteFilter)
+		latestVersion, packageTypes, opts...)
 	if err != nil {
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
 	}
@@ -1086,8 +1091,9 @@ func (t tagDao) CountAllArtifactsByParentID(
 func (t tagDao) CountAllArtifactsByParentIDUntagged(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, _ bool, packageTypes []string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	query := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").
@@ -1404,8 +1410,9 @@ func (t tagDao) GetLatestTag(ctx context.Context, repoID int64, imageName string
 func (t tagDao) GetAllArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey string,
 	sortByField string, sortByOrder string, limit int, offset int, search string,
-	labels []string, softDeleteFilter types.SoftDeleteFilter,
+	labels []string, opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	var rowNumSubquery string
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterInclude:
@@ -1489,9 +1496,9 @@ func (t tagDao) GetAllArtifactsByRepo(
 // nolint:goconst
 func (t tagDao) CountAllArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey string,
-	search string, labels []string,
-	softDeleteFilter types.SoftDeleteFilter,
+	search string, labels []string, opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	var rowNumSubquery string
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterInclude:

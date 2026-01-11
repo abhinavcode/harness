@@ -18,7 +18,7 @@ type ImageRepository struct {
 }
 
 // CountLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, search, softDeleteFilter
-func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, search string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, search string, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, parentID, repo, search, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -130,7 +130,7 @@ func (_m *ImageRepository) DuplicateImage(ctx context.Context, sourceImage *type
 }
 
 // Get provides a mock function with given fields: ctx, id, softDeleteFilter
-func (_m *ImageRepository) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+func (_m *ImageRepository) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error) {
 	ret := _m.Called(ctx, id, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -160,7 +160,7 @@ func (_m *ImageRepository) Get(ctx context.Context, id int64, softDeleteFilter t
 }
 
 // GetByName provides a mock function with given fields: ctx, registryID, name, softDeleteFilter
-func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name string, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name string, opts ...types.QueryOption) (*types.Image, error) {
 	ret := _m.Called(ctx, registryID, name, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -190,7 +190,7 @@ func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name
 }
 
 // GetByNameAndType provides a mock function with given fields: ctx, registryID, name, artifactType, softDeleteFilter
-func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int64, name string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int64, name string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*types.Image, error) {
 	ret := _m.Called(ctx, registryID, name, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -220,7 +220,7 @@ func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int6
 }
 
 // GetByRepoAndName provides a mock function with given fields: ctx, parentID, repo, name, softDeleteFilter
-func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64, repo string, name string, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64, repo string, name string, opts ...types.QueryOption) (*types.Image, error) {
 	ret := _m.Called(ctx, parentID, repo, name, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -280,7 +280,7 @@ func (_m *ImageRepository) GetByUUID(ctx context.Context, uuid string) (*types.I
 }
 
 // GetLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, limit, offset, search, softDeleteFilter
-func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, limit int, offset int, search string, softDeleteFilter types.SoftDeleteFilter) ([]string, error) {
+func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, limit int, offset int, search string, opts ...types.QueryOption) ([]string, error) {
 	ret := _m.Called(ctx, parentID, repo, limit, offset, search, softDeleteFilter)
 
 	if len(ret) == 0 {

@@ -41,7 +41,6 @@ import (
 	generic2 "github.com/harness/gitness/registry/app/pkg/types/generic"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/request"
-	"github.com/harness/gitness/registry/types"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
@@ -135,7 +134,6 @@ func (h *Handler) GetGenericArtifactInfo(r *http.Request) (
 		ctx,
 		rootSpace.ID,
 		registryIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(

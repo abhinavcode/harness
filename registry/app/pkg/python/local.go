@@ -35,7 +35,6 @@ import (
 	"github.com/harness/gitness/registry/app/remote/adapter/commons/pypi"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
-	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store/database/dbtx"
 
 	"github.com/rs/zerolog/log"
@@ -110,7 +109,6 @@ func (c *localRegistry) GetPackageMetadata(
 		ctx,
 		info.RootParentID,
 		info.RegIdentifier,
-		registrytypes.SoftDeleteFilterExclude,
 	)
 	packageMetadata := pythontype.PackageMetadata{}
 	packageMetadata.Name = info.Image
@@ -124,7 +122,6 @@ func (c *localRegistry) GetPackageMetadata(
 		ctx,
 		registry.ID,
 		info.Image,
-		registrytypes.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return packageMetadata, err

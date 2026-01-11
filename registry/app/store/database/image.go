@@ -72,7 +72,8 @@ type imageLabelDB struct {
 	Labels sql.NullString `db:"labels"`
 }
 
-func (i ImageDao) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Image, error) {
+func (i ImageDao) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
 		From("images i").
 		Join("registries r ON i.image_registry_id = r.registry_id").
@@ -170,8 +171,9 @@ func (i ImageDao) GetByName(
 	ctx context.Context,
 	registryID int64,
 	name string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (*types.Image, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
 		From("images i").
 		Join("registries r ON i.image_registry_id = r.registry_id").
@@ -203,11 +205,12 @@ func (i ImageDao) GetByName(
 
 func (i ImageDao) GetByNameAndType(
 	ctx context.Context, registryID int64,
-	name string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
+	name string, artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (*types.Image, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	// If artifactType is nil or empty, fall back to GetByName
 	if artifactType == nil || *artifactType == "" {
-		return i.GetByName(ctx, registryID, name, softDeleteFilter)
+		return i.GetByName(ctx, registryID, name, opts...)
 	}
 
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
@@ -291,8 +294,9 @@ func (i ImageDao) CreateOrUpdate(ctx context.Context, image *types.Image) error 
 
 func (i ImageDao) GetLabelsByParentIDAndRepo(
 	ctx context.Context, parentID int64, repo string,
-	limit int, offset int, search string, softDeleteFilter types.SoftDeleteFilter,
+	limit int, offset int, search string, opts ...types.QueryOption,
 ) (labels []string, err error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select("a.image_labels as labels").
 		From("images a").
 		Join("registries r ON r.registry_id = a.image_registry_id").
@@ -332,8 +336,9 @@ func (i ImageDao) GetLabelsByParentIDAndRepo(
 
 func (i ImageDao) CountLabelsByParentIDAndRepo(
 	ctx context.Context, parentID int64, repo,
-	search string, softDeleteFilter types.SoftDeleteFilter,
+	search string, opts ...types.QueryOption,
 ) (count int64, err error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select("a.image_labels as labels").
 		From("images a").
 		Join("registries r ON r.registry_id = a.image_registry_id").
@@ -370,8 +375,9 @@ func (i ImageDao) CountLabelsByParentIDAndRepo(
 
 func (i ImageDao) GetByRepoAndName(
 	ctx context.Context, parentID int64,
-	repo string, name string, softDeleteFilter types.SoftDeleteFilter,
+	repo string, name string, opts ...types.QueryOption,
 ) (*types.Image, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
 		From("images a").
 		Join(" registries r ON r.registry_id = a.image_registry_id").

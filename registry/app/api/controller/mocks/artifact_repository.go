@@ -80,7 +80,7 @@ func (_m *ArtifactRepository) Get(ctx context.Context, id int64) (*types.Artifac
 }
 
 // Count provides a mock function with given fields: ctx, softDeleteFilter
-func (_m *ArtifactRepository) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *ArtifactRepository) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -108,7 +108,7 @@ func (_m *ArtifactRepository) Count(ctx context.Context, softDeleteFilter types.
 }
 
 // CountAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter
-func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -136,7 +136,7 @@ func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, p
 }
 
 // CountAllVersionsByRepoAndImage provides a mock function with given fields: ctx, parentID, repoKey, image, search, artifactType, softDeleteFilter
-func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context, parentID int64, repoKey string, image string, search string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context, parentID int64, repoKey string, image string, search string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, parentID, repoKey, image, search, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -164,7 +164,7 @@ func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context
 }
 
 // CountArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, artifactType, softDeleteFilter
-func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, parentID, repoKey, search, labels, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -192,7 +192,7 @@ func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID
 }
 
 // CountByImageName provides a mock function with given fields: ctx, regID, name, softDeleteFilter
-func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64, name string, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, regID, name, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -220,7 +220,7 @@ func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64,
 }
 
 // CountLatestByName provides a mock function with given fields: ctx, regID, name, softDeleteFilter
-func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64, name string, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, regID, name, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -342,7 +342,7 @@ func (_m *ArtifactRepository) DuplicateArtifact(ctx context.Context, sourceArtif
 }
 
 // GetAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, softDeleteFilter
-func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error) {
+func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, limit int, offset int, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
 	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -402,7 +402,7 @@ func (_m *ArtifactRepository) GetAllArtifactsByRepo(ctx context.Context, registr
 }
 
 // GetAllVersionsByRepoAndImage provides a mock function with given fields: ctx, id, image, field, order, limit, offset, term, artifactType, softDeleteFilter
-func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, id int64, image string, field string, order string, limit int, offset int, term string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (*[]types.NonOCIArtifactMetadata, error) {
+func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, id int64, image string, field string, order string, limit int, offset int, term string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*[]types.NonOCIArtifactMetadata, error) {
 	ret := _m.Called(ctx, id, image, field, order, limit, offset, term, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -432,7 +432,7 @@ func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, 
 }
 
 // GetArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, version, artifactType, softDeleteFilter
-func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64, identifier string, image string, version string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (*types.ArtifactMetadata, error) {
+func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64, identifier string, image string, version string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*types.ArtifactMetadata, error) {
 	ret := _m.Called(ctx, id, identifier, image, version, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -462,7 +462,7 @@ func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64,
 }
 
 // GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, softDeleteFilter
-func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, latestVersion bool, limit int, offset int, sortByField string, sortByOrder string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error) {
+func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, latestVersion bool, limit int, offset int, sortByField string, sortByOrder string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
 	ret := _m.Called(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -552,7 +552,7 @@ func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, vers
 }
 
 // GetByRegistryIDAndImage provides a mock function with given fields: ctx, registryID, image, softDeleteFilter
-func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, softDeleteFilter types.SoftDeleteFilter) (*[]types.Artifact, error) {
+func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, opts ...types.QueryOption) (*[]types.Artifact, error) {
 	ret := _m.Called(ctx, registryID, image, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -582,7 +582,7 @@ func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, regis
 }
 
 // GetByRegistryImageAndVersion provides a mock function with given fields: ctx, registryID, image, version, softDeleteFilter
-func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, registryID int64, image string, version string, softDeleteFilter types.SoftDeleteFilter) (*types.Artifact, error) {
+func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, registryID int64, image string, version string, opts ...types.QueryOption) (*types.Artifact, error) {
 	ret := _m.Called(ctx, registryID, image, version, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -612,7 +612,7 @@ func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, 
 }
 
 // GetLatestArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, softDeleteFilter
-func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id int64, identifier string, image string, softDeleteFilter types.SoftDeleteFilter) (*types.ArtifactMetadata, error) {
+func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id int64, identifier string, image string, opts ...types.QueryOption) (*types.ArtifactMetadata, error) {
 	ret := _m.Called(ctx, id, identifier, image, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -702,7 +702,7 @@ func (_m *ArtifactRepository) GetLatestByImageID(ctx context.Context, imageID in
 }
 
 // SearchByImageName provides a mock function with given fields: ctx, regID, name, limit, offset, softDeleteFilter
-func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter) (*[]types.ArtifactMetadata, error) {
+func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64, name string, limit int, offset int, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
 	ret := _m.Called(ctx, regID, name, limit, offset, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -732,7 +732,7 @@ func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64
 }
 
 // SearchLatestByName provides a mock function with given fields: ctx, regID, name, limit, offset, softDeleteFilter
-func (_m *ArtifactRepository) SearchLatestByName(ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter) (*[]types.Artifact, error) {
+func (_m *ArtifactRepository) SearchLatestByName(ctx context.Context, regID int64, name string, limit int, offset int, opts ...types.QueryOption) (*[]types.Artifact, error) {
 	ret := _m.Called(ctx, regID, name, limit, offset, softDeleteFilter)
 
 	if len(ret) == 0 {

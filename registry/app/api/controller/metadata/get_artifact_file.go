@@ -24,7 +24,6 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/api/utils"
-	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/enum"
 )
@@ -83,7 +82,6 @@ func (c *APIController) GetArtifactFile(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 
 	if err != nil {
@@ -110,7 +108,6 @@ func (c *APIController) GetArtifactFile(
 		regInfo.RegistryID,
 		image,
 		artifactType,
-		types.SoftDeleteFilterExclude,
 	)
 
 	if err != nil {
@@ -127,7 +124,7 @@ func (c *APIController) GetArtifactFile(
 			),
 		}, nil
 	}
-	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version, types.SoftDeleteFilterExclude)
+	art, err := c.ArtifactStore.GetByName(ctx, img.ID, version)
 
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {

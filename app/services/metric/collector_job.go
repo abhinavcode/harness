@@ -25,7 +25,6 @@ import (
 	"github.com/harness/gitness/app/store"
 	"github.com/harness/gitness/job"
 	registrystore "github.com/harness/gitness/registry/app/store"
-	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
 	"github.com/harness/gitness/version"
@@ -165,12 +164,12 @@ func (c *CollectorJob) Handle(ctx context.Context, _ string, _ job.ProgressRepor
 		return "", fmt.Errorf("failed to get gitspace count: %w", err)
 	}
 
-	totalRegistries, err := c.registryStore.Count(ctx, registrytypes.SoftDeleteFilterExclude)
+	totalRegistries, err := c.registryStore.Count(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get registries count: %w", err)
 	}
 
-	totalArtifacts, err := c.artifactStore.Count(ctx, registrytypes.SoftDeleteFilterExclude)
+	totalArtifacts, err := c.artifactStore.Count(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get artifacts count: %w", err)
 	}

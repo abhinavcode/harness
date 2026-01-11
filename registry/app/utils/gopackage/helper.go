@@ -154,7 +154,6 @@ func (h *registryHelper) UpdatePackageMetadata(
 		registryID,
 		image,
 		version,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to get artifact by registry, image and version: %w", err)

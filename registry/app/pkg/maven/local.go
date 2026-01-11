@@ -93,13 +93,13 @@ func (r *LocalRegistry) FetchArtifact(ctx context.Context, info pkg.MavenArtifac
 ) {
 	filePath := utils.GetFilePath(info)
 	name := info.GroupID + ":" + info.ArtifactID
-	dbImage, err2 := r.DBStore.ImageDao.GetByName(ctx, info.RegistryID, name, types.SoftDeleteFilterExclude)
+	dbImage, err2 := r.DBStore.ImageDao.GetByName(ctx, info.RegistryID, name)
 	if err2 != nil {
 		return processError(err2)
 	}
 
 	if !utils.IsMetadataFile(info.FileName) || info.Version != "" {
-		_, err2 = r.DBStore.ArtifactDao.GetByName(ctx, dbImage.ID, info.Version, types.SoftDeleteFilterExclude)
+		_, err2 = r.DBStore.ArtifactDao.GetByName(ctx, dbImage.ID, info.Version)
 		if err2 != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to get artifact for image ID: %d, version: %s with error: %v",
 				dbImage.ID, info.Version, err2)
@@ -177,7 +177,6 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 				ctx,
 				dbImage.ID,
 				info.Version,
-				types.SoftDeleteFilterExclude,
 			)
 			if err3 != nil && !strings.Contains(err3.Error(), "resource not found") {
 				return err3

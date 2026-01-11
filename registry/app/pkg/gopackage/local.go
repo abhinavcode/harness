@@ -40,7 +40,6 @@ import (
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/services/webhook"
-	"github.com/harness/gitness/registry/types"
 	gitnessstore "github.com/harness/gitness/store"
 	"github.com/harness/gitness/store/database/dbtx"
 )
@@ -250,7 +249,6 @@ func (c *localRegistry) DownloadPackageLatestVersionInfo(
 		info.ParentID,
 		info.RegIdentifier,
 		info.Image,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, nil, nil, "", fmt.Errorf("failed to get image: %w", err)

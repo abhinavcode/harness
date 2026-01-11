@@ -90,7 +90,7 @@ func (c *APIController) DeleteRegistry(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		registrytypes.SoftDeleteFilterInclude,
+		registrytypes.WithAllDeleted(),
 	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
@@ -165,7 +165,7 @@ func (c *APIController) checkIfRegistryUsedAsUpstream(
 		return fmt.Errorf("failed to fetch registryIDs IDs: %w", err)
 	}
 	if len(registryIDs) > 0 {
-		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, registrytypes.SoftDeleteFilterInclude)
+		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, registrytypes.WithAllDeleted())
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("failed to fetch registries: %s", err)
 			return fmt.Errorf("failed to fetch registries: %w", err)

@@ -191,7 +191,6 @@ func (c *localRegistry) RevisionInfo(
 		info.RegistryID,
 		info.Repo,
 		&info.RepoType,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return headers, nil, err
@@ -201,7 +200,6 @@ func (c *localRegistry) RevisionInfo(
 		ctx,
 		image.ID,
 		info.Revision,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return headers, nil, err
@@ -458,7 +456,6 @@ func (c *localRegistry) HeadFile(ctx context.Context, info huggingfacetype.Artif
 		info.RegistryID,
 		info.Repo,
 		&info.RepoType,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msgf("Failed to get image: %s", string(info.RepoType)+"/"+info.Repo)
@@ -467,7 +464,7 @@ func (c *localRegistry) HeadFile(ctx context.Context, info huggingfacetype.Artif
 		return headers, err
 	}
 
-	_, err = c.artifactDao.GetByName(ctx, dbImage.ID, info.Revision, types.SoftDeleteFilterExclude)
+	_, err = c.artifactDao.GetByName(ctx, dbImage.ID, info.Revision)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msgf("Failed to get artifact: %s", info.Revision)
 		headers.Headers["Content-Type"] = contentTypeJSON

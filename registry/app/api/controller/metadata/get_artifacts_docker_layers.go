@@ -85,7 +85,6 @@ func (c *APIController) GetDockerArtifactLayers(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return getLayersErrorResponse(ctx, err)

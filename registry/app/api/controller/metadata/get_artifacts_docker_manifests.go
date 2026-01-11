@@ -150,7 +150,7 @@ func (c *APIController) getManifestDetails(
 	createdAt := GetTimeInMs(m.CreatedAt)
 	size := GetSize(m.TotalSize)
 	dgst, _ := types.NewDigest(m.Digest)
-	image, err := c.ImageStore.GetByName(ctx, m.RegistryID, m.ImageName, types.SoftDeleteFilterExclude)
+	image, err := c.ImageStore.GetByName(ctx, m.RegistryID, m.ImageName)
 	if err != nil {
 		return artifact.DockerManifestDetails{}, err
 	}
@@ -197,7 +197,6 @@ func (c *APIController) ProcessManifest(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return nil, err

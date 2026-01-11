@@ -214,7 +214,6 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -224,7 +223,6 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		registry.ID,
 		info.Image,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -234,7 +232,6 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -274,7 +271,6 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -284,7 +280,6 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		registry.ID,
 		imageName,
-		types.SoftDeleteFilterExclude,
 	)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
@@ -297,7 +292,6 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -343,7 +337,7 @@ func dbBandwidthStat(
 		return err
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, types.SoftDeleteFilterExclude)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getImageFromUpstreamProxy(ctx, c, info)
 	}
@@ -370,7 +364,7 @@ func getImageFromUpstreamProxy(ctx context.Context, c *docker.Controller, info p
 	}
 	for _, registry := range repos {
 		log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
-		image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, types.SoftDeleteFilterExclude)
+		image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
 		if err == nil && image != nil {
 			return image, nil
 		}
@@ -393,7 +387,6 @@ func getMavenArtifactFromUpstreamProxy(
 			ctx,
 			registry.ID,
 			info.GroupID+":"+info.ArtifactID,
-			types.SoftDeleteFilterExclude,
 		)
 		if err == nil && image != nil {
 			return image, nil

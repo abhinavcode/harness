@@ -86,8 +86,9 @@ type registryNameID struct {
 }
 
 func (r registryDao) Get(
-	ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, id int64, opts ...types.QueryOption,
 ) (*types.Registry, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
@@ -119,8 +120,9 @@ func (r registryDao) Get(
 
 func (r registryDao) GetByParentIDAndName(
 	ctx context.Context, parentID int64,
-	name string, softDeleteFilter types.SoftDeleteFilter,
+	name string, opts ...types.QueryOption,
 ) (*types.Registry, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	log.Info().Msgf("GetByParentIDAndName: parentID: %d, name: %s", parentID, name)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
@@ -153,8 +155,9 @@ func (r registryDao) GetByParentIDAndName(
 
 func (r registryDao) GetByRootParentIDAndName(
 	ctx context.Context, parentID int64,
-	name string, softDeleteFilter types.SoftDeleteFilter,
+	name string, opts ...types.QueryOption,
 ) (*types.Registry, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
@@ -184,7 +187,8 @@ func (r registryDao) GetByRootParentIDAndName(
 	return r.mapToRegistry(ctx, dst)
 }
 
-func (r registryDao) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (r registryDao) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("registries")
 
@@ -218,8 +222,9 @@ func (r registryDao) CountAll(
 	packageTypes []string,
 	search string,
 	repoType string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (count int64, err error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("registries").
 		Where(sq.Eq{"registry_parent_id": parentIDs})
@@ -307,8 +312,9 @@ func (r registryDao) FetchUpstreamProxyKeys(
 }
 
 func (r registryDao) GetByIDIn(
-	ctx context.Context, ids []int64, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, ids []int64, opts ...types.QueryOption,
 ) (*[]types.Registry, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
@@ -366,8 +372,9 @@ func (r registryDao) GetAll(
 	offset int,
 	search string,
 	repoType string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (repos *[]store.RegistryMetadata, err error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if limit < 0 || offset < 0 {
 		return nil, fmt.Errorf("limit and offset must be non-negative")
 	}
@@ -464,22 +471,22 @@ func (r registryDao) GetAll(
 	}
 
 	// Fetch aggregate data sequentially with soft delete filtering
-	artifactCounts, err := r.fetchArtifactCounts(ctx, registryIDs, softDeleteFilter)
+	artifactCounts, err := r.fetchArtifactCounts(ctx, registryIDs, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch artifact counts: %w", err)
 	}
 
-	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs, softDeleteFilter)
+	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OCI blob sizes: %w", err)
 	}
 
-	genericSizes, err := r.fetchGenericBlobSizes(ctx, registryIDs, softDeleteFilter)
+	genericSizes, err := r.fetchGenericBlobSizes(ctx, registryIDs, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch generic blob sizes: %w", err)
 	}
 
-	downloadCounts, err := r.fetchDownloadCounts(ctx, registryIDs, softDeleteFilter)
+	downloadCounts, err := r.fetchDownloadCounts(ctx, registryIDs, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch download counts: %w", err)
 	}
@@ -512,8 +519,9 @@ func (r registryDao) GetAll(
 
 // fetchArtifactCounts fetches artifact counts for given registry IDs with soft delete filtering.
 func (r registryDao) fetchArtifactCounts(
-	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
 ) (map[int64]int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
@@ -574,8 +582,9 @@ func (r registryDao) fetchArtifactCounts(
 
 // fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs with soft delete filtering.
 func (r registryDao) fetchOCIBlobSizes(
-	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
 ) (map[int64]int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
@@ -641,8 +650,9 @@ func (r registryDao) fetchOCIBlobSizes(
 
 // fetchGenericBlobSizes fetches generic blob sizes for given registry IDs with soft delete filtering.
 func (r registryDao) fetchGenericBlobSizes(
-	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
 ) (map[int64]int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
@@ -712,8 +722,9 @@ func (r registryDao) fetchGenericBlobSizes(
 
 // fetchDownloadCounts fetches download counts for given registry IDs with soft delete filtering.
 func (r registryDao) fetchDownloadCounts(
-	ctx context.Context, registryIDs []int64, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
 ) (map[int64]int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}

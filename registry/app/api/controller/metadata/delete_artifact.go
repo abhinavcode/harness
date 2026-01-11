@@ -82,7 +82,6 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
@@ -102,7 +101,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 	}
 
 	artifactName := string(r.Artifact)
-	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, artifactName, types.SoftDeleteFilterInclude)
+	_, err = c.ImageStore.GetByName(ctx, regInfo.RegistryID, artifactName, types.WithAllDeleted())
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifact404JSONResponse{

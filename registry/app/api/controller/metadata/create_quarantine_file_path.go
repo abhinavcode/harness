@@ -98,7 +98,6 @@ func (c *APIController) QuarantineFilePath(
 		regInfo.RegistryID,
 		artifactName,
 		artifactType,
-		types.SoftDeleteFilterExclude,
 	)
 
 	if err != nil {
@@ -141,7 +140,7 @@ func (c *APIController) QuarantineFilePath(
 			digestVal := typesDigest.String()
 			version = &digestVal
 		}
-		art, err := c.ArtifactStore.GetByName(ctx, img.ID, *version, types.SoftDeleteFilterExclude)
+		art, err := c.ArtifactStore.GetByName(ctx, img.ID, *version)
 		if err != nil {
 			if errors.Is(err, store.ErrResourceNotFound) {
 				return artifact.QuarantineFilePath400JSONResponse{

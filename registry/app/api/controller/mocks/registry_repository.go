@@ -17,7 +17,7 @@ type RegistryRepository struct {
 }
 
 // Count provides a mock function with given fields: ctx, softDeleteFilter
-func (_m *RegistryRepository) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *RegistryRepository) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -45,7 +45,7 @@ func (_m *RegistryRepository) Count(ctx context.Context, softDeleteFilter types.
 }
 
 // CountAll provides a mock function with given fields: ctx, parentIDs, packageTypes, search, repoType, softDeleteFilter
-func (_m *RegistryRepository) CountAll(ctx context.Context, parentIDs []int64, packageTypes []string, search string, repoType string, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (_m *RegistryRepository) CountAll(ctx context.Context, parentIDs []int64, packageTypes []string, search string, repoType string, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, parentIDs, packageTypes, search, repoType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -209,7 +209,7 @@ func (_m *RegistryRepository) FetchUpstreamProxyKeys(ctx context.Context, ids []
 }
 
 // Get provides a mock function with given fields: ctx, id, softDeleteFilter
-func (_m *RegistryRepository) Get(ctx context.Context, id int64, softDeleteFilter types.SoftDeleteFilter) (*types.Registry, error) {
+func (_m *RegistryRepository) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Registry, error) {
 	ret := _m.Called(ctx, id, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -239,7 +239,7 @@ func (_m *RegistryRepository) Get(ctx context.Context, id int64, softDeleteFilte
 }
 
 // GetAll provides a mock function with given fields: ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, softDeleteFilter
-func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, packageTypes []string, sortByField string, sortByOrder string, limit int, offset int, search string, repoType string, softDeleteFilter types.SoftDeleteFilter) (*[]store.RegistryMetadata, error) {
+func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, packageTypes []string, sortByField string, sortByOrder string, limit int, offset int, search string, repoType string, opts ...types.QueryOption) (*[]store.RegistryMetadata, error) {
 	ret := _m.Called(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -269,7 +269,7 @@ func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, pac
 }
 
 // GetByIDIn provides a mock function with given fields: ctx, ids, softDeleteFilter
-func (_m *RegistryRepository) GetByIDIn(ctx context.Context, ids []int64, softDeleteFilter types.SoftDeleteFilter) (*[]types.Registry, error) {
+func (_m *RegistryRepository) GetByIDIn(ctx context.Context, ids []int64, opts ...types.QueryOption) (*[]types.Registry, error) {
 	ret := _m.Called(ctx, ids, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -299,7 +299,7 @@ func (_m *RegistryRepository) GetByIDIn(ctx context.Context, ids []int64, softDe
 }
 
 // GetByParentIDAndName provides a mock function with given fields: ctx, parentID, name, softDeleteFilter
-func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID int64, name string, softDeleteFilter types.SoftDeleteFilter) (*types.Registry, error) {
+func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID int64, name string, opts ...types.QueryOption) (*types.Registry, error) {
 	ret := _m.Called(ctx, parentID, name, softDeleteFilter)
 
 	if len(ret) == 0 {
@@ -329,7 +329,7 @@ func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID
 }
 
 // GetByRootParentIDAndName provides a mock function with given fields: ctx, parentID, name, softDeleteFilter
-func (_m *RegistryRepository) GetByRootParentIDAndName(ctx context.Context, parentID int64, name string, softDeleteFilter types.SoftDeleteFilter) (*types.Registry, error) {
+func (_m *RegistryRepository) GetByRootParentIDAndName(ctx context.Context, parentID int64, name string, opts ...types.QueryOption) (*types.Registry, error) {
 	ret := _m.Called(ctx, parentID, name, softDeleteFilter)
 
 	if len(ret) == 0 {

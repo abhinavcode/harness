@@ -103,7 +103,7 @@ func (r registryFinder) Update(ctx context.Context, registry *types.Registry) (e
 }
 
 func (r registryFinder) Delete(ctx context.Context, parentID int64, name string) (err error) {
-	registry, err := r.inner.GetByParentIDAndName(ctx, parentID, name, types.SoftDeleteFilterInclude)
+	registry, err := r.inner.GetByParentIDAndName(ctx, parentID, name, types.WithAllDeleted())
 	if err != nil {
 		return fmt.Errorf("error finding registry by parent-ref: %w", err)
 	}

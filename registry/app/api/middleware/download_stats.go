@@ -90,7 +90,7 @@ func dbDownloadStat(
 ) error {
 	registry := info.Registry
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, types.SoftDeleteFilterExclude)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getImageFromUpstreamProxy(ctx, c, info)
 	}
@@ -103,7 +103,7 @@ func dbDownloadStat(
 		return err
 	}
 
-	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, dgst.String(), types.SoftDeleteFilterExclude)
+	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, dgst.String())
 	if err != nil {
 		return err
 	}
@@ -209,7 +209,6 @@ func dbDownloadStatForGenericArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -219,7 +218,6 @@ func dbDownloadStatForGenericArtifact(
 		ctx,
 		registry.ID,
 		info.Image,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -229,7 +227,6 @@ func dbDownloadStatForGenericArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -255,7 +252,6 @@ func dbDownloadStatForMavenArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -265,7 +261,6 @@ func dbDownloadStatForMavenArtifact(
 		ctx,
 		registry.ID,
 		imageName,
-		types.SoftDeleteFilterExclude,
 	)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
@@ -278,7 +273,6 @@ func dbDownloadStatForMavenArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)

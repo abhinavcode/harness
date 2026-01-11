@@ -86,7 +86,6 @@ func (c *APIController) ModifyRegistry(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.SoftDeleteFilterExclude,
 	)
 	if err != nil {
 		return throwModifyRegistry500Error(err), err
@@ -221,7 +220,7 @@ func (c *APIController) updateVirtualRegistry(
 			),
 		}, nil
 	}
-	modifiedRepoEntity, err := c.RegistryRepository.Get(ctx, registry.ID, types.SoftDeleteFilterInclude)
+	modifiedRepoEntity, err := c.RegistryRepository.Get(ctx, registry.ID, types.WithAllDeleted())
 	if err != nil {
 		return throwModifyRegistry500Error(err), nil
 	}
@@ -607,7 +606,7 @@ func (c *APIController) checkIfUpstreamIsUsedInPublicRegistries(
 	}
 	//nolint:nestif
 	if len(registryIDs) > 0 {
-		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, types.SoftDeleteFilterInclude)
+		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, types.WithAllDeleted())
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("failed to fetch registries: %s", err)
 			return fmt.Errorf("failed to fetch registries: %w", err)
@@ -649,7 +648,7 @@ func (c *APIController) checkIfVirtualHasPrivateUpstreams(
 ) error {
 	//nolint:nestif
 	if len(registryIDs) > 0 {
-		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, types.SoftDeleteFilterInclude)
+		registries, err := c.RegistryRepository.GetByIDIn(ctx, registryIDs, types.WithAllDeleted())
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("failed to fetch registries: %s", err)
 			return fmt.Errorf("failed to fetch registries: %w", err)

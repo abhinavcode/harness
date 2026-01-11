@@ -120,8 +120,9 @@ func (a ArtifactDao) Get(
 }
 
 func (a ArtifactDao) GetByName(
-	ctx context.Context, imageID int64, version string, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, imageID int64, version string, opts ...types.QueryOption,
 ) (*types.Artifact, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -155,8 +156,9 @@ func (a ArtifactDao) GetByName(
 }
 
 func (a ArtifactDao) GetByRegistryImageAndVersion(
-	ctx context.Context, registryID int64, image string, version string, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, registryID int64, image string, version string, opts ...types.QueryOption,
 ) (*types.Artifact, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -189,11 +191,12 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 }
 
 func (a ArtifactDao) GetByRegistryIDAndImage(
-	ctx context.Context, registryID int64, image string, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, registryID int64, image string, opts ...types.QueryOption,
 ) (
 	*[]types.Artifact,
 	error,
 ) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -308,7 +311,8 @@ func (a ArtifactDao) CreateOrUpdate(ctx context.Context, artifact *types.Artifac
 	return artifact.ID, nil
 }
 
-func (a ArtifactDao) Count(ctx context.Context, softDeleteFilter types.SoftDeleteFilter) (int64, error) {
+func (a ArtifactDao) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -509,8 +513,9 @@ func (a ArtifactDao) mapArtifactWithParents(_ context.Context, dst *artifactWith
 }
 
 func (a ArtifactDao) SearchLatestByName(
-	ctx context.Context, regID int64, name string, limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, regID int64, name string, limit int, offset int, opts ...types.QueryOption,
 ) (*[]types.Artifact, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	subQuery := `
 	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
 	FROM artifacts
@@ -565,8 +570,9 @@ func (a ArtifactDao) SearchLatestByName(
 }
 
 func (a ArtifactDao) CountLatestByName(
-	ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, regID int64, name string, opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	subQuery := `
 	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
 	FROM artifacts
@@ -612,8 +618,9 @@ func (a ArtifactDao) CountLatestByName(
 
 func (a ArtifactDao) SearchByImageName(
 	ctx context.Context, regID int64, name string,
-	limit int, offset int, softDeleteFilter types.SoftDeleteFilter,
+	limit int, offset int, opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(
 		`i.image_name as name,
         a.artifact_id as artifact_id, a.artifact_version as version, a.artifact_metadata as metadata,
@@ -659,8 +666,9 @@ func (a ArtifactDao) SearchByImageName(
 }
 
 func (a ArtifactDao) CountByImageName(
-	ctx context.Context, regID int64, name string, softDeleteFilter types.SoftDeleteFilter,
+	ctx context.Context, regID int64, name string, opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.
 		Select("COUNT(*)").
 		From("artifacts a").
@@ -706,8 +714,9 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	packageTypes []string,
 	limit int,
 	offset int,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, 
 		i.image_name as name, 
@@ -805,8 +814,9 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 func (a ArtifactDao) CountAllArtifactsByParentID(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, latestVersion bool, packageTypes []string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	// nolint:goconst
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
@@ -881,8 +891,9 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 func (a ArtifactDao) GetArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey, search string, labels []string, _ bool,
 	limit int, offset int, sortByField string, sortByOrder string,
-	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
+	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	var rowNumSubquery string
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterInclude:
@@ -983,22 +994,47 @@ func (a ArtifactDao) GetArtifactsByRepo(
 	return a.mapToArtifactMetadataList(dst)
 }
 
-// nolint:goconst
 func (a ArtifactDao) CountArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey, search string, labels []string,
-	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
+	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (int64, error) {
-	q := databaseg.Builder.Select("COUNT(*)").
-		From("artifacts a").
-		Join(
-			"images i ON i.image_id = a.artifact_image_id").
-		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repoKey)
-	if search != "" {
-		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(search))
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	var rowNumSubquery string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterInclude:
+		rowNumSubquery = `(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id
+			ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
+			JOIN images i ON i.image_id = a.artifact_image_id  
+			JOIN registries r ON i.image_registry_id = r.registry_id  
+			WHERE r.registry_parent_id = ? AND r.registry_name = ?) AS a1`
+	case types.SoftDeleteFilterExclude:
+		//nolint:lll
+		rowNumSubquery = `(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id
+			ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
+			JOIN images i ON i.image_id = a.artifact_image_id  
+			JOIN registries r ON i.image_registry_id = r.registry_id  
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND a.artifact_deleted_at IS NULL AND i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL) AS a1`
+	case types.SoftDeleteFilterOnly:
+		//nolint:lll
+		rowNumSubquery = `(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id
+			ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
+			JOIN images i ON i.image_id = a.artifact_image_id  
+			JOIN registries r ON i.image_registry_id = r.registry_id  
+			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND (a.artifact_deleted_at IS NOT NULL OR i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)) AS a1`
 	}
-	if artifactType != nil && *artifactType != "" {
+
+	q := databaseg.Builder.Select("COUNT(DISTINCT i.image_id)").
+		From("artifacts a").
+		Join(rowNumSubquery+` ON a.artifact_id = a1.id`, parentID, repoKey).
+		Join("images i ON i.image_id = a.artifact_image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id")
+
+	if artifactType != nil {
 		q = q.Where("i.image_type = ?", *artifactType)
+	}
+
+	if search != "" {
+		q = q.Where("i.image_name LIKE ?", "%"+search+"%")
 	}
 
 	if len(labels) > 0 {
@@ -1021,13 +1057,12 @@ func (a ArtifactDao) CountArtifactsByRepo(
 
 	sql, args, err := q.ToSql()
 	if err != nil {
-		return -1, errors.Wrap(err, "Failed to convert query to sql")
+		return 0, errors.Wrap(err, "Failed to convert query to sql")
 	}
-	db := dbtx.GetAccessor(ctx, a.db)
 
+	db := dbtx.GetAccessor(ctx, a.db)
 	var count int64
-	err = db.QueryRowContext(ctx, sql, args...).Scan(&count)
-	if err != nil {
+	if err = db.QueryRowContext(ctx, sql, args...).Scan(&count); err != nil {
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
 	}
 	return count, nil
@@ -1038,8 +1073,9 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 	parentID int64,
 	repoKey string,
 	imageName string,
-	softDeleteFilter types.SoftDeleteFilter,
+	opts ...types.QueryOption,
 ) (*types.ArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	// Precomputed download count subquery with soft delete filtering
 	var downloadCountSubquery string
 	switch softDeleteFilter {
@@ -1209,8 +1245,9 @@ func (a ArtifactDao) mapToArtifactMetadataList(
 func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 	ctx context.Context, regID int64, image string,
 	sortByField string, sortByOrder string, limit int, offset int, search string,
-	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
+	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (*[]types.NonOCIArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	// Build the main query
 	q := databaseg.Builder.
 		Select(`
@@ -1348,8 +1385,9 @@ func (a ArtifactDao) fetchDownloadStatsForArtifacts(
 
 func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 	ctx context.Context, parentID int64, repoKey string, image string,
-	search string, artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
+	search string, artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON i.image_id = a.artifact_image_id").
@@ -1395,8 +1433,9 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 
 func (a ArtifactDao) GetArtifactMetadata(
 	ctx context.Context, id int64, identifier string, image string, version string,
-	artifactType *artifact.ArtifactType, softDeleteFilter types.SoftDeleteFilter,
+	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (*types.ArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(
 		"r.registry_package_type as package_type, a.artifact_version as name,"+
 			"a.artifact_updated_at as modified_at, "+

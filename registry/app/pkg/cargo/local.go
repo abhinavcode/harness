@@ -35,7 +35,6 @@ import (
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/services/webhook"
-	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store/database/dbtx"
 )
 
@@ -210,7 +209,7 @@ func (c *localRegistry) UpdateYank(
 
 func (c *localRegistry) updateYankInternal(ctx context.Context, info cargotype.ArtifactInfo, yanked bool) error {
 	a, err := c.artifactDao.GetByRegistryImageAndVersion(
-		ctx, info.RegistryID, info.Image, info.Version, registrytypes.SoftDeleteFilterExclude,
+		ctx, info.RegistryID, info.Image, info.Version,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to get artifact by image and version: %w", err)
