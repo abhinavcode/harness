@@ -36,8 +36,8 @@ func (c *APIController) GetArtifactVersionSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
 ) (artifact.GetArtifactVersionSummaryResponseObject, error) {
-	image, version, pkgType, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, artifactUUID, registryUUID, err :=
-		c.FetchArtifactSummary(ctx, r)
+	image, version, pkgType, isQuarantined, quarantineReason, artifactType, deletedAt, isDeleted, artifactUUID,
+		registryUUID, err := c.FetchArtifactSummary(ctx, r)
 	if err != nil {
 		if errors.Is(err, apiauth.ErrUnauthorized) {
 			return artifact.GetArtifactVersionSummary401JSONResponse{
@@ -70,7 +70,8 @@ func (c *APIController) GetArtifactVersionSummary(
 func (c *APIController) FetchArtifactSummary(
 	ctx context.Context,
 	r artifact.GetArtifactVersionSummaryRequestObject,
-) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, *time.Time, bool, string, string, error) {
+) (string, string, artifact.PackageType, bool, string, *artifact.ArtifactType, *time.Time, bool, string,
+	string, error) {
 	regInfo, err := c.RegistryMetadataHelper.GetRegistryRequestBaseInfo(ctx, "", string(r.RegistryRef))
 
 	if err != nil {
@@ -161,7 +162,8 @@ func (c *APIController) FetchArtifactSummary(
 			deletedAt = &timestamp
 		}
 
-		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt, isDeleted, "", "", nil
+		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt,
+			isDeleted, "", "", nil
 	}
 	metadata, err := c.ArtifactStore.GetArtifactMetadata(
 		ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version, artifactType, types.WithAllDeleted())
