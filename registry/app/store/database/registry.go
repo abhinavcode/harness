@@ -123,7 +123,7 @@ func (r registryDao) GetByParentIDAndName(
 	name string, opts ...types.QueryOption,
 ) (*types.Registry, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	log.Info().Msgf("GetByParentIDAndName: parentID: %d, name: %s", parentID, name)
+	log.Ctx(ctx).Info().Msgf("GetByParentIDAndName: parentID: %d, name: %s", parentID, name)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
