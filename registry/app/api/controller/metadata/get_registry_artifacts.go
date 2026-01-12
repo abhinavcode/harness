@@ -87,7 +87,6 @@ func (c *APIController) GetAllArtifactsByRegistry(
 		ctx,
 		space.ID,
 		regInfo.RegistryIdentifier,
-		types.WithAllDeleted(),
 	)
 
 	if err != nil {

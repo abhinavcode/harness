@@ -670,7 +670,7 @@ func (l *localBase) CheckIfFileAlreadyExist(
 	fileName string,
 	path string,
 ) error {
-	image, err := l.imageDao.GetByName(ctx, info.RegistryID, info.Image, types.WithAllDeleted())
+	image, err := l.imageDao.GetByName(ctx, info.RegistryID, info.Image)
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch the image for artifact : [%s] with registry : [%s]", info.Image,
 			info.RegIdentifier)

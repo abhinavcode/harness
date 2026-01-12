@@ -214,6 +214,7 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -223,6 +224,7 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		registry.ID,
 		info.Image,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -232,6 +234,7 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		image.ID,
 		info.Version,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -271,6 +274,7 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -280,6 +284,7 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		registry.ID,
 		imageName,
+		types.WithAllDeleted(),
 	)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
@@ -292,6 +297,7 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		image.ID,
 		info.Version,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -337,7 +343,7 @@ func dbBandwidthStat(
 		return err
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, types.WithAllDeleted())
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getImageFromUpstreamProxy(ctx, c, info)
 	}
@@ -387,6 +393,7 @@ func getMavenArtifactFromUpstreamProxy(
 			ctx,
 			registry.ID,
 			info.GroupID+":"+info.ArtifactID,
+			types.WithAllDeleted(),
 		)
 		if err == nil && image != nil {
 			return image, nil

@@ -253,7 +253,7 @@ func (c Controller) PullArtifact(ctx context.Context, info pkg.GenericArtifactIn
 
 func (c Controller) CheckIfFileAlreadyExist(ctx context.Context,
 	info pkg.GenericArtifactInfo) error { //nolint:staticcheck
-	image, err := c.DBStore.ImageDao.GetByName(ctx, info.RegistryID, info.Image, types.WithAllDeleted())
+	image, err := c.DBStore.ImageDao.GetByName(ctx, info.RegistryID, info.Image)
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch the image for artifact : [%s] with "+
 			regNameFormat, info.Image, info.RegIdentifier)
@@ -262,7 +262,7 @@ func (c Controller) CheckIfFileAlreadyExist(ctx context.Context,
 		return nil
 	}
 
-	dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version, types.WithAllDeleted())
+	dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
 
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch artifact : [%s] with "+

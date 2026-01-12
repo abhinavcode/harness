@@ -27,7 +27,6 @@ import (
 	"github.com/harness/gitness/app/paths"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/common"
-	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/registry/utils"
 	"github.com/harness/gitness/types/enum"
 
@@ -73,7 +72,6 @@ func (c *APIController) GetClientSetupDetails(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return artifact.GetClientSetupDetails404JSONResponse{

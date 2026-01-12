@@ -39,6 +39,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/maven"
 	mavenutils "github.com/harness/gitness/registry/app/pkg/maven/utils"
 	"github.com/harness/gitness/registry/request"
+	"github.com/harness/gitness/registry/types"
 
 	"github.com/rs/zerolog/log"
 )
@@ -102,6 +103,7 @@ func (h *Handler) GetArtifactInfo(r *http.Request, remoteSupport bool) (pkg.Mave
 		ctx,
 		rootSpace.ID,
 		registryIdentifier,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(

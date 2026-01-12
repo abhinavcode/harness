@@ -84,7 +84,6 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
-		registryTypes.WithAllDeleted(),
 	)
 	if err != nil {
 		//nolint:nilerr
@@ -102,7 +101,7 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	versionName := string(r.Version)
 	registryName := repoEntity.Name
 
-	imageInfo, err := c.ImageStore.GetByName(ctx, repoEntity.ID, artifactName, registryTypes.WithAllDeleted())
+	imageInfo, err := c.ImageStore.GetByName(ctx, repoEntity.ID, artifactName)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifactVersion404JSONResponse{
@@ -267,7 +266,7 @@ func (c *APIController) deleteVersion(
 	artifactName string,
 	versionName string,
 ) error {
-	_, err := c.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName, registryTypes.WithAllDeleted())
+	_, err := c.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName)
 	if err != nil {
 		return fmt.Errorf("version doesn't exist for image %v: %w", imageInfo.Name, err)
 	}

@@ -220,7 +220,7 @@ func (c *APIController) updateVirtualRegistry(
 			),
 		}, nil
 	}
-	modifiedRepoEntity, err := c.RegistryRepository.Get(ctx, registry.ID, types.WithAllDeleted())
+	modifiedRepoEntity, err := c.RegistryRepository.Get(ctx, registry.ID)
 	if err != nil {
 		return throwModifyRegistry500Error(err), nil
 	}
