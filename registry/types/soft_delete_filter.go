@@ -19,9 +19,9 @@ type SoftDeleteFilter string
 
 const (
 	// SoftDeleteFilterExclude excludes soft-deleted entities (default behavior).
-	SoftDeleteFilterExclude SoftDeleteFilter = "exclude"
+	SoftDeleteFilterExclude SoftDeleteFilter = "EXCLUDE"
 	// SoftDeleteFilterOnly returns only soft-deleted entities.
-	SoftDeleteFilterOnly SoftDeleteFilter = "only"
+	SoftDeleteFilterOnly SoftDeleteFilter = "ONLY"
 	// SoftDeleteFilterInclude returns all entities regardless of soft-delete status.
-	SoftDeleteFilterInclude SoftDeleteFilter = "include"
+	SoftDeleteFilterInclude SoftDeleteFilter = "INCLUDE"
 )

@@ -39,6 +39,7 @@ import (
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/types"
+	gitnessstore "github.com/harness/gitness/store"
 	"github.com/harness/gitness/store/database/dbtx"
 	"github.com/harness/gitness/types/enum"
 
@@ -441,6 +442,9 @@ func (l *localBase) postUploadArtifact(
 		ctx, func(ctx context.Context) error {
 			// Check if image already exists and is soft-deleted
 			existingImage, err := l.imageDao.GetByName(ctx, registry.ID, info.Image, types.WithAllDeleted())
+			if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
+				return fmt.Errorf("failed to check existing image: %w", err)
+			}
 			if err == nil && existingImage.DeletedAt != nil {
 				return fmt.Errorf("cannot upload to soft-deleted image: %s", info.Image)
 			}
@@ -457,6 +461,9 @@ func (l *localBase) postUploadArtifact(
 
 			// Check if artifact version already exists and is soft-deleted
 			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.WithAllDeleted())
+			if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
+				return fmt.Errorf("failed to check existing artifact version: %w", err)
+			}
 			if err == nil && dbArtifact.DeletedAt != nil {
 				return fmt.Errorf("cannot upload to soft-deleted artifact version: %s", version)
 			}
