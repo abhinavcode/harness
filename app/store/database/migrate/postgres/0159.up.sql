@@ -1,22 +1,14 @@
--- Add deleted_at and deleted_by columns to registries, images, and artifacts tables
+ALTER TABLE repositories ADD column repo_language TEXT DEFAULT '';
 
--- Add to registries table
-ALTER TABLE registries 
-    ADD COLUMN IF NOT EXISTS registry_deleted_at BIGINT,
-    ADD COLUMN IF NOT EXISTS registry_deleted_by INTEGER;
+CREATE TABLE repo_languages (
+  repo_lang_repo_id    INTEGER NOT NULL,
+  repo_lang_language  TEXT NOT NULL,
+  repo_lang_bytes      BIGINT NOT NULL DEFAULT 0,
+  repo_lang_files      BIGINT NOT NULL DEFAULT 0,
 
-CREATE INDEX IF NOT EXISTS idx_registries_deleted_at ON registries(registry_deleted_at);
+  CONSTRAINT repo_languages_pk
+    PRIMARY KEY (repo_lang_repo_id, repo_lang_language),
 
--- Add to images table
-ALTER TABLE images 
-    ADD COLUMN IF NOT EXISTS image_deleted_at BIGINT,
-    ADD COLUMN IF NOT EXISTS image_deleted_by INTEGER;
-
-CREATE INDEX IF NOT EXISTS idx_images_deleted_at ON images(image_deleted_at);
-
--- Add to artifacts table
-ALTER TABLE artifacts 
-    ADD COLUMN IF NOT EXISTS artifact_deleted_at BIGINT,
-    ADD COLUMN IF NOT EXISTS artifact_deleted_by INTEGER;
-
-CREATE INDEX IF NOT EXISTS idx_artifacts_deleted_at ON artifacts(artifact_deleted_at);
+  CONSTRAINT repo_languages_repo_fk FOREIGN KEY (repo_lang_repo_id)
+    REFERENCES repositories (repo_id) ON DELETE CASCADE
+);
