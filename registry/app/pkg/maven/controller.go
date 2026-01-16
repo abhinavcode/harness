@@ -272,7 +272,7 @@ func (c *Controller) ProxyWrapper(
 
 func (c *Controller) GetOrderedRepos(
 	ctx context.Context,
-	repoKey string,
+	_ string,
 	artInfo pkg.ArtifactInfo,
 ) ([]registrytypes.Registry, error) {
 	var result []registrytypes.Registry

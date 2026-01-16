@@ -467,7 +467,8 @@ func (c *Controller) GetReferrers(
 	artInfo pkg.RegistryInfo,
 	artifactType string,
 ) (index *v1.Index, responseHeaders *commons.ResponseHeaders, err error) {
-	accessErr := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
+	accessErr := pkg.GetRegistryCheckAccessWithFinder(
+		ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if accessErr != nil {
 		return nil, nil, errcode.ErrCodeDenied

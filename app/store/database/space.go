@@ -41,23 +41,20 @@ var _ store.SpaceStore = (*SpaceStore)(nil)
 func NewSpaceStore(
 	db *sqlx.DB,
 	spacePathCache store.SpacePathCache,
-	spacePathCICache store.SpacePathCaseInsensitiveCache,
 	spacePathStore store.SpacePathStore,
 ) *SpaceStore {
 	return &SpaceStore{
-		db:               db,
-		spacePathCache:   spacePathCache,
-		spacePathCICache: spacePathCICache,
-		spacePathStore:   spacePathStore,
+		db:             db,
+		spacePathCache: spacePathCache,
+		spacePathStore: spacePathStore,
 	}
 }
 
 // SpaceStore implements a SpaceStore backed by a relational database.
 type SpaceStore struct {
-	db               *sqlx.DB
-	spacePathCache   store.SpacePathCache
-	spacePathCICache store.SpacePathCaseInsensitiveCache
-	spacePathStore   store.SpacePathStore
+	db             *sqlx.DB
+	spacePathCache store.SpacePathCache
+	spacePathStore store.SpacePathStore
 }
 
 // space is an internal representation used to store space data in DB.
@@ -150,18 +147,36 @@ func (s *SpaceStore) FindByRef(ctx context.Context, spaceRef string) (*types.Spa
 	return s.findByRef(ctx, spaceRef, nil)
 }
 
-// FindByRefCaseInsensitive finds the space using the spaceRef.
+// FindByRefCaseInsensitive finds the space using the spaceRef (performs DB query).
 func (s *SpaceStore) FindByRefCaseInsensitive(ctx context.Context, spaceRef string) (int64, error) {
 	segments := paths.Segments(spaceRef)
 	if len(segments) < 1 {
 		return -1, fmt.Errorf("invalid space reference provided")
 	}
 
-	// Use cache with lowercase key for case-insensitive lookup
-	lowerCaseRef := strings.ToLower(spaceRef)
-	spaceID, err := s.spacePathCICache.Get(ctx, lowerCaseRef)
+	var stmt squirrel.SelectBuilder
+	switch {
+	case len(segments) == 1:
+		stmt = database.Builder.
+			Select("space_id").
+			From("spaces").
+			Where("LOWER(space_uid) = ? ", strings.ToLower(segments[0])).
+			Limit(1)
+
+	case len(segments) > 1:
+		stmt = buildRecursiveSelectQueryUsingCaseInsensitivePath(segments)
+	}
+
+	sql, args, err := stmt.ToSql()
 	if err != nil {
-		return -1, fmt.Errorf("failed to get space by case-insensitive path: %w", err)
+		return -1, fmt.Errorf("failed to create sql query: %w", err)
+	}
+
+	db := dbtx.GetAccessor(ctx, s.db)
+
+	var spaceID int64
+	if err = db.GetContext(ctx, &spaceID, sql, args...); err != nil {
+		return -1, database.ProcessSQLErrorf(ctx, err, "Failed executing custom select query")
 	}
 
 	return spaceID, nil
@@ -1042,7 +1057,7 @@ func buildRecursiveSelectQueryUsingCaseInsensitivePath(segments []string) squirr
 
 		stmt = stmt.InnerJoin(fmt.Sprintf("spaces %s ON %s.space_id = %s.space_parent_id", parentAlias, parentAlias,
 			alias)).
-			Where(parentAlias+".space_uid = ?", segments[i])
+			Where("LOWER("+parentAlias+".space_uid) = LOWER(?)", segments[i])
 	}
 
 	// add parent check for root

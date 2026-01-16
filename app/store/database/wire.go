@@ -144,10 +144,9 @@ func ProvideSpacePathStore(
 func ProvideSpaceStore(
 	db *sqlx.DB,
 	spacePathCache store.SpacePathCache,
-	spacePathCICache store.SpacePathCaseInsensitiveCache,
 	spacePathStore store.SpacePathStore,
 ) store.SpaceStore {
-	return NewSpaceStore(db, spacePathCache, spacePathCICache, spacePathStore)
+	return NewSpaceStore(db, spacePathCache, spacePathStore)
 }
 
 // ProvideRepoStore provides a repo store.

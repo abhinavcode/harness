@@ -49,8 +49,7 @@ type spacePathCICacheGetter struct {
 	spaceStore store.SpaceStore
 }
 
+// Find calls SpaceStore's FindByRefCaseInsensitive method to perform the DB query.
 func (g spacePathCICacheGetter) Find(ctx context.Context, lowerCasePath string) (int64, error) {
-	// The spaceStore.FindByRefCaseInsensitive expects the original case,
-	// but it internally converts to lowercase, so we can pass the lowercase version
 	return g.spaceStore.FindByRefCaseInsensitive(ctx, lowerCasePath)
 }
