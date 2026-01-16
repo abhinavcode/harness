@@ -29,7 +29,10 @@ func MigrateAfter_0160(
 	log := log.Ctx(ctx)
 	log.Info().Msg("starting artifacts migration...")
 
-	query := `SELECT r.registry_id from registries as r where r.registry_package_type = 'RPM'`
+	query := `SELECT r.registry_id from registries as r where r.registry_package_type = 'RPM' 
+              AND r.registry_root_parent_id not in
+              (select s.space_id from spaces s where s.space_uid in ('iWnhltqOT7GFt7R-F_zP7Q','nPK9AKcjTuabx2LjrrVrNA',
+                                              'IkpsjoaVTcWXnqIsy2BpfA','rfmnLA8cRVGqwC8S-Quo6A'))`
 
 	rows, err := dbtx.QueryContext(ctx, query)
 	if err != nil {
