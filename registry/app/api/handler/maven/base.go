@@ -105,7 +105,7 @@ func (h *Handler) GetArtifactInfo(r *http.Request, remoteSupport bool) (pkg.Mave
 		)
 		return pkg.MavenArtifactInfo{}, errcode.ErrCodeRegNotFound
 	}
-	_, err = h.SpaceFinder.FindByID(r.Context(), registry.ParentID)
+	parentSpace, err := h.SpaceFinder.FindByID(r.Context(), registry.ParentID)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Parent space not found: %d", registry.ParentID)
 		return pkg.MavenArtifactInfo{}, errcode.ErrCodeParentNotFound
@@ -120,6 +120,9 @@ func (h *Handler) GetArtifactInfo(r *http.Request, remoteSupport bool) (pkg.Mave
 				RootIdentifier: rootIdentifier,
 				RootParentID:   rootSpace.ID,
 				ParentID:       registry.ParentID,
+				// Cache space objects to avoid redundant lookups
+				RootSpace:   rootSpace,
+				ParentSpace: parentSpace,
 			},
 			Registry:      *registry,
 			RegIdentifier: registryIdentifier,

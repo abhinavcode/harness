@@ -142,7 +142,7 @@ func (h *handler) GetRegistryCheckAccess(
 	if err != nil {
 		return err
 	}
-	return pkg.GetRegistryCheckAccess(ctx, h.Authorizer, h.SpaceFinder,
+	return pkg.GetRegistryCheckAccessWithFinder(ctx, h.Authorizer, h.SpaceFinder,
 		info.ParentID, info, reqPermissions...)
 }
 

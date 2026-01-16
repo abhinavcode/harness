@@ -177,7 +177,7 @@ func (c *Controller) HeadManifest(
 	acceptHeaders []string,
 	ifNoneMatchHeader []string,
 ) Response {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, art.ParentID, *art.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, art.ParentID, *art.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return &GetManifestResponse{
@@ -211,7 +211,7 @@ func (c *Controller) PullManifest(
 	acceptHeaders []string,
 	ifNoneMatchHeader []string,
 ) Response {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, art.ParentID, *art.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, art.ParentID, *art.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return &GetManifestResponse{
@@ -250,7 +250,7 @@ func (c *Controller) PutManifest(
 	body io.ReadCloser,
 	length int64,
 ) (responseHeaders *commons.ResponseHeaders, errs []error) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
 		enum.PermissionArtifactsUpload, enum.PermissionArtifactsDownload)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -262,7 +262,7 @@ func (c *Controller) DeleteManifest(
 	ctx context.Context,
 	artInfo pkg.RegistryInfo,
 ) (errs []error, responseHeaders *commons.ResponseHeaders) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
 		enum.PermissionArtifactsDelete)
 	if err != nil {
 		return []error{errcode.ErrCodeDenied}, nil
@@ -276,7 +276,7 @@ func (c *Controller) HeadBlob(
 ) (
 	responseHeaders *commons.ResponseHeaders, errs []error,
 ) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -285,7 +285,7 @@ func (c *Controller) HeadBlob(
 }
 
 func (c *Controller) GetBlob(ctx context.Context, info pkg.RegistryInfo) Response {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return &GetBlobResponse{
@@ -315,7 +315,7 @@ func (c *Controller) InitiateUploadBlob(
 	fromImageRef string,
 	mountDigest string,
 ) (*commons.ResponseHeaders, []error) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsUpload, enum.PermissionArtifactsDownload)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -328,7 +328,7 @@ func (c *Controller) GetUploadBlobStatus(
 	info pkg.RegistryInfo,
 	token string,
 ) (responseHeaders *commons.ResponseHeaders, errs []error) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -349,7 +349,7 @@ func (c *Controller) PatchBlobUpload(
 	body io.ReadCloser,
 ) (responseHeaders *commons.ResponseHeaders, errors []error) {
 	blobCtx := c.local.App.GetBlobsContext(ctx, info, nil)
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload, enum.PermissionArtifactsUpload)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -379,7 +379,7 @@ func (c *Controller) CompleteBlobUpload(
 	length int64,
 	stateToken string,
 ) (responseHeaders *commons.ResponseHeaders, errs []error) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsUpload, enum.PermissionArtifactsDownload)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -392,7 +392,7 @@ func (c *Controller) CancelBlobUpload(
 	info pkg.RegistryInfo,
 	stateToken string,
 ) (responseHeaders *commons.ResponseHeaders, errors []error) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsDelete)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -433,7 +433,7 @@ func (c *Controller) DeleteBlob(
 	ctx context.Context,
 	info pkg.RegistryInfo,
 ) (responseHeaders *commons.ResponseHeaders, errs []error) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsDelete)
 	if err != nil {
 		return nil, []error{errcode.ErrCodeDenied}
@@ -450,7 +450,7 @@ func (c *Controller) GetTags(
 	origURL string,
 	artInfo pkg.RegistryInfo,
 ) (*commons.ResponseHeaders, []string, error) {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return nil, nil, errcode.ErrCodeDenied
@@ -467,7 +467,7 @@ func (c *Controller) GetReferrers(
 	artInfo pkg.RegistryInfo,
 	artifactType string,
 ) (index *v1.Index, responseHeaders *commons.ResponseHeaders, err error) {
-	accessErr := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
+	accessErr := pkg.GetRegistryCheckAccessWithFinder(ctx, c.authorizer, c.SpaceFinder, artInfo.ParentID, *artInfo.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if accessErr != nil {
 		return nil, nil, errcode.ErrCodeDenied

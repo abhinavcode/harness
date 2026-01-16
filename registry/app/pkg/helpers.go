@@ -22,15 +22,32 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/app/auth/authz"
 	"github.com/harness/gitness/app/services/refcache"
+	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
 
 	"github.com/rs/zerolog/log"
 )
 
-// GetRegistryCheckAccess fetches an active registry
-// and checks if the current user has permission to access it.
+// GetRegistryCheckAccess checks if the current user has permission to access the registry.
+// Uses cached space from ArtifactInfo to avoid redundant DB lookups.
+// The space must be cached in art.ParentSpace.
 func GetRegistryCheckAccess(
+	ctx context.Context,
+	authorizer authz.Authorizer,
+	art ArtifactInfo,
+	reqPermissions ...enum.Permission,
+) error {
+	if art.ParentSpace == nil {
+		return fmt.Errorf("parent space not cached in ArtifactInfo")
+	}
+
+	return checkRegistryAccess(ctx, authorizer, art.Registry, art.ParentSpace, reqPermissions...)
+}
+
+// GetRegistryCheckAccessWithFinder checks if the current user has permission to access the registry.
+// Legacy version that fetches space from DB. Use GetRegistryCheckAccess when space is cached.
+func GetRegistryCheckAccessWithFinder(
 	ctx context.Context,
 	authorizer authz.Authorizer,
 	spaceFinder refcache.SpaceFinder,
@@ -38,11 +55,22 @@ func GetRegistryCheckAccess(
 	art ArtifactInfo,
 	reqPermissions ...enum.Permission,
 ) error {
-	registry := art.Registry
 	space, err := spaceFinder.FindByID(ctx, parentID)
 	if err != nil {
 		return fmt.Errorf("failed to find parent by ref: %w", err)
 	}
+
+	return checkRegistryAccess(ctx, authorizer, art.Registry, space, reqPermissions...)
+}
+
+// checkRegistryAccess is the shared implementation for registry access checks.
+func checkRegistryAccess(
+	ctx context.Context,
+	authorizer authz.Authorizer,
+	registry registrytypes.Registry,
+	space *types.SpaceCore,
+	reqPermissions ...enum.Permission,
+) error {
 	session, _ := request.AuthSessionFrom(ctx)
 	var permissionChecks []types.PermissionCheck
 
@@ -58,7 +86,7 @@ func GetRegistryCheckAccess(
 		permissionChecks = append(permissionChecks, permissionCheck)
 	}
 
-	if err = apiauth.CheckRegistry(ctx, authorizer, session, permissionChecks...); err != nil {
+	if err := apiauth.CheckRegistry(ctx, authorizer, session, permissionChecks...); err != nil {
 		err = fmt.Errorf("registry access check failed: %w", err)
 		log.Ctx(ctx).Error().Msgf("Error: %v", err)
 		return err

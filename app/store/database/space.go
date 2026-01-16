@@ -41,20 +41,23 @@ var _ store.SpaceStore = (*SpaceStore)(nil)
 func NewSpaceStore(
 	db *sqlx.DB,
 	spacePathCache store.SpacePathCache,
+	spacePathCICache store.SpacePathCaseInsensitiveCache,
 	spacePathStore store.SpacePathStore,
 ) *SpaceStore {
 	return &SpaceStore{
-		db:             db,
-		spacePathCache: spacePathCache,
-		spacePathStore: spacePathStore,
+		db:               db,
+		spacePathCache:   spacePathCache,
+		spacePathCICache: spacePathCICache,
+		spacePathStore:   spacePathStore,
 	}
 }
 
 // SpaceStore implements a SpaceStore backed by a relational database.
 type SpaceStore struct {
-	db             *sqlx.DB
-	spacePathCache store.SpacePathCache
-	spacePathStore store.SpacePathStore
+	db               *sqlx.DB
+	spacePathCache   store.SpacePathCache
+	spacePathCICache store.SpacePathCaseInsensitiveCache
+	spacePathStore   store.SpacePathStore
 }
 
 // space is an internal representation used to store space data in DB.
@@ -154,29 +157,11 @@ func (s *SpaceStore) FindByRefCaseInsensitive(ctx context.Context, spaceRef stri
 		return -1, fmt.Errorf("invalid space reference provided")
 	}
 
-	var stmt squirrel.SelectBuilder
-	switch {
-	case len(segments) == 1:
-		stmt = database.Builder.
-			Select("space_id").
-			From("spaces").
-			Where("LOWER(space_uid) = ? ", strings.ToLower(segments[0])).
-			Limit(1)
-
-	case len(segments) > 1:
-		stmt = buildRecursiveSelectQueryUsingCaseInsensitivePath(segments)
-	}
-
-	sql, args, err := stmt.ToSql()
+	// Use cache with lowercase key for case-insensitive lookup
+	lowerCaseRef := strings.ToLower(spaceRef)
+	spaceID, err := s.spacePathCICache.Get(ctx, lowerCaseRef)
 	if err != nil {
-		return -1, fmt.Errorf("failed to create sql query: %w", err)
-	}
-
-	db := dbtx.GetAccessor(ctx, s.db)
-
-	var spaceID int64
-	if err = db.GetContext(ctx, &spaceID, sql, args...); err != nil {
-		return -1, database.ProcessSQLErrorf(ctx, err, "Failed executing custom select query")
+		return -1, fmt.Errorf("failed to get space by case-insensitive path: %w", err)
 	}
 
 	return spaceID, nil

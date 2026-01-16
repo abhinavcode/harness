@@ -113,7 +113,7 @@ func (c Controller) UploadArtifact(
 		Headers: make(map[string]string),
 		Code:    0,
 	}
-	err := pkg.GetRegistryCheckAccess(ctx, c.Authorizer, c.spaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.Authorizer, c.spaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsUpload)
 	if err != nil {
 		return nil, "", errcode.ErrCodeDenied.WithDetail(err)
@@ -235,7 +235,7 @@ func (c Controller) PullArtifact(ctx context.Context, info pkg.GenericArtifactIn
 		Headers: make(map[string]string),
 		Code:    0,
 	}
-	err := pkg.GetRegistryCheckAccess(ctx, c.Authorizer, c.spaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccessWithFinder(ctx, c.Authorizer, c.spaceFinder, info.ParentID, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return nil, nil, "", errcode.ErrCodeDenied.WithDetail(err)

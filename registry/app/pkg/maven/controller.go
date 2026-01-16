@@ -135,7 +135,7 @@ func (c *Controller) GetArtifactRegistry(ctx context.Context, registry registryt
 }
 
 func (c *Controller) GetArtifact(ctx context.Context, info pkg.MavenArtifactInfo) *GetArtifactResponse {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return &GetArtifactResponse{
@@ -182,7 +182,7 @@ func (c *Controller) GetArtifact(ctx context.Context, info pkg.MavenArtifactInfo
 }
 
 func (c *Controller) HeadArtifact(ctx context.Context, info pkg.MavenArtifactInfo) *HeadArtifactResponse {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return &HeadArtifactResponse{
@@ -217,7 +217,7 @@ func (c *Controller) PutArtifact(
 	info pkg.MavenArtifactInfo,
 	fileReader io.Reader,
 ) *PutArtifactResponse {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, info.ParentID, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, *info.ArtifactInfo,
 		enum.PermissionArtifactsUpload)
 	if err != nil {
 		responseHeaders := &commons.ResponseHeaders{
@@ -249,7 +249,7 @@ func (c *Controller) ProxyWrapper(
 
 	var response Response
 	requestRepoKey := info.RegIdentifier
-	if repos, err := c.GetOrderedRepos(ctx, requestRepoKey, *info.BaseInfo); err == nil {
+	if repos, err := c.GetOrderedRepos(ctx, requestRepoKey, *info.ArtifactInfo); err == nil {
 		for _, registry := range repos {
 			log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
 			artifact, ok := c.GetArtifactRegistry(ctx, registry).(Registry)
@@ -273,22 +273,21 @@ func (c *Controller) ProxyWrapper(
 func (c *Controller) GetOrderedRepos(
 	ctx context.Context,
 	repoKey string,
-	artInfo pkg.BaseInfo,
+	artInfo pkg.ArtifactInfo,
 ) ([]registrytypes.Registry, error) {
 	var result []registrytypes.Registry
-	if registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, artInfo.ParentID, repoKey); err == nil {
-		result = append(result, *registry)
-		proxies := registry.UpstreamProxies
-		if len(proxies) > 0 {
-			upstreamRepos, err := c.DBStore.RegistryDao.GetByIDIn(ctx, proxies)
-			if err != nil {
-				return result, err
-			}
+	// Registry was already fetched and validated in handler layer (GetArtifactInfo)
+	registry := artInfo.Registry
 
-			result = append(result, *upstreamRepos...)
+	result = append(result, registry)
+	proxies := registry.UpstreamProxies
+	if len(proxies) > 0 {
+		upstreamRepos, err := c.DBStore.RegistryDao.GetByIDIn(ctx, proxies)
+		if err != nil {
+			return result, err
 		}
-	} else {
-		return result, err
+
+		result = append(result, *upstreamRepos...)
 	}
 
 	return result, nil

@@ -17,6 +17,7 @@ package pkg
 import (
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/types"
+	gitnesstypes "github.com/harness/gitness/types"
 
 	v2 "github.com/distribution/distribution/v3/registry/api/v2"
 )
@@ -27,6 +28,9 @@ type BaseInfo struct {
 	ParentID        int64
 	RootIdentifier  string
 	RootParentID    int64
+	// Cached space objects to avoid redundant lookups
+	RootSpace   *gitnesstypes.SpaceCore
+	ParentSpace *gitnesstypes.SpaceCore
 }
 
 type ArtifactInfo struct {

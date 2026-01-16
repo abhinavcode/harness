@@ -370,7 +370,7 @@ func (l *localBase) uploadInternal(
 		if !errors.IsConflict(err) {
 			return nil, "", err
 		}
-		err = pkg.GetRegistryCheckAccess(ctx, l.authorizer, l.spaceFinder,
+		err = pkg.GetRegistryCheckAccessWithFinder(ctx, l.authorizer, l.spaceFinder,
 			info.ParentID, info, enum.PermissionArtifactsDelete)
 		if err != nil {
 			return nil, "", usererror.Forbidden(fmt.Sprintf("Not enough permissions to overwrite file %s "+
