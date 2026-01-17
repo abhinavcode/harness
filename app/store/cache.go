@@ -30,7 +30,6 @@ type (
 	SpacePathCache cache.Cache[string, *types.SpacePath]
 
 	// SpacePathCaseInsensitiveCache caches case-insensitive space paths to space IDs.
-	// Used to avoid DB queries in FindByRefCaseInsensitive.
 	SpacePathCaseInsensitiveCache cache.Cache[string, int64]
 
 	// RepoIDCache holds Repository objects fetched by their ID.

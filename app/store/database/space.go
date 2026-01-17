@@ -147,7 +147,7 @@ func (s *SpaceStore) FindByRef(ctx context.Context, spaceRef string) (*types.Spa
 	return s.findByRef(ctx, spaceRef, nil)
 }
 
-// FindByRefCaseInsensitive finds the space using the spaceRef (performs DB query).
+// FindByRefCaseInsensitive finds the space using the spaceRef.
 func (s *SpaceStore) FindByRefCaseInsensitive(ctx context.Context, spaceRef string) (int64, error) {
 	segments := paths.Segments(spaceRef)
 	if len(segments) < 1 {
