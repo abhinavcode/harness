@@ -1,4 +1,5 @@
-version: "2"
+version: 2
+
 linters:
   default: none
   enable:
@@ -14,6 +15,7 @@ linters:
     - errorlint
     - exhaustive
     - forbidigo
+    - gocognit
     - goconst
     - gocritic
     - godot
@@ -107,10 +109,12 @@ linters:
     staticcheck:
       checks:
         - all
-        - -SA1019
-        - -QF1008
+        - "-SA1019"
+        - "-QF1008"
     tagliatelle:
       case:
+        use-field-name: false
+        default: snake
         rules:
           avro: snake
           bson: snake
@@ -163,7 +167,6 @@ linters:
           - gocritic
         path: ^registry/app/driver/filesystem/.*
       - linters:
-          - gocognit
           - gosec
           - nestif
         path: ^registry/app/driver/s3-aws/.*
@@ -454,7 +457,7 @@ linters:
         path: ^registry/app/remote/adapter/native/adapter.go
       - linters:
           - gosec
-        path: ^registry/app/storage/blobStore.go
+        path: ^registry/app/storage/blobstore.go
       - linters:
           - lll
           - tagliatelle
@@ -467,10 +470,9 @@ linters:
           - lll
         path: ^registry/app/api/controller/mocks/
     paths:
-      - third_party$
-      - builtin$
-      - examples$
-
+      - third_party
+      - builtin
+      - examples
 issues:
   max-same-issues: 10
 formatters:
@@ -489,6 +491,6 @@ formatters:
   exclusions:
     generated: lax
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - third_party
+      - builtin
+      - examples
