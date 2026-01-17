@@ -135,7 +135,7 @@ func (c *Controller) GetArtifactRegistry(ctx context.Context, registry registryt
 }
 
 func (c *Controller) GetArtifact(ctx context.Context, info pkg.MavenArtifactInfo) *GetArtifactResponse {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return &GetArtifactResponse{
@@ -182,7 +182,7 @@ func (c *Controller) GetArtifact(ctx context.Context, info pkg.MavenArtifactInfo
 }
 
 func (c *Controller) HeadArtifact(ctx context.Context, info pkg.MavenArtifactInfo) *HeadArtifactResponse {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, *info.ArtifactInfo,
 		enum.PermissionArtifactsDownload)
 	if err != nil {
 		return &HeadArtifactResponse{
@@ -217,7 +217,7 @@ func (c *Controller) PutArtifact(
 	info pkg.MavenArtifactInfo,
 	fileReader io.Reader,
 ) *PutArtifactResponse {
-	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, *info.ArtifactInfo,
+	err := pkg.GetRegistryCheckAccess(ctx, c.authorizer, c.SpaceFinder, *info.ArtifactInfo,
 		enum.PermissionArtifactsUpload)
 	if err != nil {
 		responseHeaders := &commons.ResponseHeaders{

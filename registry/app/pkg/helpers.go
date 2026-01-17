@@ -30,23 +30,30 @@ import (
 )
 
 // GetRegistryCheckAccess checks if the current user has permission to access the registry.
-// Uses cached space from ArtifactInfo to avoid redundant DB lookups.
-// The space must be cached in art.ParentSpace.
+// Self-healing: uses cached space if available in art.ParentSpace, otherwise fetches from DB.
+// This ensures correctness regardless of whether the handler cached spaces or not.
 func GetRegistryCheckAccess(
 	ctx context.Context,
 	authorizer authz.Authorizer,
+	spaceFinder refcache.SpaceFinder,
 	art ArtifactInfo,
 	reqPermissions ...enum.Permission,
 ) error {
-	if art.ParentSpace == nil {
-		return fmt.Errorf("parent space not cached in ArtifactInfo")
+	// Use cached space if available (optimization), otherwise fetch
+	parentSpace := art.ParentSpace
+	if parentSpace == nil {
+		var err error
+		parentSpace, err = spaceFinder.FindByID(ctx, art.ParentID)
+		if err != nil {
+			return fmt.Errorf("failed to find parent space: %w", err)
+		}
 	}
 
-	return checkRegistryAccess(ctx, authorizer, art.Registry, art.ParentSpace, reqPermissions...)
+	return checkRegistryAccess(ctx, authorizer, art.Registry, parentSpace, reqPermissions...)
 }
 
-// GetRegistryCheckAccessWithFinder checks if the current user has permission to access the registry.
-// Legacy version that fetches space from DB. Use GetRegistryCheckAccess when space is cached.
+// GetRegistryCheckAccessWithFinder is deprecated. Use GetRegistryCheckAccess instead.
+// Kept for backward compatibility during migration.
 func GetRegistryCheckAccessWithFinder(
 	ctx context.Context,
 	authorizer authz.Authorizer,
@@ -55,12 +62,7 @@ func GetRegistryCheckAccessWithFinder(
 	art ArtifactInfo,
 	reqPermissions ...enum.Permission,
 ) error {
-	space, err := spaceFinder.FindByID(ctx, parentID)
-	if err != nil {
-		return fmt.Errorf("failed to find parent by ref: %w", err)
-	}
-
-	return checkRegistryAccess(ctx, authorizer, art.Registry, space, reqPermissions...)
+	return GetRegistryCheckAccess(ctx, authorizer, spaceFinder, art, reqPermissions...)
 }
 
 // checkRegistryAccess is the shared implementation for registry access checks.

@@ -152,7 +152,9 @@ func NewMavenHandlerProvider(
 func NewPackageHandlerProvider(
 	registryDao store.RegistryRepository, downloadStatDao store.DownloadStatRepository,
 	bandwidthStatDao store.BandwidthStatRepository,
-	spaceStore corestore.SpaceStore, tokenStore corestore.TokenStore,
+	spaceStore corestore.SpaceStore,
+	spacePathCICache corestore.SpacePathCaseInsensitiveCache,
+	tokenStore corestore.TokenStore,
 	userCtrl *usercontroller.Controller, authenticator authn.Authenticator,
 	urlProvider urlprovider.Provider, authorizer authz.Authorizer, spaceFinder refcache.SpaceFinder,
 	regFinder refcache2.RegistryFinder,
@@ -164,6 +166,7 @@ func NewPackageHandlerProvider(
 		downloadStatDao,
 		bandwidthStatDao,
 		spaceStore,
+		spacePathCICache,
 		tokenStore,
 		userCtrl,
 		authenticator,

@@ -52,7 +52,9 @@ func NewHandler(
 	registryDao store.RegistryRepository,
 	downloadStatDao store.DownloadStatRepository,
 	bandwidthStatDao store.BandwidthStatRepository,
-	spaceStore corestore.SpaceStore, tokenStore corestore.TokenStore,
+	spaceStore corestore.SpaceStore,
+	spacePathCICache corestore.SpacePathCaseInsensitiveCache,
+	tokenStore corestore.TokenStore,
 	userCtrl *usercontroller.Controller, authenticator authn.Authenticator,
 	urlProvider urlprovider.Provider, authorizer authz.Authorizer, spaceFinder refcache.SpaceFinder,
 	regFinder refcache2.RegistryFinder,
@@ -64,6 +66,7 @@ func NewHandler(
 		DownloadStatDao:  downloadStatDao,
 		BandwidthStatDao: bandwidthStatDao,
 		SpaceStore:       spaceStore,
+		SpacePathCICache: spacePathCICache,
 		TokenStore:       tokenStore,
 		UserCtrl:         userCtrl,
 		Authenticator:    authenticator,
@@ -82,6 +85,7 @@ type handler struct {
 	DownloadStatDao  store.DownloadStatRepository
 	BandwidthStatDao store.BandwidthStatRepository
 	SpaceStore       corestore.SpaceStore
+	SpacePathCICache corestore.SpacePathCaseInsensitiveCache
 	TokenStore       corestore.TokenStore
 	UserCtrl         *usercontroller.Controller
 	Authenticator    authn.Authenticator
@@ -199,7 +203,9 @@ func (h *handler) GetArtifactInfo(r *http.Request) (pkg.ArtifactInfo, error) {
 		return pkg.ArtifactInfo{}, errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	rootSpaceID, err := h.SpaceStore.FindByRefCaseInsensitive(ctx, rootIdentifier)
+	// Use case-insensitive cache for root space lookup
+	cacheKey := strings.ToLower(rootIdentifier)
+	rootSpaceID, err := h.SpacePathCICache.Get(ctx, cacheKey)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Root spaceID not found: %s", rootIdentifier)
 		return pkg.ArtifactInfo{}, usererror.NotFoundf("Root not found: %s", rootIdentifier)
@@ -225,7 +231,8 @@ func (h *handler) GetArtifactInfo(r *http.Request) (pkg.ArtifactInfo, error) {
 		)
 	}
 
-	_, err = h.SpaceFinder.FindByID(r.Context(), registry.ParentID)
+	// Cache parent space to avoid redundant lookups in access checks
+	parentSpace, err := h.SpaceFinder.FindByID(r.Context(), registry.ParentID)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Parent space not found: %d", registry.ParentID)
 		return pkg.ArtifactInfo{}, usererror.NotFoundf("Parent not found for registry: %s", registryIdentifier)
@@ -237,6 +244,9 @@ func (h *handler) GetArtifactInfo(r *http.Request) (pkg.ArtifactInfo, error) {
 			RootParentID:    rootSpace.ID,
 			ParentID:        registry.ParentID,
 			PathPackageType: artifact.PackageType(packageType),
+			// Cache space objects to avoid redundant lookups
+			RootSpace:   rootSpace,
+			ParentSpace: parentSpace,
 		},
 		RegIdentifier: registryIdentifier,
 		RegistryID:    registry.ID,
