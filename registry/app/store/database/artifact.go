@@ -190,6 +190,34 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 	return a.mapArtifactWithParents(ctx, dst)
 }
 
+// GetByRegistryImageVersionAndArtifactType gets artifact by registry, image, version and type
+func (a ArtifactDao) GetByRegistryImageVersionAndArtifactType(
+	ctx context.Context, registryID int64, image string, version string, artifactType string,
+) (*types.Artifact, error) {
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactWithParentsDB{}), ",")).
+		From("artifacts a").
+		Join("images i ON a.artifact_image_id = i.image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("i.image_registry_id = ?", registryID).
+		Where("i.image_name = ?", image).
+		Where("i.image_type = ?", artifactType).
+		Where("a.artifact_version = ?", version)
+
+	sql, args, err := q.ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to convert query to sql")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+
+	dst := new(artifactWithParentsDB)
+	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact")
+	}
+	return a.mapArtifactWithParents(ctx, dst)
+}
+
+// GetByRegistryIDAndImage gets artifacts by registry and image with soft delete filtering
 func (a ArtifactDao) GetByRegistryIDAndImage(
 	ctx context.Context, registryID int64, image string, opts ...types.QueryOption,
 ) (
@@ -201,7 +229,7 @@ func (a ArtifactDao) GetByRegistryIDAndImage(
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("i.image_registry_id = ? AND i.image_name = ?", registryID, image)
+		Where("i.image_registry_id = ? AND i.image_name = ? AND i.image_type IS NULL", registryID, image)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:

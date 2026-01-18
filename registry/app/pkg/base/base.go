@@ -30,10 +30,12 @@ import (
 	"github.com/harness/gitness/app/api/usererror"
 	"github.com/harness/gitness/app/auth/authz"
 	"github.com/harness/gitness/app/services/refcache"
+	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/errors"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
 	"github.com/harness/gitness/registry/app/metadata"
 	"github.com/harness/gitness/registry/app/pkg"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/storage"
@@ -99,6 +101,12 @@ type LocalBase interface {
 
 	ExistsByFilePath(ctx context.Context, registryID int64, filePath string) (bool, error)
 
+	// AuditPush logs audit trail for artifact push operations.
+	AuditPush(
+		ctx context.Context, info pkg.ArtifactInfo, version string,
+		imageUUID string, artifactUUID string,
+	)
+
 	CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error)
 
 	DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error
@@ -113,15 +121,16 @@ type LocalBase interface {
 }
 
 type localBase struct {
-	registryDao store.RegistryRepository
-	fileManager filemanager.FileManager
-	tx          dbtx.Transactor
-	imageDao    store.ImageRepository
-	artifactDao store.ArtifactRepository
-	nodesDao    store.NodesRepository
-	tagsDao     store.PackageTagRepository
-	authorizer  authz.Authorizer
-	spaceFinder refcache.SpaceFinder
+	registryDao  store.RegistryRepository
+	fileManager  filemanager.FileManager
+	tx           dbtx.Transactor
+	imageDao     store.ImageRepository
+	artifactDao  store.ArtifactRepository
+	nodesDao     store.NodesRepository
+	tagsDao      store.PackageTagRepository
+	authorizer   authz.Authorizer
+	spaceFinder  refcache.SpaceFinder
+	auditService audit.Service
 }
 
 func NewLocalBase(
@@ -134,17 +143,19 @@ func NewLocalBase(
 	tagsDao store.PackageTagRepository,
 	authorizer authz.Authorizer,
 	spaceFinder refcache.SpaceFinder,
+	auditService audit.Service,
 ) LocalBase {
 	return &localBase{
-		registryDao: registryDao,
-		fileManager: fileManager,
-		tx:          tx,
-		imageDao:    imageDao,
-		artifactDao: artifactDao,
-		nodesDao:    nodesDao,
-		tagsDao:     tagsDao,
-		authorizer:  authorizer,
-		spaceFinder: spaceFinder,
+		registryDao:  registryDao,
+		fileManager:  fileManager,
+		tx:           tx,
+		imageDao:     imageDao,
+		artifactDao:  artifactDao,
+		nodesDao:     nodesDao,
+		tagsDao:      tagsDao,
+		authorizer:   authorizer,
+		spaceFinder:  spaceFinder,
+		auditService: auditService,
 	}
 }
 
@@ -269,6 +280,8 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 		}
 	}
 
+	var imageUUID string
+	var artifactUUID string
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
 			image := &types.Image{
@@ -285,6 +298,7 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 				return fmt.Errorf("failed to create image for artifact: [%s], error: %w",
 					info.Image, err)
 			}
+			imageUUID = image.UUID
 
 			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
 
@@ -310,18 +324,31 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 			}
 
 			// Create or update artifact
-			_, err = l.artifactDao.CreateOrUpdate(ctx, &types.Artifact{
+			newArtifact := &types.Artifact{
 				ImageID:  image.ID,
 				Version:  version,
 				Metadata: metadataJSON,
-			})
+			}
+
+			_, err = l.artifactDao.CreateOrUpdate(ctx, newArtifact)
 			if err != nil {
 				log.Ctx(ctx).Error().Msgf("Failed to create artifact : [%s] with error: %v", info.Image, err)
 				return fmt.Errorf("failed to create artifact : [%s] with error: %w", info.Image, err)
 			}
+
+			// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
+			artifactUUID = newArtifact.UUID
+
 			return nil
 		})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Audit log for artifact push
+	l.AuditPush(ctx, *info, version, imageUUID, artifactUUID)
+
+	return nil
 }
 
 func (l *localBase) updateFilesMetadata(
@@ -438,6 +465,8 @@ func (l *localBase) postUploadArtifact(
 	}
 
 	var artifactID int64
+	var imageUUID string
+	var artifactUUID string
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
 			// Check if image already exists and is soft-deleted
@@ -458,6 +487,8 @@ func (l *localBase) postUploadArtifact(
 			if err != nil {
 				return fmt.Errorf("failed to create image for artifact: [%s], error: %w", info.Image, err)
 			}
+
+			imageUUID = image.UUID
 
 			// Check if artifact version already exists and is soft-deleted
 			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.WithAllDeleted())
@@ -489,14 +520,22 @@ func (l *localBase) postUploadArtifact(
 				}
 			}
 
-			artifactID, err = l.artifactDao.CreateOrUpdate(ctx, &types.Artifact{
+			newArtifact := &types.Artifact{
 				ImageID:  image.ID,
 				Version:  version,
 				Metadata: metadataJSON,
-			})
+			}
+
+			artifactID, err = l.artifactDao.CreateOrUpdate(ctx, newArtifact)
 			if err != nil {
 				return fmt.Errorf("failed to create artifact : [%s] with error: %w", info.Image, err)
 			}
+
+			// Audit log for push/upload operation
+			// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
+			artifactUUID = newArtifact.UUID
+			l.AuditPush(ctx, info, version, imageUUID, artifactUUID)
+
 			return nil
 		})
 	return artifactID, err
@@ -769,4 +808,14 @@ func (l *localBase) DeleteVersion(ctx context.Context, info pkg.PackageArtifactI
 		return err
 	}
 	return nil
+}
+
+// AuditPush is a convenience wrapper for calling the centralized audit function from localBase.
+func (l *localBase) AuditPush(
+	ctx context.Context, info pkg.ArtifactInfo, version string,
+	imageUUID string, artifactUUID string,
+) {
+	registryaudit.LogArtifactPush(
+		ctx, l.auditService, l.spaceFinder, info, version, imageUUID, artifactUUID,
+	)
 }

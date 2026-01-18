@@ -58,6 +58,10 @@ type mockLocalBase struct {
 		tmp, version, path string,
 		md metadata.Metadata, fi types.FileInfo, failOnConflict bool,
 	) (*commons.ResponseHeaders, string, int64, bool, error)
+	auditPush func(
+		ctx context.Context, info pkg.ArtifactInfo, version string,
+		imageUUID string, artifactUUID string,
+	)
 }
 
 func TestParseAndUploadNPMPackage_WithAttachment_UploadsData(t *testing.T) {
@@ -194,6 +198,15 @@ func (m *mockLocalBase) MoveMultipleTempFilesAndCreateArtifact(
 	return nil
 }
 
+func (m *mockLocalBase) AuditPush(
+	ctx context.Context, info pkg.ArtifactInfo, version string,
+	imageUUID string, artifactUUID string,
+) {
+	if m.auditPush != nil {
+		m.auditPush(ctx, info, version, imageUUID, artifactUUID)
+	}
+}
+
 type mockTagsDAO struct {
 	findByImageNameAndRegID func(ctx context.Context, image string, regID int64) ([]*types.PackageTagMetadata, error)
 	create                  func(ctx context.Context, tag *types.PackageTag) (string, error)
@@ -321,6 +334,11 @@ func (m *mockArtifactDAO) GetByName(
 func (m *mockArtifactDAO) GetByRegistryImageAndVersion(
 	context.Context,
 	int64, string, string, ...types.QueryOption,
+) (*types.Artifact, error) {
+	return nil, nil //nolint:nilnil
+}
+func (m *mockArtifactDAO) GetByRegistryImageVersionAndArtifactType(
+	ctx context.Context, registryID int64, image string, version string, artifactType string,
 ) (*types.Artifact, error) {
 	return nil, nil //nolint:nilnil
 }
