@@ -409,7 +409,6 @@ type RegistryMetadata struct {
 	DownloadCount int64
 	Size          int64
 	DeletedAt     *time.Time
-	IsDeleted     bool
 }
 
 type RegistryRepository interface {

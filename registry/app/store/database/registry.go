@@ -1076,7 +1076,6 @@ func (r registryDao) mapToRegistry(ctx context.Context, dst *registryDB) (*types
 		UpdatedBy:       dst.UpdatedBy,
 		DeletedAt:       deletedAt,
 		DeletedBy:       dst.DeletedBy,
-		IsDeleted:       dst.DeletedAt != nil, // Registry is deleted if its DeletedAt is not nil
 	}, nil
 }
 
@@ -1125,7 +1124,6 @@ func (r registryDao) mapToRegistryMetadata(ctx context.Context, dst *RegistryMet
 		Labels:        util.StringToArr(dst.Labels.String),
 		Config:        config,
 		DeletedAt:     deletedAt,
-		IsDeleted:     dst.DeletedAt != nil,
 	}
 }
 

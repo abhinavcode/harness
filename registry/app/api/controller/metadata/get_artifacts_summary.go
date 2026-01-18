@@ -142,7 +142,6 @@ func (c *APIController) getImageMetadata(
 		CreatedAt:     img.CreatedAt,
 		ArtifactType:  img.ArtifactType,
 		DeletedAt:     img.DeletedAt,
-		IsDeleted:     img.IsDeleted,
 	}
 	//nolint:nestif
 	if registry.PackageType == artifact.PackageTypeDOCKER || registry.PackageType == artifact.PackageTypeHELM {

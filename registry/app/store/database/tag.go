@@ -2042,10 +2042,9 @@ func (t tagDao) mapToArtifactMetadata(
 		}
 	}
 
-	// Compute DeletedAt and IsDeleted with cascade logic
+	// Compute DeletedAt with cascade logic
 	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
 	var deletedAt *time.Time
-	isDeleted := false
 
 	// Collect all non-null deleted_at timestamps
 	var timestamps []*int64
@@ -2059,9 +2058,8 @@ func (t tagDao) mapToArtifactMetadata(
 		timestamps = append(timestamps, dst.RegistryDeletedAt)
 	}
 
-	// If any entity is deleted, set isDeleted and find earliest timestamp
+	// If any entity is deleted, find earliest timestamp
 	if len(timestamps) > 0 {
-		isDeleted = true
 		// Find the earliest (minimum) timestamp
 		earliestTimestamp := timestamps[0]
 		for _, ts := range timestamps[1:] {
@@ -2089,7 +2087,6 @@ func (t tagDao) mapToArtifactMetadata(
 		QuarantineReason: dst.QuarantineReason,
 		ArtifactType:     dst.ArtifactType,
 		DeletedAt:        deletedAt,
-		IsDeleted:        isDeleted,
 	}
 
 	if dst.Tags != nil {

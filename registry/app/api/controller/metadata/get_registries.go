@@ -277,7 +277,6 @@ func (c *APIController) GetRegistryMetadata(
 			Path:           &path,
 			IsPublic:       isPublic,
 			DeletedAt:      deletedAt,
-			IsDeleted:      reg.IsDeleted,
 		}
 		repoMetadataList = append(repoMetadataList, repoMetadata)
 	}

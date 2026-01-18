@@ -529,32 +529,20 @@ func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) 
 	createdBy := dst.CreatedBy
 	updatedBy := dst.UpdatedBy
 
-	// Compute DeletedAt and IsDeleted with cascade logic
+	// Compute DeletedAt with cascade logic
 	// deletedAt should be set to the earliest timestamp among image or registry
 	var deletedAt *time.Time
-	isDeleted := false
 
-	// Collect all non-null deleted_at timestamps
-	var timestamps []*int64
 	if dst.DeletedAt != nil {
-		timestamps = append(timestamps, dst.DeletedAt)
-	}
-	if dst.RegistryDeletedAt != nil {
-		timestamps = append(timestamps, dst.RegistryDeletedAt)
+		imageDeleted := time.UnixMilli(*dst.DeletedAt)
+		deletedAt = &imageDeleted
 	}
 
-	// If any entity is deleted, set isDeleted and find earliest timestamp
-	if len(timestamps) > 0 {
-		isDeleted = true
-		// Find the earliest (minimum) timestamp
-		earliestTimestamp := timestamps[0]
-		for _, ts := range timestamps[1:] {
-			if *ts < *earliestTimestamp {
-				earliestTimestamp = ts
-			}
+	if dst.RegistryDeletedAt != nil {
+		registryDeletedAt := time.UnixMilli(*dst.RegistryDeletedAt)
+		if deletedAt == nil || registryDeletedAt.Before(*deletedAt) {
+			deletedAt = &registryDeletedAt
 		}
-		t := time.UnixMilli(*earliestTimestamp)
-		deletedAt = &t
 	}
 
 	return &types.Image{
@@ -571,7 +559,6 @@ func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) 
 		UpdatedBy:    updatedBy,
 		DeletedAt:    deletedAt,
 		DeletedBy:    dst.DeletedBy,
-		IsDeleted:    isDeleted, // CASCADE: deleted if image OR registry is deleted
 	}, nil
 }
 

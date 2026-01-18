@@ -16,6 +16,14 @@ type RegistryRepository struct {
 	mock.Mock
 }
 
+type RegistryRepository_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *RegistryRepository) EXPECT() *RegistryRepository_Expecter {
+	return &RegistryRepository_Expecter{mock: &_m.Mock}
+}
+
 // Count provides a mock function with given fields: ctx, opts
 func (_m *RegistryRepository) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
 	ret := _m.Called(ctx, opts)

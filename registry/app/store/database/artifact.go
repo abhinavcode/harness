@@ -190,7 +190,7 @@ func (a ArtifactDao) GetByRegistryImageAndVersion(
 	return a.mapArtifactWithParents(ctx, dst)
 }
 
-// GetByRegistryImageVersionAndArtifactType gets artifact by registry, image, version and type
+// GetByRegistryImageVersionAndArtifactType gets artifact by registry, image, version and type.
 func (a ArtifactDao) GetByRegistryImageVersionAndArtifactType(
 	ctx context.Context, registryID int64, image string, version string, artifactType string,
 ) (*types.Artifact, error) {
@@ -217,7 +217,7 @@ func (a ArtifactDao) GetByRegistryImageVersionAndArtifactType(
 	return a.mapArtifactWithParents(ctx, dst)
 }
 
-// GetByRegistryIDAndImage gets artifacts by registry and image with soft delete filtering
+// GetByRegistryIDAndImage gets artifacts by registry and image with soft delete filtering.
 func (a ArtifactDao) GetByRegistryIDAndImage(
 	ctx context.Context, registryID int64, image string, opts ...types.QueryOption,
 ) (
@@ -493,35 +493,27 @@ func (a ArtifactDao) mapArtifactWithParents(_ context.Context, dst *artifactWith
 		metadata = *dst.Metadata
 	}
 
-	// Compute DeletedAt and IsDeleted with cascade logic
+	// Compute DeletedAt with cascade logic
 	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
 	var deletedAt *time.Time
-	isDeleted := false
 
-	// Collect all non-null deleted_at timestamps
-	var timestamps []*int64
 	if dst.DeletedAt != nil {
-		timestamps = append(timestamps, dst.DeletedAt)
-	}
-	if dst.ImageDeletedAt != nil {
-		timestamps = append(timestamps, dst.ImageDeletedAt)
-	}
-	if dst.RegistryDeletedAt != nil {
-		timestamps = append(timestamps, dst.RegistryDeletedAt)
+		artifactDeleted := time.UnixMilli(*dst.DeletedAt)
+		deletedAt = &artifactDeleted
 	}
 
-	// If any entity is deleted, set isDeleted and find earliest timestamp
-	if len(timestamps) > 0 {
-		isDeleted = true
-		// Find the earliest (minimum) timestamp
-		earliestTimestamp := timestamps[0]
-		for _, ts := range timestamps[1:] {
-			if *ts < *earliestTimestamp {
-				earliestTimestamp = ts
-			}
+	if dst.ImageDeletedAt != nil {
+		imageDeletedAt := time.UnixMilli(*dst.ImageDeletedAt)
+		if deletedAt == nil || imageDeletedAt.Before(*deletedAt) {
+			deletedAt = &imageDeletedAt
 		}
-		t := time.UnixMilli(*earliestTimestamp)
-		deletedAt = &t
+	}
+
+	if dst.RegistryDeletedAt != nil {
+		registryDeletedAt := time.UnixMilli(*dst.RegistryDeletedAt)
+		if deletedAt == nil || registryDeletedAt.Before(*deletedAt) {
+			deletedAt = &registryDeletedAt
+		}
 	}
 
 	return &types.Artifact{
@@ -536,7 +528,6 @@ func (a ArtifactDao) mapArtifactWithParents(_ context.Context, dst *artifactWith
 		UpdatedBy: updatedBy,
 		DeletedAt: deletedAt,
 		DeletedBy: dst.DeletedBy,
-		IsDeleted: isDeleted, // CASCADE: deleted if artifact OR image OR registry is deleted
 	}, nil
 }
 
@@ -1665,10 +1656,9 @@ func (a ArtifactDao) GetArtifactsByRepoAndImageBatch(
 func (a ArtifactDao) mapToArtifactMetadata(
 	dst *artifactMetadataDB,
 ) (*types.ArtifactMetadata, error) {
-	// Compute DeletedAt and IsDeleted with cascade logic
+	// Compute DeletedAt with cascade logic
 	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
 	var deletedAt *time.Time
-	isDeleted := false
 
 	// Collect all non-null deleted_at timestamps
 	var timestamps []*int64
@@ -1682,9 +1672,8 @@ func (a ArtifactDao) mapToArtifactMetadata(
 		timestamps = append(timestamps, dst.RegistryDeletedAt)
 	}
 
-	// If any entity is deleted, set isDeleted and find earliest timestamp
+	// If any entity is deleted, find earliest timestamp
 	if len(timestamps) > 0 {
-		isDeleted = true
 		// Find the earliest (minimum) timestamp
 		earliestTimestamp := timestamps[0]
 		for _, ts := range timestamps[1:] {
@@ -1713,7 +1702,6 @@ func (a ArtifactDao) mapToArtifactMetadata(
 		QuarantineReason: dst.QuarantineReason,
 		ArtifactType:     dst.ArtifactType,
 		DeletedAt:        deletedAt,
-		IsDeleted:        isDeleted,
 	}
 	if dst.Metadata != nil {
 		artifactMetadata.Metadata = *dst.Metadata

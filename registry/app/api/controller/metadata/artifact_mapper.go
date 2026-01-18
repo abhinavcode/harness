@@ -133,7 +133,6 @@ func mapToArtifactMetadata(
 		QuarantineReason:   artifact.QuarantineReason,
 		ArtifactType:       artifact.ArtifactType,
 		DeletedAt:          deletedAt,
-		IsDeleted:          artifact.IsDeleted,
 	}
 }
 
@@ -158,7 +157,6 @@ func mapToRegistryArtifactMetadata(artifact types.ArtifactMetadata) *artifactapi
 		IsQuarantined:      &artifact.IsQuarantined,
 		ArtifactType:       artifact.ArtifactType,
 		DeletedAt:          deletedAt,
-		IsDeleted:          artifact.IsDeleted,
 	}
 }
 
@@ -846,7 +844,6 @@ func GetArtifactSummary(artifact types.ImageMetadata) *artifactapi.ArtifactSumma
 		PackageType:    artifact.PackageType,
 		ArtifactType:   artifact.ArtifactType,
 		DeletedAt:      deletedAt,
-		IsDeleted:      artifact.IsDeleted,
 		RegistryUUID:   artifact.RegistryUUID,
 		Uuid:           artifact.UUID,
 	}
@@ -865,7 +862,6 @@ func GetArtifactVersionSummary(
 	quarantineReason string,
 	artifactType *artifactapi.ArtifactType,
 	deletedAt *time.Time,
-	isDeleted bool,
 	artifactUUID string,
 	registryUUID string,
 ) *artifactapi.ArtifactVersionSummaryResponseJSONResponse {
@@ -883,7 +879,6 @@ func GetArtifactVersionSummary(
 		QuarantineReason: &quarantineReason,
 		ArtifactType:     artifactType,
 		DeletedAt:        deletedAtStr,
-		IsDeleted:        isDeleted,
 		Uuid:             artifactUUID,
 		RegistryUUID:     registryUUID,
 	}
