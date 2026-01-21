@@ -77,16 +77,8 @@ func (c *Controller) scanSecrets(
 	// always print result (handles both no results and results found)
 	printScanSecretsFindings(output, findings, len(in.RefUpdates) > 1, time.Since(startTime))
 
-	// this will be removed when secret scanning check will be moved to push protection
-	if len(findings) > 0 && violationsInput == nil {
-		errMsg := fmt.Sprintf("Found %d secret(s) in your code. Push rejected.", len(findings))
-		output.Error = ptr.String(errMsg)
-	}
-
-	if violationsInput != nil {
-		violationsInput.SecretScanningEnabled = scanningEnabled
-		violationsInput.FoundSecretCount = len(findings)
-	}
+	violationsInput.SecretScanningEnabled = scanningEnabled
+	violationsInput.FoundSecretCount = len(findings)
 
 	return nil
 }
