@@ -18,13 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/harness/gitness/app/services/protection"
-	"github.com/harness/gitness/app/services/settings"
 	"github.com/harness/gitness/git"
 	"github.com/harness/gitness/git/hook"
 	"github.com/harness/gitness/types"
-
-	"github.com/gotidy/ptr"
 )
 
 func (c *Controller) processObjects(
@@ -33,59 +29,23 @@ func (c *Controller) processObjects(
 	repo *types.RepositoryCore,
 	principal *types.Principal,
 	refUpdates changedRefs,
-	sizeLimit int64,
-	principalCommitterMatch bool,
-	violationsInput *protection.PushViolationsInput,
+	checks *protectionChecks,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
-) error {
+) (git.ProcessPreReceiveObjectsOutput, error) {
 	if refUpdates.hasOnlyDeletedBranches() {
-		return nil
+		return git.ProcessPreReceiveObjectsOutput{}, nil
 	}
 
-	// TODO: Remove this once push rules implementation and migration are complete.
-	settingsSizeLimit, err := settings.RepoGet(
-		ctx,
-		c.settings,
-		repo.ID,
-		settings.KeyFileSizeLimit,
-		settings.DefaultFileSizeLimit,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to check settings for file size limit: %w", err)
+	sizeLimit := checks.SettingsFileSizeLimit
+	if checks.RulesFileSizeLimit != 0 && checks.RulesFileSizeLimit < sizeLimit {
+		sizeLimit = checks.RulesFileSizeLimit
 	}
 
-	if sizeLimit == 0 || (settingsSizeLimit > 0 && sizeLimit > settingsSizeLimit) {
-		sizeLimit = settingsSizeLimit
-	}
+	principalCommitterMatch := checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch
 
-	// TODO: Remove this once push rules implementation and migration are complete.
-	if !principalCommitterMatch {
-		principalCommitterMatch, err = settings.RepoGet(
-			ctx,
-			c.settings,
-			repo.ID,
-			settings.KeyPrincipalCommitterMatch,
-			settings.DefaultPrincipalCommitterMatch,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to check settings for principal committer match: %w", err)
-		}
-	}
-
-	gitLFSEnabled, err := settings.RepoGet(
-		ctx,
-		c.settings,
-		repo.ID,
-		settings.KeyGitLFSEnabled,
-		settings.DefaultGitLFSEnabled,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to check settings for Git LFS enabled: %w", err)
-	}
-
-	if sizeLimit == 0 && !principalCommitterMatch && !gitLFSEnabled {
-		return nil
+	if sizeLimit == 0 && !principalCommitterMatch && !checks.SettingsGitLFSEnabled {
+		return git.ProcessPreReceiveObjectsOutput{}, nil
 	}
 
 	preReceiveObjsIn := git.ProcessPreReceiveObjectsParams{
@@ -107,7 +67,7 @@ func (c *Controller) processObjects(
 		}
 	}
 
-	if gitLFSEnabled {
+	if checks.SettingsGitLFSEnabled {
 		preReceiveObjsIn.FindLFSPointersParams = &git.FindLFSPointersParams{}
 	}
 
@@ -116,7 +76,7 @@ func (c *Controller) processObjects(
 		preReceiveObjsIn,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to process pre-receive objects: %w", err)
+		return git.ProcessPreReceiveObjectsOutput{}, fmt.Errorf("failed to process pre-receive objects: %w", err)
 	}
 
 	if preReceiveObjsOut.FindOversizeFilesOutput != nil &&
@@ -148,13 +108,11 @@ func (c *Controller) processObjects(
 
 		existingObjs, err := c.lfsStore.FindMany(ctx, in.RepoID, objIDs)
 		if err != nil {
-			return fmt.Errorf("failed to find lfs objects: %w", err)
+			return git.ProcessPreReceiveObjectsOutput{}, fmt.Errorf("failed to find lfs objects: %w", err)
 		}
 
 		//nolint:lll
 		if len(existingObjs) != len(objIDs) {
-			output.Error = ptr.String(
-				"Changes blocked by unknown Git LFS objects. Please try `git lfs push --all` or check if LFS is setup properly.")
 			printLFSPointers(
 				output,
 				preReceiveObjsOut.FindLFSPointersOutput.LFSInfos,
@@ -163,12 +121,5 @@ func (c *Controller) processObjects(
 		}
 	}
 
-	violationsInput.FileSizeLimit = sizeLimit
-	violationsInput.FindOversizeFilesOutput = preReceiveObjsOut.FindOversizeFilesOutput
-	violationsInput.PrincipalCommitterMatch = principalCommitterMatch
-	if preReceiveObjsOut.FindCommitterMismatchOutput != nil {
-		violationsInput.CommitterMismatchCount = preReceiveObjsOut.FindCommitterMismatchOutput.Total
-	}
-
-	return nil
+	return preReceiveObjsOut, nil
 }

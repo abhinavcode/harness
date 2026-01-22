@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/harness/gitness/app/services/protection"
-	"github.com/harness/gitness/app/services/settings"
 	"github.com/harness/gitness/git"
 	"github.com/harness/gitness/git/hook"
 	"github.com/harness/gitness/logging"
@@ -39,26 +38,12 @@ func (c *Controller) scanSecrets(
 	ctx context.Context,
 	rgit RestrictedGIT,
 	repo *types.RepositoryCore,
-	scanningEnabled bool,
+	checks *protectionChecks,
 	violationsInput *protection.PushViolationsInput,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
 ) error {
-	if !scanningEnabled {
-		var err error
-		scanningEnabled, err = settings.RepoGet(
-			ctx,
-			c.settings,
-			repo.ID,
-			settings.KeySecretScanningEnabled,
-			settings.DefaultSecretScanningEnabled,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to check settings whether secret scanning is enabled: %w", err)
-		}
-	}
-
-	if !scanningEnabled {
+	if !checks.SettingsSecretScanningEnabled && !checks.RulesSecretScanningEnabled {
 		return nil
 	}
 
@@ -74,11 +59,10 @@ func (c *Controller) scanSecrets(
 		return fmt.Errorf("failed to scan for git leaks: %w", err)
 	}
 
+	violationsInput.FoundSecretCount = len(findings)
+
 	// always print result (handles both no results and results found)
 	printScanSecretsFindings(output, findings, len(in.RefUpdates) > 1, time.Since(startTime))
-
-	violationsInput.SecretScanningEnabled = scanningEnabled
-	violationsInput.FoundSecretCount = len(findings)
 
 	return nil
 }

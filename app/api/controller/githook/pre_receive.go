@@ -24,6 +24,7 @@ import (
 	"github.com/harness/gitness/app/api/usererror"
 	"github.com/harness/gitness/app/auth"
 	"github.com/harness/gitness/app/services/protection"
+	"github.com/harness/gitness/app/services/settings"
 	"github.com/harness/gitness/git/hook"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
@@ -156,6 +157,84 @@ func (c *Controller) PreReceive(
 	return output, nil
 }
 
+type protectionChecks struct {
+	RulesSecretScanningEnabled   bool
+	RulesFileSizeLimit           int64
+	RulesPrincipalCommitterMatch bool
+
+	SettingsSecretScanningEnabled   bool
+	SettingsFileSizeLimit           int64
+	SettingsPrincipalCommitterMatch bool
+
+	SettingsGitLFSEnabled bool
+}
+
+type settingsViolations struct {
+	SecretsFound           bool
+	FileSizeLimitExceeded  bool
+	CommitterMismatchFound bool
+	UnknownLFSObjectsFound bool
+}
+
+func (c *Controller) populateProtectionChecks(
+	ctx context.Context,
+	repo *types.RepositoryCore,
+	out *protection.PushVerifyOutput,
+) (protectionChecks, error) {
+	var checks protectionChecks
+
+	checks.RulesFileSizeLimit = out.FileSizeLimit
+	checks.RulesPrincipalCommitterMatch = out.PrincipalCommitterMatch
+	checks.RulesSecretScanningEnabled = out.SecretScanningEnabled
+
+	var errSettings error
+	checks.SettingsSecretScanningEnabled, errSettings = settings.RepoGet(
+		ctx,
+		c.settings,
+		repo.ID,
+		settings.KeySecretScanningEnabled,
+		settings.DefaultSecretScanningEnabled,
+	)
+	if errSettings != nil {
+		return checks, fmt.Errorf("failed to check settings whether secret scanning is enabled: %w", errSettings)
+	}
+
+	checks.SettingsFileSizeLimit, errSettings = settings.RepoGet(
+		ctx,
+		c.settings,
+		repo.ID,
+		settings.KeyFileSizeLimit,
+		settings.DefaultFileSizeLimit,
+	)
+	if errSettings != nil {
+		return checks, fmt.Errorf("failed to check settings for file size limit: %w", errSettings)
+	}
+
+	checks.SettingsPrincipalCommitterMatch, errSettings = settings.RepoGet(
+		ctx,
+		c.settings,
+		repo.ID,
+		settings.KeyPrincipalCommitterMatch,
+		settings.DefaultPrincipalCommitterMatch,
+	)
+	if errSettings != nil {
+		return checks, fmt.Errorf("failed to check settings for principal committer match: %w", errSettings)
+	}
+
+	checks.SettingsGitLFSEnabled, errSettings = settings.RepoGet(
+		ctx,
+		c.settings,
+		repo.ID,
+		settings.KeyGitLFSEnabled,
+		settings.DefaultGitLFSEnabled,
+	)
+	if errSettings != nil {
+		return checks, fmt.Errorf("failed to check settings for Git LFS enabled: %w", errSettings)
+	}
+
+	return checks, nil
+}
+
 // processPushProtection handles push protection verification for active repositories.
 func (c *Controller) processPushProtection(
 	ctx context.Context,
@@ -183,37 +262,47 @@ func (c *Controller) processPushProtection(
 		return nil, fmt.Errorf("failed to verify git objects: %w", err)
 	}
 
-	violationsInput := &protection.PushViolationsInput{
-		ResolveUserGroupID: c.userGroupService.ListUserIDsByGroupIDs,
-		Actor:              principal,
-		IsRepoOwner:        isRepoOwner,
-		Protections:        out.Protections,
+	checks, err := c.populateProtectionChecks(ctx, repo, &out)
+	if err != nil {
+		return nil, fmt.Errorf("failed to populate protection checks: %w", err)
 	}
 
-	err = c.scanSecrets(ctx, rgit, repo, out.SecretScanningEnabled, violationsInput, in, output)
+	violationsInput := &protection.PushViolationsInput{
+		ResolveUserGroupID:      c.userGroupService.ListUserIDsByGroupIDs,
+		Actor:                   principal,
+		IsRepoOwner:             isRepoOwner,
+		Protections:             out.Protections,
+		FileSizeLimit:           checks.RulesFileSizeLimit,
+		PrincipalCommitterMatch: checks.RulesPrincipalCommitterMatch,
+		SecretScanningEnabled:   checks.RulesSecretScanningEnabled,
+	}
+
+	err = c.scanSecrets(ctx, rgit, repo, &checks, violationsInput, in, output)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan secrets: %w", err)
 	}
 
-	if err = c.processObjects(
+	objs, err := c.processObjects(
 		ctx, rgit,
 		repo, principal, refUpdates,
-		out.FileSizeLimit, out.PrincipalCommitterMatch, violationsInput,
+		&checks,
 		in, output,
-	); err != nil {
+	)
+	if err != nil {
 		return nil, fmt.Errorf("failed to process pre-receive objects: %w", err)
 	}
 
-	if !violationsInput.HasViolations() {
-		return []types.RuleViolations{}, nil
+	violationsInput.FindOversizeFilesOutput = objs.FindOversizeFilesOutput
+	if objs.FindCommitterMismatchOutput != nil {
+		violationsInput.CommitterMismatchCount = objs.FindCommitterMismatchOutput.Total
 	}
 
-	pushViolations, err := pushProtection.Violations(ctx, violationsInput)
+	ruleViolations, err := pushProtection.Violations(ctx, violationsInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to backfill violations: %w", err)
 	}
 
-	return pushViolations.Violations, nil
+	return ruleViolations.Violations, nil
 }
 
 func (c *Controller) blockPullReqRefUpdate(refUpdates changedRefs, state enum.RepoState) bool {
