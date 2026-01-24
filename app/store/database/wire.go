@@ -55,6 +55,7 @@ var WireSet = wire.NewSet(
 	ProvidePullReqReviewStore,
 	ProvidePullReqReviewerStore,
 	ProvidePullReqFileViewStore,
+	ProvideAutoMergeStore,
 	ProvideWebhookStore,
 	ProvideWebhookExecutionStore,
 	ProvideSettingsStore,
@@ -81,6 +82,7 @@ var WireSet = wire.NewSet(
 	ProvideUsageMetricStore,
 	ProvideCDEGatewayStore,
 	ProvideFavoriteStore,
+	ProvideAutolinkStore,
 	ProvideGitspaceSettingsStore,
 	ProvideAITaskStore,
 )
@@ -321,6 +323,10 @@ func ProvidePullReqFileViewStore(db *sqlx.DB) store.PullReqFileViewStore {
 	return NewPullReqFileViewStore(db)
 }
 
+func ProvideAutoMergeStore(db *sqlx.DB) store.AutoMergeStore {
+	return NewAutoMergeStore(db)
+}
+
 // ProvideWebhookStore provides a webhook store.
 func ProvideWebhookStore(db *sqlx.DB) store.WebhookStore {
 	return NewWebhookStore(db)
@@ -413,6 +419,10 @@ func ProvideCDEGatewayStore(db *sqlx.DB) store.CDEGatewayStore {
 
 func ProvideFavoriteStore(db *sqlx.DB) store.FavoriteStore {
 	return NewFavoriteStore(db)
+}
+
+func ProvideAutolinkStore(db *sqlx.DB) store.AutoLinkStore {
+	return NewAutoLinkStore(db)
 }
 
 func ProvideAITaskStore(db *sqlx.DB) store.AITaskStore {

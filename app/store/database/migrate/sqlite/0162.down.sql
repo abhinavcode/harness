@@ -1,16 +1,49 @@
--- Drop indexes first
-DROP INDEX IF EXISTS idx_registries_deleted_at;
-DROP INDEX IF EXISTS idx_images_deleted_at;
-DROP INDEX IF EXISTS idx_artifacts_deleted_at;
+CREATE TABLE usage_metrics_temp
+(
+    usage_metric_space_id          BIGINT            NOT NULL,
+    usage_metric_date              BIGINT            NOT NULL,
+    usage_metric_created           BIGINT            NOT NULL,
+    usage_metric_updated           BIGINT,
+    usage_metric_bandwidth_out     BIGINT            NOT NULL,
+    usage_metric_storage_total     BIGINT            NOT NULL,
+    usage_metric_version           BIGINT            NOT NULL,
+    usage_metric_pushes            INTEGER DEFAULT 0 NOT NULL,
+    usage_metric_bandwidth_in      BIGINT  DEFAULT 0 NOT NULL,
+    usage_metric_lfs_storage_total BIGINT  DEFAULT 0 NOT NULL,
+    CONSTRAINT pk_usage_metrics
+        PRIMARY KEY (usage_metric_space_id, usage_metric_date),
+    CONSTRAINT fk_usagemetric_space_id
+        FOREIGN KEY (usage_metric_space_id)
+            REFERENCES spaces
+            ON DELETE CASCADE
+);
 
--- Drop columns from registries table
-ALTER TABLE registries DROP COLUMN registry_deleted_at;
-ALTER TABLE registries DROP COLUMN registry_deleted_by;
+INSERT INTO usage_metrics_temp(
+    usage_metric_space_id
+    ,usage_metric_date
+    ,usage_metric_created
+    ,usage_metric_updated
+    ,usage_metric_bandwidth_out
+    ,usage_metric_storage_total
+    ,usage_metric_pushes
+    ,usage_metric_bandwidth_in
+    ,usage_metric_lfs_storage_total
+    ,usage_metric_version
+)
+SELECT
+    usage_metric_space_id
+    ,usage_metric_date
+    ,usage_metric_created
+    ,usage_metric_updated
+    ,usage_metric_bandwidth_out
+    ,usage_metric_storage_total
+    ,usage_metric_pushes
+    ,usage_metric_bandwidth_in
+    ,usage_metric_lfs_storage_total
+    ,1
+FROM usage_metrics;
 
--- Drop columns from images table
-ALTER TABLE images DROP COLUMN image_deleted_at;
-ALTER TABLE images DROP COLUMN image_deleted_by;
+DROP TABLE usage_metrics;
 
--- Drop columns from artifacts table
-ALTER TABLE artifacts DROP COLUMN artifact_deleted_at;
-ALTER TABLE artifacts DROP COLUMN artifact_deleted_by;
+ALTER TABLE usage_metrics_temp
+    RENAME TO usage_metrics;

@@ -599,6 +599,12 @@ type (
 		List(ctx context.Context, prID int64, principalID int64) ([]*types.PullReqFileView, error)
 	}
 
+	AutoMergeStore interface {
+		Find(ctx context.Context, pullreqID int64) (*types.AutoMerge, error)
+		Delete(ctx context.Context, pullreqID int64) (bool, error)
+		Upsert(ctx context.Context, autoMerge *types.AutoMerge) error
+	}
+
 	// RuleStore defines database interface for protection rules.
 	RuleStore interface {
 		// Find finds a protection rule by ID.
@@ -1505,8 +1511,8 @@ type (
 	}
 
 	UsageMetricStore interface {
-		Upsert(ctx context.Context, in *types.UsageMetric) error
-		UpsertOptimistic(ctx context.Context, in *types.UsageMetric) error
+		Upsert(ctx context.Context, in []*types.UsageMetric) error
+		UpsertStorage(ctx context.Context, in []*types.UsageMetric) error
 		GetMetrics(
 			ctx context.Context,
 			rootSpaceID int64,
@@ -1536,6 +1542,32 @@ type (
 		Delete(ctx context.Context, principalID int64, in *types.FavoriteResource) error
 	}
 
+	AutoLinkStore interface {
+		// Create creates a new autolink.
+		Create(ctx context.Context, autolink *types.AutoLink) error
+
+		// Update updates an existing autolink.
+		Update(ctx context.Context, autolink *types.AutoLink) error
+
+		// Find finds an autolink by id.
+		Find(ctx context.Context, id int64) (*types.AutoLink, error)
+
+		// List lists autolinks defined in a specified space or repo.
+		List(ctx context.Context, spaceID, repoID *int64, filter *types.AutoLinkFilter) ([]*types.AutoLink, error)
+
+		// ListInScopes lists autolinks from repo and all ancestor spaces.
+		ListInScopes(ctx context.Context, repoID int64, spaceIDs []int64,
+			filter *types.AutoLinkFilter) ([]*types.AutoLink, error)
+
+		// Count returns a count of autolinks in a specified space or repo.
+		Count(ctx context.Context, spaceID, repoID *int64, filter *types.AutoLinkFilter) (int64, error)
+
+		// CountInScopes returns a count of autolinks from repo and all ancestor spaces.
+		CountInScopes(ctx context.Context, repoID int64, spaceIDs []int64, filter *types.AutoLinkFilter) (int64, error)
+
+		// Delete deletes an existing autolink.
+		Delete(ctx context.Context, autolinkID int64) error
+	}
 	AITaskStore interface {
 		Create(ctx context.Context, in *types.AITask) error
 		Update(ctx context.Context, in *types.AITask) error

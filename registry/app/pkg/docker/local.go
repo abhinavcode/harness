@@ -46,6 +46,7 @@ import (
 	"github.com/harness/gitness/registry/app/manifest/schema2"
 	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/commons"
+	registryrefcache "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/store/database/util"
@@ -114,7 +115,8 @@ type hmacKey string
 
 func NewLocalRegistry(
 	app *App, ms ManifestService, manifestDao store.ManifestRepository,
-	registryDao store.RegistryRepository, registryBlobDao store.RegistryBlobRepository,
+	registryDao store.RegistryRepository, registryFinder registryrefcache.RegistryFinder,
+	registryBlobDao store.RegistryBlobRepository,
 	blobRepo store.BlobRepository, mtRepository store.MediaTypesRepository,
 	tagDao store.TagRepository, imageDao store.ImageRepository, artifactDao store.ArtifactRepository,
 	bandwidthStatDao store.BandwidthStatRepository, downloadStatDao store.DownloadStatRepository,
@@ -125,6 +127,7 @@ func NewLocalRegistry(
 		App:                   app,
 		ms:                    ms,
 		registryDao:           registryDao,
+		registryFinder:        registryFinder,
 		manifestDao:           manifestDao,
 		registryBlobDao:       registryBlobDao,
 		blobRepo:              blobRepo,
@@ -146,6 +149,7 @@ type LocalRegistry struct {
 	App                   *App
 	ms                    ManifestService
 	registryDao           store.RegistryRepository
+	registryFinder        registryrefcache.RegistryFinder
 	manifestDao           store.ManifestRepository
 	registryBlobDao       store.RegistryBlobRepository
 	blobRepo              store.BlobRepository
@@ -380,6 +384,7 @@ func (r *LocalRegistry) fetchBlobInternal(
 
 	blobID, err := r.dbBlobLinkExists(ctx2, digest.Digest(info.Digest), info)
 	if err != nil { //nolint:contextcheck
+		log.Ctx(ctx2).Error().Msgf("error: %v", err)
 		errs = append(errs, errcode.FromUnknownError(err))
 		return responseHeaders, nil, -1, nil, "", errs
 	}
@@ -1747,12 +1752,7 @@ func (r *LocalRegistry) dbMountBlob(
 		)
 	}
 
-	sourceRepo, err := r.registryDao.GetByParentIDAndName(
-		ctx,
-		info.ParentID,
-		fromRepo,
-	)
-
+	sourceRepo, err := r.registryFinder.FindByRootParentID(ctx, info.RootParentID, fromRepo)
 	if err != nil {
 		return err
 	}

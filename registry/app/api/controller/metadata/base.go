@@ -409,6 +409,9 @@ func (c *APIController) BuildUpstreamProxyResponse(
 		Source:   &source,
 		Url:      &upstreamproxy.RepoURL,
 	}
+	if upstreamproxy.FirewallMode != nil {
+		config.UpstreamProxyConfigFirewallMode = (*api.UpstreamProxyConfigFirewallMode)(upstreamproxy.FirewallMode)
+	}
 
 	if upstreamproxy.Config != nil && upstreamproxy.Config.RemoteUrlSuffix != "" {
 		config.RemoteUrlSuffix = &upstreamproxy.Config.RemoteUrlSuffix

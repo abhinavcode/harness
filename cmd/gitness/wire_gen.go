@@ -77,6 +77,7 @@ import (
 	server2 "github.com/harness/gitness/app/server"
 	"github.com/harness/gitness/app/services"
 	"github.com/harness/gitness/app/services/aitaskevent"
+	"github.com/harness/gitness/app/services/autolink"
 	"github.com/harness/gitness/app/services/branch"
 	"github.com/harness/gitness/app/services/cleanup"
 	"github.com/harness/gitness/app/services/codecomments"
@@ -96,6 +97,7 @@ import (
 	"github.com/harness/gitness/app/services/label"
 	"github.com/harness/gitness/app/services/languageanalyzer"
 	"github.com/harness/gitness/app/services/locker"
+	"github.com/harness/gitness/app/services/merge"
 	"github.com/harness/gitness/app/services/metric"
 	"github.com/harness/gitness/app/services/migrate"
 	"github.com/harness/gitness/app/services/notification"
@@ -349,8 +351,10 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	lfsController := lfs.ProvideController(authorizer, repoFinder, repoStore, principalStore, lfsObjectStore, blobStore, remoteauthService, provider, settingsService)
 	keyfetcherService := keyfetcher.ProvideService(publicKeyStore)
 	signatureVerifyService := publickey.ProvideSignatureVerifyService(principalStore, keyfetcherService, gitSignatureResultStore)
+	autoLinkStore := database.ProvideAutolinkStore(db)
+	autolinkService := autolink.ProvideAutoLink(transactor, spaceStore, repoStore, autoLinkStore)
 	repoLangStore := database.ProvideRepoLangStore(db)
-	repoController := repo.ProvideController(config, transactor, provider, authorizer, repoStore, linkedRepoStore, spaceStore, pipelineStore, principalStore, executionStore, ruleStore, checkStore, pullReqStore, settingsService, principalInfoCache, protectionManager, gitInterface, spaceFinder, repoFinder, jobRepository, jobReferenceSync, jobRepositoryLink, codeownersService, eventsReporter, indexer, resourceLimiter, lockerLocker, auditService, mutexManager, repoIdentifier, repoCheck, publicaccessService, labelService, instrumentService, userGroupStore, usergroupService, rulesService, streamer, lfsController, favoriteStore, signatureVerifyService, connectorService, repoLangStore)
+	repoController := repo.ProvideController(config, transactor, provider, authorizer, repoStore, linkedRepoStore, spaceStore, pipelineStore, principalStore, executionStore, ruleStore, checkStore, pullReqStore, settingsService, principalInfoCache, protectionManager, gitInterface, spaceFinder, repoFinder, jobRepository, jobReferenceSync, jobRepositoryLink, codeownersService, eventsReporter, indexer, resourceLimiter, lockerLocker, auditService, mutexManager, repoIdentifier, repoCheck, publicaccessService, labelService, instrumentService, userGroupStore, usergroupService, rulesService, streamer, lfsController, favoriteStore, signatureVerifyService, autolinkService, connectorService, repoLangStore)
 	reposettingsController := reposettings.ProvideController(authorizer, repoFinder, settingsService, auditService)
 	stageStore := database.ProvideStageStore(db)
 	schedulerScheduler, err := scheduler.ProvideScheduler(stageStore, mutexManager)
@@ -458,7 +462,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	spaceController := space2.ProvideController(config, transactor, provider, streamer, spaceIdentifier, authorizer, spacePathStore, pipelineStore, secretStore, connectorStore, templateStore, spaceStore, repoStore, principalStore, repoController, membershipStore, listService, spaceFinder, repoFinder, jobRepository, repository, resourceLimiter, publicaccessService, auditService, gitspaceService, labelService, instrumentService, executionStore, rulesService, usageMetricStore, repoIdentifier, infraproviderService, favoriteStore, spaceService)
+	spaceController := space2.ProvideController(config, transactor, provider, streamer, spaceIdentifier, authorizer, spacePathStore, pipelineStore, secretStore, connectorStore, templateStore, spaceStore, repoStore, principalStore, repoController, membershipStore, listService, spaceFinder, repoFinder, jobRepository, repository, resourceLimiter, publicaccessService, auditService, gitspaceService, labelService, instrumentService, executionStore, rulesService, usageMetricStore, repoIdentifier, infraproviderService, favoriteStore, autolinkService, spaceService)
 	reporter7, err := events9.ProvideReporter(eventsSystem)
 	if err != nil {
 		return nil, err
@@ -477,6 +481,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	pullReqReviewerStore := database.ProvidePullReqReviewerStore(db, principalInfoCache)
 	userGroupReviewerStore := database.ProvideUserGroupReviewerStore(db, principalInfoCache, userGroupStore)
 	pullReqFileViewStore := database.ProvidePullReqFileViewStore(db)
+	autoMergeStore := database.ProvideAutoMergeStore(db)
 	reporter8, err := events10.ProvideReporter(eventsSystem)
 	if err != nil {
 		return nil, err
@@ -494,9 +499,17 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
+	readerFactory2, err := events12.ProvideReaderFactory(eventsSystem)
+	if err != nil {
+		return nil, err
+	}
+	mergeService, err := merge.ProvideService(ctx, config, gitInterface, reporter8, readerFactory2, eventsReaderFactory, repoFinder, repoStore, pullReqStore, pullReqActivityStore, checkStore, pullReqReviewerStore, principalInfoCache, principalStore, autoMergeStore, protectionManager, codeownersService, usergroupService, provider, streamer, pubSub, instrumentService, lockerLocker)
+	if err != nil {
+		return nil, err
+	}
 	pullReq := migrate.ProvidePullReqImporter(provider, gitInterface, principalStore, spaceStore, repoStore, pullReqStore, pullReqActivityStore, labelStore, labelValueStore, pullReqLabelAssignmentStore, pullReqReviewerStore, pullReqReviewStore, repoFinder, transactor, mutexManager)
 	branchStore := database.ProvideBranchStore(db)
-	pullreqController := pullreq2.ProvideController(transactor, provider, authorizer, auditService, pullReqStore, pullReqActivityStore, codeCommentView, pullReqReviewStore, pullReqReviewerStore, repoStore, principalStore, userGroupStore, userGroupReviewerStore, principalInfoCache, pullReqFileViewStore, membershipStore, checkStore, gitInterface, repoFinder, reporter8, migrator, pullreqService, listService, protectionManager, streamer, codeownersService, lockerLocker, pullReq, labelService, instrumentService, usergroupService, branchStore, usergroupResolver)
+	pullreqController := pullreq2.ProvideController(transactor, provider, authorizer, auditService, pullReqStore, pullReqActivityStore, codeCommentView, pullReqReviewStore, pullReqReviewerStore, repoStore, principalStore, userGroupStore, userGroupReviewerStore, principalInfoCache, pullReqFileViewStore, membershipStore, checkStore, autoMergeStore, gitInterface, repoFinder, reporter8, migrator, pullreqService, listService, mergeService, protectionManager, streamer, codeownersService, lockerLocker, pullReq, labelService, instrumentService, usergroupService, branchStore, usergroupResolver)
 	webhookConfig := server.ProvideWebhookConfig(config)
 	webhookStore := database.ProvideWebhookStore(db)
 	webhookExecutionStore := database.ProvideWebhookExecutionStore(db)
@@ -578,7 +591,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	localRegistry := docker.LocalRegistryProvider(app, manifestService, blobRepository, registryRepository, manifestRepository, registryBlobRepository, mediaTypesRepository, tagRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, gcService, transactor, quarantineArtifactRepository, replicationReporter, bucketService)
+	localRegistry := docker.LocalRegistryProvider(app, manifestService, blobRepository, registryRepository, registryFinder, manifestRepository, registryBlobRepository, mediaTypesRepository, tagRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, gcService, transactor, quarantineArtifactRepository, replicationReporter, bucketService)
 	upstreamProxyConfigRepository := database2.ProvideUpstreamDao(db, registryRepository, spaceFinder)
 	proxyController := docker.ProvideProxyController(localRegistry, manifestService, secretService, spaceFinder)
 	remoteRegistry := docker.RemoteRegistryProvider(localRegistry, app, upstreamProxyConfigRepository, spaceFinder, secretService, proxyController)
@@ -600,11 +613,11 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	cleanupPolicyRepository := database2.ProvideCleanupPolicyDao(db, transactor)
 	webhooksRepository := database2.ProvideWebhookDao(db)
 	webhooksExecutionRepository := database2.ProvideWebhookExecutionDao(db)
-	readerFactory2, err := artifact.ProvideReaderFactory(eventsSystem)
+	readerFactory3, err := artifact.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	service3, err := webhook3.ProvideService(ctx, webhookConfig, transactor, readerFactory2, webhooksRepository, webhooksExecutionRepository, spaceStore, provider, principalStore, urlProvider, spacePathStore, secretService, registryRepository, encrypter, spaceFinder)
+	service3, err := webhook3.ProvideService(ctx, webhookConfig, transactor, readerFactory3, webhooksRepository, webhooksExecutionRepository, spaceStore, provider, principalStore, urlProvider, spacePathStore, secretService, registryRepository, encrypter, spaceFinder)
 	if err != nil {
 		return nil, err
 	}
@@ -620,62 +633,63 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	packageWrapper := helpers.ProvidePackageWrapperProvider(interfacesRegistryHelper, registryFinder, registryHelper)
 	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, storageDriver, spaceFinder, transactor, authenticator, provider, authorizer, auditService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, registryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder)
 	packageTagRepository := database2.ProvidePackageTagDao(db)
-	localBase := base.LocalBaseProvider(registryRepository, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService)
+	localBase := base.LocalBaseProvider(registryRepository, registryFinder, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService)
 	mavenDBStore := maven.DBStoreProvider(registryRepository, imageRepository, artifactRepository, spaceStore, bandwidthStatRepository, downloadStatRepository, nodesRepository, upstreamProxyConfigRepository)
 	mavenLocalRegistry := maven.LocalRegistryProvider(localBase, mavenDBStore, transactor, fileManager)
 	mavenController := maven.ProvideProxyController(mavenLocalRegistry, secretService, spaceFinder)
 	mavenRemoteRegistry := maven.RemoteRegistryProvider(mavenDBStore, transactor, mavenLocalRegistry, mavenController)
-	controller2 := maven.ControllerProvider(mavenLocalRegistry, mavenRemoteRegistry, authorizer, mavenDBStore, spaceFinder, finder)
-	mavenHandler := api2.NewMavenHandlerProvider(controller2, spaceStore, tokenStore, controller, authenticator, authorizer, spaceFinder, cacheService)
+	dependencyFirewallChecker := helpers.NewNoopDependencyFirewallChecker()
+	controller2 := maven.ControllerProvider(mavenLocalRegistry, mavenRemoteRegistry, authorizer, mavenDBStore, spaceFinder, finder, dependencyFirewallChecker)
+	mavenHandler := api2.NewMavenHandlerProvider(controller2, spaceStore, tokenStore, controller, authenticator, authorizer, spaceFinder, registryFinder, cacheService)
 	handler2 := router.MavenHandlerProvider(mavenHandler)
 	genericDBStore := generic.DBStoreProvider(imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, registryRepository)
 	genericLocalRegistry := generic2.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider)
 	localRegistryHelper := generic2.LocalRegistryHelperProvider(genericLocalRegistry, localBase)
 	proxy := generic2.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, localRegistryHelper)
-	genericController := generic.ControllerProvider(spaceStore, authorizer, fileManager, genericDBStore, transactor, spaceFinder, genericLocalRegistry, proxy, finder)
+	genericController := generic.ControllerProvider(spaceStore, authorizer, fileManager, genericDBStore, transactor, spaceFinder, genericLocalRegistry, proxy, finder, dependencyFirewallChecker)
 	packagesHandler := api2.NewPackageHandlerProvider(registryRepository, downloadStatRepository, bandwidthStatRepository, spaceStore, tokenStore, controller, authenticator, provider, authorizer, spaceFinder, registryFinder, fileManager, finder, packageWrapper)
 	genericHandler := api2.NewGenericHandlerProvider(spaceStore, genericController, tokenStore, controller, authenticator, provider, authorizer, packagesHandler, spaceFinder, registryFinder)
 	handler3 := router.GenericHandlerProvider(genericHandler)
-	pythonLocalRegistry := python.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider)
+	pythonLocalRegistry := python.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, registryFinder, imageRepository, artifactRepository, provider)
 	pythonLocalRegistryHelper := python.LocalRegistryHelperProvider(pythonLocalRegistry, localBase)
 	pythonProxy := python.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, pythonLocalRegistryHelper)
-	pythonController := python2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, pythonLocalRegistry, pythonProxy, finder)
+	pythonController := python2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, pythonLocalRegistry, pythonProxy, finder, dependencyFirewallChecker)
 	pythonHandler := api2.NewPythonHandlerProvider(pythonController, packagesHandler)
 	nugetLocalRegistry := nuget.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider)
 	nugetLocalRegistryHelper := nuget.LocalRegistryHelperProvider(nugetLocalRegistry, localBase)
 	nugetProxy := nuget.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, nugetLocalRegistryHelper)
-	nugetController := nuget2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, nugetLocalRegistry, nugetProxy, finder)
+	nugetController := nuget2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, nugetLocalRegistry, nugetProxy, finder, dependencyFirewallChecker)
 	nugetHandler := api2.NewNugetHandlerProvider(nugetController, packagesHandler)
 	npmLocalRegistry := npm.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, packageTagRepository, registryRepository, imageRepository, artifactRepository, nodesRepository, provider)
 	npmLocalRegistryHelper := npm.LocalRegistryHelperProvider(npmLocalRegistry, localBase)
 	npmProxy := npm.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, npmLocalRegistryHelper)
-	npmController := npm2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, downloadStatRepository, provider, npmLocalRegistry, npmProxy, finder)
+	npmController := npm2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, downloadStatRepository, provider, npmLocalRegistry, npmProxy, finder, dependencyFirewallChecker)
 	npmHandler := api2.NewNPMHandlerProvider(npmController, packagesHandler)
 	rpmRegistryHelper := rpm.RegistryHelperProvider(localBase, fileManager, asyncprocessingReporter)
 	rpmLocalRegistry := rpm.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider, rpmRegistryHelper)
 	rpmProxy := rpm.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, localBase, rpmRegistryHelper, spaceFinder, secretService)
-	rpmController := rpm2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, rpmLocalRegistry, rpmProxy, asyncprocessingReporter)
+	rpmController := rpm2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, rpmLocalRegistry, rpmProxy, asyncprocessingReporter, dependencyFirewallChecker)
 	rpmHandler := api2.NewRpmHandlerProvider(rpmController, packagesHandler)
 	cargoLocalRegistry := cargo2.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider, artifactReporter, asyncprocessingReporter)
 	cargoLocalRegistryHelper := cargo2.LocalRegistryHelperProvider(cargoLocalRegistry, localBase, asyncprocessingReporter)
 	cargoProxy := cargo2.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, cargoLocalRegistryHelper, artifactReporter)
-	cargoController := cargo3.ControllerProvider(upstreamProxyConfigRepository, registryRepository, registryFinder, imageRepository, artifactRepository, fileManager, transactor, provider, cargoLocalRegistry, cargoProxy, cacheService, spaceFinder, finder)
+	cargoController := cargo3.ControllerProvider(upstreamProxyConfigRepository, registryRepository, registryFinder, imageRepository, artifactRepository, fileManager, transactor, provider, cargoLocalRegistry, cargoProxy, cacheService, spaceFinder, finder, dependencyFirewallChecker)
 	cargoHandler := api2.NewCargoHandlerProvider(cargoController, packagesHandler)
 	gopackageLocalRegistry := gopackage.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider, artifactReporter, asyncprocessingReporter)
 	gopackageLocalRegistryHelper := gopackage.LocalRegistryHelperProvider(gopackageLocalRegistry, localBase, asyncprocessingReporter)
 	gopackageProxy := gopackage.ProxyProvider(localBase, upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, artifactReporter, gopackageLocalRegistryHelper)
-	gopackageController := gopackage2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, registryFinder, imageRepository, artifactRepository, fileManager, transactor, provider, gopackageLocalRegistry, gopackageProxy, finder)
+	gopackageController := gopackage2.ControllerProvider(upstreamProxyConfigRepository, registryRepository, registryFinder, imageRepository, artifactRepository, fileManager, transactor, provider, gopackageLocalRegistry, gopackageProxy, finder, dependencyFirewallChecker)
 	gopackageHandler := api2.NewGoPackageHandlerProvider(gopackageController, packagesHandler)
 	huggingfaceLocalRegistry := huggingface.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider)
 	huggingfaceController := huggingface2.ProvideController(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, huggingfaceLocalRegistry, finder)
 	huggingfaceHandler := huggingface3.ProvideHandler(huggingfaceController, packagesHandler)
 	handler4 := router.PackageHandlerProvider(packagesHandler, mavenHandler, genericHandler, pythonHandler, nugetHandler, npmHandler, rpmHandler, cargoHandler, gopackageHandler, huggingfaceHandler, spaceFinder, cacheService)
 	appRouter := router.AppRouterProvider(registryOCIHandler, apiHandler, handler2, handler3, handler4)
-	readerFactory3, err := events3.ProvideReaderFactory(eventsSystem)
+	readerFactory4, err := events3.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	sender, err := usage.ProvideMediator(ctx, config, spaceFinder, repoFinder, usageMetricStore, readerFactory3)
+	sender, err := usage.ProvideMediator(ctx, config, spaceFinder, repoFinder, usageMetricStore, readerFactory4)
 	if err != nil {
 		return nil, err
 	}
@@ -700,15 +714,15 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	readerFactory4, err := events2.ProvideReaderFactory(eventsSystem)
+	readerFactory5, err := events2.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	readerFactory5, err := events4.ProvideReaderFactory(eventsSystem)
+	readerFactory6, err := events4.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	submitter, err := metric.ProvideSubmitter(ctx, config, values, principalStore, principalInfoCache, pullReqStore, ruleStore, readerFactory4, readerFactory3, eventsReaderFactory, readerFactory5, publicaccessService, spaceFinder, repoFinder)
+	submitter, err := metric.ProvideSubmitter(ctx, config, values, principalStore, principalInfoCache, pullReqStore, ruleStore, readerFactory5, readerFactory4, eventsReaderFactory, readerFactory6, publicaccessService, spaceFinder, repoFinder)
 	if err != nil {
 		return nil, err
 	}
@@ -716,11 +730,11 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	sizeCalculator, err := repo2.ProvideCalculator(config, gitInterface, repoStore, spaceStore, jobScheduler, executor, lfsObjectStore, sender)
+	sizeCalculator, err := repo2.ProvideCalculator(config, gitInterface, repoStore, spaceStore, jobScheduler, executor, lfsObjectStore, usageMetricStore)
 	if err != nil {
 		return nil, err
 	}
-	repoService, err := repo2.ProvideService(ctx, config, eventsReporter, readerFactory3, repoStore, provider, gitInterface, lockerLocker)
+	repoService, err := repo2.ProvideService(ctx, config, eventsReporter, readerFactory4, repoStore, provider, gitInterface, lockerLocker)
 	if err != nil {
 		return nil, err
 	}
@@ -737,50 +751,50 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 		return nil, err
 	}
 	keywordsearchConfig := server.ProvideKeywordSearchConfig(config)
-	keywordsearchService, err := keywordsearch.ProvideService(ctx, keywordsearchConfig, readerFactory, readerFactory3, repoStore, indexer)
+	keywordsearchService, err := keywordsearch.ProvideService(ctx, keywordsearchConfig, readerFactory, readerFactory4, repoStore, indexer)
 	if err != nil {
 		return nil, err
 	}
 	gitspaceeventConfig := server.ProvideGitspaceEventConfig(config)
-	readerFactory6, err := events5.ProvideReaderFactory(eventsSystem)
+	readerFactory7, err := events5.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	gitspaceeventService, err := gitspaceevent.ProvideService(ctx, gitspaceeventConfig, readerFactory6, gitspaceEventStore)
+	gitspaceeventService, err := gitspaceevent.ProvideService(ctx, gitspaceeventConfig, readerFactory7, gitspaceEventStore)
 	if err != nil {
 		return nil, err
 	}
 	gitspacedeleteeventConfig := server.ProvideGitspaceDeleteEventConfig(config)
-	readerFactory7, err := events8.ProvideReaderFactory(eventsSystem)
+	readerFactory8, err := events8.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	gitspacedeleteeventService, err := gitspacedeleteevent.ProvideService(ctx, gitspacedeleteeventConfig, readerFactory7, gitspaceService)
+	gitspacedeleteeventService, err := gitspacedeleteevent.ProvideService(ctx, gitspacedeleteeventConfig, readerFactory8, gitspaceService)
 	if err != nil {
 		return nil, err
 	}
-	readerFactory8, err := events6.ProvideReaderFactory(eventsSystem)
+	readerFactory9, err := events6.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	gitspaceinfraeventService, err := gitspaceinfraevent.ProvideService(ctx, gitspaceeventConfig, readerFactory8, orchestratorOrchestrator, gitspaceService, reporter3)
+	gitspaceinfraeventService, err := gitspaceinfraevent.ProvideService(ctx, gitspaceeventConfig, readerFactory9, orchestratorOrchestrator, gitspaceService, reporter3)
 	if err != nil {
 		return nil, err
 	}
-	readerFactory9, err := events7.ProvideReaderFactory(eventsSystem)
+	readerFactory10, err := events7.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
-	gitspaceoperationseventService, err := gitspaceoperationsevent.ProvideService(ctx, gitspaceeventConfig, readerFactory9, orchestratorOrchestrator, gitspaceService, reporter3)
+	gitspaceoperationseventService, err := gitspaceoperationsevent.ProvideService(ctx, gitspaceeventConfig, readerFactory10, orchestratorOrchestrator, gitspaceService, reporter3)
 	if err != nil {
 		return nil, err
 	}
-	readerFactory10, err := events13.ProvideReaderFactory(eventsSystem)
+	readerFactory11, err := events13.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
 	aiTaskStore := database.ProvideAITaskStore(db)
-	aitaskeventService, err := aitaskevent.ProvideService(ctx, gitspaceeventConfig, readerFactory10, orchestratorOrchestrator, gitspaceService, aiTaskStore)
+	aitaskeventService, err := aitaskevent.ProvideService(ctx, gitspaceeventConfig, readerFactory11, orchestratorOrchestrator, gitspaceService, aiTaskStore)
 	if err != nil {
 		return nil, err
 	}
@@ -800,12 +814,12 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	}
 	rpmHelper := asyncprocessing2.ProvideRpmHelper(fileManager, artifactRepository, upstreamProxyConfigRepository, spaceFinder, secretService, registryRepository)
 	gopackageRegistryHelper := gopackage3.LocalRegistryHelperProvider(fileManager, artifactRepository, spaceFinder, registryFinder)
-	readerFactory11, err := asyncprocessing.ProvideReaderFactory(eventsSystem)
+	readerFactory12, err := asyncprocessing.ProvideReaderFactory(eventsSystem)
 	if err != nil {
 		return nil, err
 	}
 	asyncprocessingConfig := asyncprocessing2.ProvideRegistryPostProcessingConfig(config)
-	asyncprocessingService, err := asyncprocessing2.ProvideService(ctx, transactor, rpmHelper, registryHelper, gopackageRegistryHelper, lockerLocker, readerFactory11, asyncprocessingConfig, registryRepository, taskRepository, taskSourceRepository, taskEventRepository, eventsSystem, asyncprocessingReporter, packageWrapper)
+	asyncprocessingService, err := asyncprocessing2.ProvideService(ctx, transactor, rpmHelper, registryHelper, gopackageRegistryHelper, lockerLocker, readerFactory12, asyncprocessingConfig, registryRepository, taskRepository, taskSourceRepository, taskEventRepository, eventsSystem, asyncprocessingReporter, packageWrapper)
 	if err != nil {
 		return nil, err
 	}
@@ -813,7 +827,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	languageAnalyzer, err := languageanalyzer.ProvideAnalyzer(ctx, config, readerFactory3, readerFactory, transactor, repoStore, repoFinder, repoLangStore, gitInterface)
+	languageAnalyzer, err := languageanalyzer.ProvideAnalyzer(ctx, config, readerFactory4, readerFactory, transactor, repoStore, repoFinder, repoLangStore, gitInterface)
 	if err != nil {
 		return nil, err
 	}

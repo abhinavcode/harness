@@ -208,16 +208,19 @@ func (m *mockLocalBase) AuditPush(
 }
 
 type mockTagsDAO struct {
-	findByImageNameAndRegID func(ctx context.Context, image string, regID int64) ([]*types.PackageTagMetadata, error)
+	findByImageNameAndRegID func(ctx context.Context,
+		image string, regID int64, imageType *string) ([]*types.PackageTagMetadata, error)
 	create                  func(ctx context.Context, tag *types.PackageTag) (string, error)
 	deleteByTagAndImageName func(ctx context.Context, tag string, image string, regID int64) error
 }
 
 func (m *mockTagsDAO) FindByImageNameAndRegID(
 	ctx context.Context,
-	image string, regID int64,
+	image string,
+	regID int64,
+	imageType *string,
 ) ([]*types.PackageTagMetadata, error) {
-	return m.findByImageNameAndRegID(ctx, image, regID)
+	return m.findByImageNameAndRegID(ctx, image, regID, imageType)
 }
 func (m *mockTagsDAO) Create(ctx context.Context, tag *types.PackageTag) (string, error) {
 	return m.create(ctx, tag)
@@ -229,6 +232,7 @@ func (m *mockTagsDAO) DeleteByImageNameAndRegID(context.Context, string, int64) 
 
 type mockImageDAO struct {
 	getByRepoAndName func(ctx context.Context, parentID int64, repo, name string) (*types.Image, error)
+	getByName        func(ctx context.Context, regID int64, name string) (*types.Image, error)
 }
 
 func (m *mockImageDAO) DuplicateImage(
@@ -598,7 +602,7 @@ func TestListTags(t *testing.T) {
 	info := sampleArtifactInfo()
 	tags := []*types.PackageTagMetadata{{Name: "latest", Version: "1.0.0"}, {Name: "beta", Version: "2.0.0"}}
 	tdao := &mockTagsDAO{
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
 			return tags, nil
 		},
 	}
@@ -613,7 +617,7 @@ func TestAddTag_Success(t *testing.T) {
 	info := sampleArtifactInfo()
 	info.DistTags = []string{"latest"}
 	imgDAO := &mockImageDAO{
-		getByRepoAndName: func(_ context.Context, _ int64, _, _ string) (*types.Image, error) {
+		getByName: func(_ context.Context, _ int64, _ string) (*types.Image, error) {
 			return &types.Image{ID: 5}, nil
 		},
 	}
@@ -631,7 +635,7 @@ func TestAddTag_Success(t *testing.T) {
 			created = true
 			return tag.ID, nil
 		},
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
 			return []*types.PackageTagMetadata{{Name: "latest", Version: info.Version}}, nil
 		},
 	}
@@ -646,7 +650,7 @@ func TestAddTag_NoDistTags(t *testing.T) {
 	ctx := context.Background()
 	info := sampleArtifactInfo()
 	imgDAO := &mockImageDAO{
-		getByRepoAndName: func(_ context.Context, _ int64, _, _ string) (*types.Image, error) {
+		getByName: func(_ context.Context, _ int64, _ string) (*types.Image, error) {
 			return &types.Image{ID: 5}, nil
 		},
 	}
@@ -658,6 +662,26 @@ func TestAddTag_NoDistTags(t *testing.T) {
 	lr := newLocalForTests(nil, &mockTagsDAO{}, imgDAO, artDAO, nil)
 	_, err := lr.AddTag(ctx, info)
 	assert.Error(t, err)
+}
+
+func TestAddTag_EmptyDistTag(t *testing.T) {
+	ctx := context.Background()
+	info := sampleArtifactInfo()
+	info.DistTags = []string{"   "}
+	imgDAO := &mockImageDAO{
+		getByName: func(_ context.Context, _ int64, _ string) (*types.Image, error) {
+			return &types.Image{ID: 5}, nil
+		},
+	}
+	artDAO := &mockArtifactDAO{
+		getByName: func(_ context.Context, _ int64, version string) (*types.Artifact, error) {
+			return &types.Artifact{ID: 7, Version: version}, nil
+		},
+	}
+	lr := newLocalForTests(nil, &mockTagsDAO{}, imgDAO, artDAO, nil)
+	m, err := lr.AddTag(ctx, info)
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{}, m)
 }
 
 func TestDeleteTag_Success(t *testing.T) {
@@ -675,7 +699,7 @@ func TestDeleteTag_Success(t *testing.T) {
 			deleted = true
 			return nil
 		},
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
 			return []*types.PackageTagMetadata{}, nil
 		},
 	}
@@ -706,7 +730,7 @@ func TestGetPackageMetadata_Success(t *testing.T) {
 		},
 	}
 	tdao := &mockTagsDAO{
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
 			return []*types.PackageTagMetadata{{Name: "latest", Version: "1.0.0"}}, nil
 		},
 	}

@@ -19,6 +19,7 @@ package main
 
 import (
 	"context"
+	"github.com/harness/gitness/app/services/merge"
 
 	checkcontroller "github.com/harness/gitness/app/api/controller/check"
 	"github.com/harness/gitness/app/api/controller/connector"
@@ -87,6 +88,7 @@ import (
 	"github.com/harness/gitness/app/router"
 	"github.com/harness/gitness/app/server"
 	"github.com/harness/gitness/app/services"
+	"github.com/harness/gitness/app/services/autolink"
 	"github.com/harness/gitness/app/services/branch"
 	"github.com/harness/gitness/app/services/cleanup"
 	"github.com/harness/gitness/app/services/codecomments"
@@ -189,6 +191,7 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		repo.WireSet,
 		reposettings.WireSet,
 		pullreq.WireSet,
+		merge.WireSet,
 		controllerwebhook.WireSet,
 		controllerwebhook.ProvidePreprocessor,
 		svclabel.WireSet,
@@ -323,6 +326,7 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		registryindex.WireSet,
 		cliserver.ProvideBranchConfig,
 		branch.WireSet,
+		autolink.WireSet,
 		cargoutils.WireSet,
 		gopackageutils.WireSet,
 		registrypostporcessingevents.ProvideAsyncProcessingReporter,
