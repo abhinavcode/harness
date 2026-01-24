@@ -431,8 +431,12 @@ type RegistryRepository interface {
 	Create(ctx context.Context, repository *types.Registry) (id int64, err error)
 	// Delete the repository specified by ID (hard delete)
 	Delete(ctx context.Context, parentID int64, name string) (err error)
+	// SoftDelete soft deletes a registry by setting deleted_at timestamp
+	SoftDelete(ctx context.Context, parentID int64, name string) (err error)
 	// GetByUUID gets a registry by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Registry, error)
+	// RestoreByUUID restores a soft-deleted registry by clearing deleted_at timestamp
+	RestoreByUUID(ctx context.Context, uuid string) (err error)
 	// Update updates the repository. Only the properties specified by "props" will be updated if it is set
 	Update(ctx context.Context, repository *types.Registry) (err error)
 

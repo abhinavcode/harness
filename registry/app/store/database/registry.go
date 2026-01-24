@@ -890,20 +890,83 @@ func mapToInternalRegistry(ctx context.Context, in *types.Registry) *registryDB 
 	}
 }
 
-func (r registryDao) Delete(ctx context.Context, parentID int64, name string) (err error) {
+func (r registryDao) Delete(ctx context.Context, parentID int64, name string) error {
 	stmt := databaseg.Builder.Delete("registries").
 		Where("registry_parent_id = ? AND registry_name = ?", parentID, name)
 
-	sql, args, err := stmt.ToSql()
+	db := dbtx.GetAccessor(ctx, r.db)
+
+	query, args, err := stmt.ToSql()
 	if err != nil {
-		return fmt.Errorf("failed to convert purge registry query to sql: %w", err)
+		return errors.Wrap(err, "Failed to convert query to sql")
 	}
+
+	if _, err := db.ExecContext(ctx, query, args...); err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to delete registry")
+	}
+
+	return nil
+}
+
+// SoftDelete soft deletes a registry by setting deleted_at timestamp.
+func (r registryDao) SoftDelete(ctx context.Context, parentID int64, name string) error {
+	now := time.Now().UnixMilli()
+	stmt := databaseg.Builder.Update("registries").
+		Set("registry_deleted_at", now).
+		Where("registry_parent_id = ? AND registry_name = ?", parentID, name).
+		Where("registry_deleted_at IS NULL") // Only soft delete if not already deleted
 
 	db := dbtx.GetAccessor(ctx, r.db)
 
-	_, err = db.ExecContext(ctx, sql, args...)
+	query, args, err := stmt.ToSql()
 	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "the delete query failed")
+		return fmt.Errorf("failed to convert soft delete query to sql: %w", err)
+	}
+
+	result, err := db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "failed to soft delete registry")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("registry not found or already deleted")
+	}
+
+	return nil
+}
+
+// RestoreByUUID restores a soft-deleted registry by clearing deleted_at timestamp.
+func (r registryDao) RestoreByUUID(ctx context.Context, uuid string) error {
+	stmt := databaseg.Builder.Update("registries").
+		Set("registry_deleted_at", nil).
+		Set("registry_deleted_by", nil).
+		Where("registry_uuid = ?", uuid).
+		Where("registry_deleted_at IS NOT NULL") // Only restore if currently deleted
+
+	db := dbtx.GetAccessor(ctx, r.db)
+
+	query, args, err := stmt.ToSql()
+	if err != nil {
+		return fmt.Errorf("failed to convert restore query to sql: %w", err)
+	}
+
+	result, err := db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "failed to restore registry")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("registry not found or not deleted")
 	}
 
 	return nil
