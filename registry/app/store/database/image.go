@@ -62,28 +62,21 @@ type imageDB struct {
 	DeletedBy    *int64                 `db:"image_deleted_by"`
 }
 
-// imageWithParentDB is used for queries that JOIN with registries table.
-type imageWithParentDB struct {
-	imageDB                  // Embed base struct
-	RegistryDeletedAt *int64 `db:"registry_deleted_at"` // CASCADE from parent registry
-}
-
 type imageLabelDB struct {
 	Labels sql.NullString `db:"labels"`
 }
 
 func (i ImageDao) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images i").
-		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("i.image_id = ?", id)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		q = q.Where("i.image_deleted_at IS NULL AND r.registry_deleted_at IS NULL")
+		q = q.Where("i.image_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		q = q.Where("i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL")
+		q = q.Where("i.image_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filter
 	}
@@ -95,11 +88,11 @@ func (i ImageDao) Get(ctx context.Context, id int64, opts ...types.QueryOption) 
 
 	db := dbtx.GetAccessor(ctx, i.db)
 
-	dst := new(imageWithParentDB)
+	dst := new(imageDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get image")
 	}
-	return i.mapImageWithParent(ctx, dst)
+	return i.mapImageDB(ctx, dst)
 }
 
 func (i ImageDao) DeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) (err error) {
@@ -147,9 +140,8 @@ func (i ImageDao) DeleteByImageNameIfNoLinkedArtifacts(
 func (i ImageDao) GetByUUID(
 	ctx context.Context, uuid string,
 ) (*types.Image, error) {
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images i").
-		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("i.image_uuid = ?", uuid)
 
 	sql, args, err := q.ToSql()
@@ -159,12 +151,12 @@ func (i ImageDao) GetByUUID(
 
 	db := dbtx.GetAccessor(ctx, i.db)
 
-	dst := new(imageWithParentDB)
+	dst := new(imageDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing find query")
 	}
 
-	return i.mapImageWithParent(ctx, dst)
+	return i.mapImageDB(ctx, dst)
 }
 
 func (i ImageDao) GetByName(
@@ -174,17 +166,15 @@ func (i ImageDao) GetByName(
 	opts ...types.QueryOption,
 ) (*types.Image, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images i").
-		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("i.image_registry_id = ? AND i.image_name = ? AND i.image_type IS NULL", registryID, name)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		q = q.Where("i.image_deleted_at IS NULL").
-			Where("r.registry_deleted_at IS NULL")
+		q = q.Where("i.image_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		q = q.Where("(i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		q = q.Where("i.image_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
@@ -196,11 +186,11 @@ func (i ImageDao) GetByName(
 
 	db := dbtx.GetAccessor(ctx, i.db)
 
-	dst := new(imageWithParentDB)
+	dst := new(imageDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get image")
 	}
-	return i.mapImageWithParent(ctx, dst)
+	return i.mapImageDB(ctx, dst)
 }
 
 func (i ImageDao) GetByNameAndType(
@@ -213,18 +203,16 @@ func (i ImageDao) GetByNameAndType(
 		return i.GetByName(ctx, registryID, name, opts...)
 	}
 
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images i").
-		Join("registries r ON i.image_registry_id = r.registry_id").
 		Where("i.image_registry_id = ? AND i.image_name = ?", registryID, name).
 		Where("i.image_type = ?", *artifactType)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		q = q.Where("i.image_deleted_at IS NULL").
-			Where("r.registry_deleted_at IS NULL")
+		q = q.Where("i.image_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		q = q.Where("(i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		q = q.Where("i.image_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
@@ -236,11 +224,11 @@ func (i ImageDao) GetByNameAndType(
 
 	db := dbtx.GetAccessor(ctx, i.db)
 
-	dst := new(imageWithParentDB)
+	dst := new(imageDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get image")
 	}
-	return i.mapImageWithParent(ctx, dst)
+	return i.mapImageDB(ctx, dst)
 }
 
 func (i ImageDao) CreateOrUpdate(ctx context.Context, image *types.Image) error {
@@ -308,9 +296,9 @@ func (i ImageDao) GetLabelsByParentIDAndRepo(
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		q = q.Where("a.image_deleted_at IS NULL").Where("r.registry_deleted_at IS NULL")
+		q = q.Where("a.image_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		q = q.Where("a.image_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
@@ -350,9 +338,9 @@ func (i ImageDao) CountLabelsByParentIDAndRepo(
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		q = q.Where("a.image_deleted_at IS NULL").Where("r.registry_deleted_at IS NULL")
+		q = q.Where("a.image_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		q = q.Where("a.image_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
@@ -378,7 +366,7 @@ func (i ImageDao) GetByRepoAndName(
 	repo string, name string, opts ...types.QueryOption,
 ) (*types.Image, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageWithParentDB{}), ",")).
+	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images a").
 		Join(" registries r ON r.registry_id = a.image_registry_id").
 		Where("r.registry_parent_id = ? AND r.registry_name = ? AND a.image_name = ?",
@@ -386,10 +374,9 @@ func (i ImageDao) GetByRepoAndName(
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		q = q.Where("a.image_deleted_at IS NULL").
-			Where("r.registry_deleted_at IS NULL")
+		q = q.Where("a.image_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		q = q.Where("(a.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)")
+		q = q.Where("a.image_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
@@ -401,11 +388,11 @@ func (i ImageDao) GetByRepoAndName(
 
 	db := dbtx.GetAccessor(ctx, i.db)
 
-	dst := new(imageWithParentDB)
+	dst := new(imageDB)
 	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact")
 	}
-	return i.mapImageWithParent(ctx, dst)
+	return i.mapImageDB(ctx, dst)
 }
 
 func (i ImageDao) Update(ctx context.Context, image *types.Image) (err error) {
@@ -524,25 +511,13 @@ func (i ImageDao) mapToInternalImage(ctx context.Context, in *types.Image) *imag
 	}
 }
 
-// mapImageWithParent maps imageWithParentDB (from JOIN queries) and computes earliest deletedAt.
-func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) (*types.Image, error) {
-	createdBy := dst.CreatedBy
-	updatedBy := dst.UpdatedBy
-
-	// Compute DeletedAt with cascade logic
-	// deletedAt should be set to the earliest timestamp among image or registry
+// mapImageDB maps imageDB directly without cascade logic.
+// With explicit cascade soft delete, each image has its definitive deleted_at timestamp.
+func (i ImageDao) mapImageDB(_ context.Context, dst *imageDB) (*types.Image, error) {
 	var deletedAt *time.Time
-
 	if dst.DeletedAt != nil {
-		imageDeleted := time.UnixMilli(*dst.DeletedAt)
-		deletedAt = &imageDeleted
-	}
-
-	if dst.RegistryDeletedAt != nil {
-		registryDeletedAt := time.UnixMilli(*dst.RegistryDeletedAt)
-		if deletedAt == nil || registryDeletedAt.Before(*deletedAt) {
-			deletedAt = &registryDeletedAt
-		}
+		t := time.UnixMilli(*dst.DeletedAt)
+		deletedAt = &t
 	}
 
 	return &types.Image{
@@ -555,8 +530,8 @@ func (i ImageDao) mapImageWithParent(_ context.Context, dst *imageWithParentDB) 
 		Enabled:      dst.Enabled,
 		CreatedAt:    time.UnixMilli(dst.CreatedAt),
 		UpdatedAt:    time.UnixMilli(dst.UpdatedAt),
-		CreatedBy:    createdBy,
-		UpdatedBy:    updatedBy,
+		CreatedBy:    dst.CreatedBy,
+		UpdatedBy:    dst.UpdatedBy,
 		DeletedAt:    deletedAt,
 		DeletedBy:    dst.DeletedBy,
 	}, nil
