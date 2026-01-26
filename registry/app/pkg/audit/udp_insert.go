@@ -17,6 +17,7 @@ package audit
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/harness/gitness/audit"
@@ -94,39 +95,34 @@ func InsertUDPAuditEvent(
 		log.Ctx(ctx).Debug().Msg("skipping UDP audit event insertion: no database accessor provided")
 		return
 	}
-	// Build the audit event to extract data
 	event := &audit.Event{}
 	for _, opt := range options {
 		opt.Apply(event)
 	}
 
-	// Parse resource scope from spacePath (format: account.org.project or account.org)
 	resourceScope := parseResourceScope(spacePath)
 
-	// Get client IP
 	clientIP := event.ClientIP
 	if clientIP == "" {
 		clientIP = audit.GetRealIP(ctx)
 	}
 
-	// Get request method
 	requestMethod := event.RequestMethod
 	if requestMethod == "" {
 		requestMethod = audit.GetRequestMethod(ctx)
 	}
 
-	// Build resource labels
 	resourceLabels := make(map[string]interface{})
 	resourceLabels[FieldResourceName] = resource.Identifier
-	// Add any additional resource data as labels
 	resourceData := resource.DataAsSlice()
 	for i := 0; i < len(resourceData); i += 2 {
 		if i+1 < len(resourceData) {
 			resourceLabels[resourceData[i]] = resourceData[i+1]
+		} else {
+			log.Ctx(ctx).Warn().Msgf("odd number of resource data elements, ignoring last element: %v", resourceData[i])
 		}
 	}
 
-	// Build payload matching exact job_data structure
 	auditPayload := map[string]interface{}{
 		FieldResourceScope: resourceScope,
 		FieldHTTPRequestInfo: map[string]interface{}{
@@ -135,7 +131,7 @@ func InsertUDPAuditEvent(
 		FieldRequestMetadata: map[string]interface{}{
 			FieldClientIP: clientIP,
 		},
-		FieldTimestamp: time.Now().UnixMilli(), // milliseconds
+		FieldTimestamp: time.Now().UnixMilli(),
 		FieldAuthenticationInfo: map[string]interface{}{
 			FieldPrincipal: map[string]interface{}{
 				FieldType:       string(principal.Type),
@@ -155,12 +151,10 @@ func InsertUDPAuditEvent(
 		FieldAction: udpAction,
 	}
 
-	// Add internal info if present (from WithData options)
 	if len(event.Data) > 0 {
 		auditPayload["internalInfo"] = event.Data
 	}
 
-	// Add old/new objects if present (for update operations)
 	if event.DiffObject.OldObject != nil {
 		auditPayload["oldObject"] = event.DiffObject.OldObject
 	}
@@ -168,14 +162,12 @@ func InsertUDPAuditEvent(
 		auditPayload["newObject"] = event.DiffObject.NewObject
 	}
 
-	// Marshal to JSON (similar format as job_data)
 	payloadJSON, err := json.Marshal(auditPayload)
 	if err != nil {
 		log.Ctx(ctx).Warn().Err(err).Msg("failed to marshal audit payload for UDP events")
 		return
 	}
 
-	// Insert directly into UDP events table
 	const udpEventInsertQuery = `
 		INSERT INTO udp_events (data_type, payload) VALUES ($1, $2)
 	`
@@ -186,12 +178,10 @@ func InsertUDPAuditEvent(
 	}
 }
 
-// parseResourceScope parses the spacePath into resource scope components
+// parseResourceScope parses the spacePath into resource scope components.
 // Expected format: account/org/project or account/org
 func parseResourceScope(spacePath string) map[string]interface{} {
 	scope := make(map[string]interface{})
-
-	// Parse spacePath format: account/org/project
 	parts := splitPath(spacePath)
 
 	if len(parts) >= 1 {
@@ -215,25 +205,19 @@ func parseResourceScope(spacePath string) map[string]interface{} {
 	return scope
 }
 
-// splitPath splits a space path by '/' separator
+// splitPath splits a space path by '/' separator.
+// Filters out empty parts to handle paths like "account//project".
 func splitPath(path string) []string {
 	if path == "" {
 		return []string{}
 	}
 
-	var parts []string
-	start := 0
-	for i := 0; i < len(path); i++ {
-		if path[i] == '/' {
-			if i > start {
-				parts = append(parts, path[start:i])
-			}
-			start = i + 1
+	parts := strings.Split(path, "/")
+	filtered := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			filtered = append(filtered, part)
 		}
 	}
-	if start < len(path) {
-		parts = append(parts, path[start:])
-	}
-
-	return parts
+	return filtered
 }
