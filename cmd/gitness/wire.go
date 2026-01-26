@@ -106,6 +106,7 @@ import (
 	svclabel "github.com/harness/gitness/app/services/label"
 	"github.com/harness/gitness/app/services/languageanalyzer"
 	locker "github.com/harness/gitness/app/services/locker"
+	"github.com/harness/gitness/app/services/merge"
 	"github.com/harness/gitness/app/services/metric"
 	migrateservice "github.com/harness/gitness/app/services/migrate"
 	"github.com/harness/gitness/app/services/notification"
