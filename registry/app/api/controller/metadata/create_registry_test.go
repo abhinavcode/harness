@@ -252,6 +252,7 @@ func TestCreateRegistry(t *testing.T) {
 					nil, // driver.
 					mockSpaceFinder,
 					mockTransactor,
+					nil, // db AccessorTx.
 					mockURLProvider,
 					mockAuthorizer,
 					mockAuditService,
@@ -337,6 +338,7 @@ func TestCreateRegistry(t *testing.T) {
 					nil, // driver.
 					nil, // spaceFinder
 					mockTransactor,
+					nil, // db AccessorTx.
 					nil, // urlProvider.
 					nil, // authorizer.
 					nil, // auditService.
