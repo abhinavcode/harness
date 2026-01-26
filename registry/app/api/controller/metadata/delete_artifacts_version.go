@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"net/http"
 
-	apiauth "github.com/harness/gitness/app/api/auth"
+	apiauth 	"github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/api/utils"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/app/manifest/manifestlist"
 	"github.com/harness/gitness/registry/services/webhook"
 	registryTypes "github.com/harness/gitness/registry/types"
@@ -169,6 +170,16 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	if auditErr != nil {
 		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for delete artifact operation: %s", auditErr)
 	}
+
+	// Also insert into UDP events table
+	registryaudit.InsertUDPAuditEvent(ctx, c.db, session.Principal,
+		audit.NewResource(audit.ResourceTypeRegistry, artifactName),
+		audit.ActionDeleted,
+		registryaudit.ActionVersionDeleted,
+		regInfo.ParentRef,
+		audit.WithData("registry name", registryName),
+		audit.WithData("artifact name", artifactName),
+		audit.WithData("version name", versionName))
 
 	return artifact.DeleteArtifactVersion200JSONResponse{
 		SuccessJSONResponse: artifact.SuccessJSONResponse(*GetSuccessResponse()),

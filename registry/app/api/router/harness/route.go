@@ -35,7 +35,7 @@ import (
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
-	"github.com/harness/gitness/registry/app/services/refcache"
+	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
 	registrywebhook "github.com/harness/gitness/registry/services/webhook"
@@ -73,6 +73,7 @@ func NewAPIHandler(
 	baseURL string,
 	spaceFinder interfaces.SpaceFinder,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	authenticator authn.Authenticator,
 	urlProvider urlprovider.Provider,
 	authorizer authz.Authorizer,
@@ -86,7 +87,7 @@ func NewAPIHandler(
 	downloadStatRepository store.DownloadStatRepository,
 	gitnessConfig *types.Config,
 	registryBlobsDao store.RegistryBlobRepository,
-	regFinder refcache.RegistryFinder,
+	regFinder refcache2.RegistryFinder,
 	postProcessingReporter *registrypostprocessingevents.Reporter,
 	cargoRegistryHelper cargo.RegistryHelper,
 	spaceController *spacecontroller.Controller,
@@ -114,6 +115,7 @@ func NewAPIHandler(
 		driver,
 		spaceFinder,
 		tx,
+		nil,
 		urlProvider,
 		authorizer,
 		auditService,

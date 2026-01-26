@@ -1,0 +1,239 @@
+//  Copyright 2023 Harness, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package audit
+
+import (
+	"context"
+	"encoding/json"
+	"time"
+
+	"github.com/harness/gitness/audit"
+	"github.com/harness/gitness/registry/types"
+	"github.com/harness/gitness/store/database/dbtx"
+	gitnesstypes "github.com/harness/gitness/types"
+
+	"github.com/rs/zerolog/log"
+)
+
+// Action constants for UDP audit events
+const (
+	ActionRegistryCreated = "REGISTRY_CREATED"
+	ActionRegistryUpdated = "REGISTRY_UPDATED"
+	ActionRegistryDeleted = "REGISTRY_DELETED"
+	ActionArtifactDeleted = "ARTIFACT_DELETED"
+	ActionVersionDeleted  = "VERSION_DELETED"
+)
+
+// Constants for audit payload field names
+const (
+	FieldResourceScope      = "resourceScope"
+	FieldHTTPRequestInfo    = "httpRequestInfo"
+	FieldRequestMetadata    = "requestMetadata"
+	FieldTimestamp          = "timestamp"
+	FieldAuthenticationInfo = "authenticationInfo"
+	FieldModule             = "module"
+	FieldResource           = "resource"
+	FieldAction             = "action"
+
+	// Resource scope fields
+	FieldAccountIdentifier = "accountIdentifier"
+	FieldOrgIdentifier     = "orgIdentifier"
+	FieldProjectIdentifier = "projectIdentifier"
+
+	// HTTP request info fields
+	FieldRequestMethod = "requestMethod"
+
+	// Request metadata fields
+	FieldClientIP = "clientIP"
+
+	// Authentication info fields
+	FieldPrincipal = "principal"
+	FieldLabels    = "labels"
+
+	// Principal fields
+	FieldType       = "type"
+	FieldIdentifier = "identifier"
+
+	// Labels fields
+	FieldUserID      = "userId"
+	FieldUsername    = "username"
+	FieldResourceName = "resourceName"
+
+	// Module constant
+	ModuleHAR = "HAR"
+)
+
+// InsertUDPAuditEvent inserts an audit event into the UDP events table.
+// This should be called AFTER the regular audit service call.
+// It creates a payload matching the exact structure of job_data.
+// The db parameter should be the AccessorTx from the controller.
+// The udpAction parameter should be one of the Action* constants (e.g., ActionRegistryCreated).
+func InsertUDPAuditEvent(
+	ctx context.Context,
+	db dbtx.Accessor,
+	principal gitnesstypes.Principal,
+	resource audit.Resource,
+	action audit.Action,
+	udpAction string,
+	spacePath string,
+	options ...audit.Option,
+) {
+	if db == nil {
+		log.Ctx(ctx).Debug().Msg("skipping UDP audit event insertion: no database accessor provided")
+		return
+	}
+	// Build the audit event to extract data
+	event := &audit.Event{}
+	for _, opt := range options {
+		opt.Apply(event)
+	}
+
+	// Parse resource scope from spacePath (format: account.org.project or account.org)
+	resourceScope := parseResourceScope(spacePath)
+
+	// Get client IP
+	clientIP := event.ClientIP
+	if clientIP == "" {
+		clientIP = audit.GetRealIP(ctx)
+	}
+
+	// Get request method
+	requestMethod := event.RequestMethod
+	if requestMethod == "" {
+		requestMethod = audit.GetRequestMethod(ctx)
+	}
+
+	// Build resource labels
+	resourceLabels := make(map[string]interface{})
+	resourceLabels[FieldResourceName] = resource.Identifier
+	// Add any additional resource data as labels
+	resourceData := resource.DataAsSlice()
+	for i := 0; i < len(resourceData); i += 2 {
+		if i+1 < len(resourceData) {
+			resourceLabels[resourceData[i]] = resourceData[i+1]
+		}
+	}
+
+	// Build payload matching exact job_data structure
+	auditPayload := map[string]interface{}{
+		FieldResourceScope: resourceScope,
+		FieldHTTPRequestInfo: map[string]interface{}{
+			FieldRequestMethod: requestMethod,
+		},
+		FieldRequestMetadata: map[string]interface{}{
+			FieldClientIP: clientIP,
+		},
+		FieldTimestamp: time.Now().UnixMilli(), // milliseconds
+		FieldAuthenticationInfo: map[string]interface{}{
+			FieldPrincipal: map[string]interface{}{
+				FieldType:       string(principal.Type),
+				FieldIdentifier: principal.Email,
+			},
+			FieldLabels: map[string]interface{}{
+				FieldUserID:   principal.UID,
+				FieldUsername: principal.DisplayName,
+			},
+		},
+		FieldModule: ModuleHAR,
+		FieldResource: map[string]interface{}{
+			FieldType:       string(resource.Type),
+			FieldIdentifier: resource.Identifier,
+			FieldLabels:     resourceLabels,
+		},
+		FieldAction: udpAction,
+	}
+
+	// Add internal info if present (from WithData options)
+	if len(event.Data) > 0 {
+		auditPayload["internalInfo"] = event.Data
+	}
+
+	// Add old/new objects if present (for update operations)
+	if event.DiffObject.OldObject != nil {
+		auditPayload["oldObject"] = event.DiffObject.OldObject
+	}
+	if event.DiffObject.NewObject != nil {
+		auditPayload["newObject"] = event.DiffObject.NewObject
+	}
+
+	// Marshal to JSON (similar format as job_data)
+	payloadJSON, err := json.Marshal(auditPayload)
+	if err != nil {
+		log.Ctx(ctx).Warn().Err(err).Msg("failed to marshal audit payload for UDP events")
+		return
+	}
+
+	// Insert directly into UDP events table
+	const udpEventInsertQuery = `
+		INSERT INTO udp_events (data_type, payload) VALUES ($1, $2)
+	`
+	
+	_, err = db.ExecContext(ctx, udpEventInsertQuery, types.UDPEventTypeAudits, string(payloadJSON))
+	if err != nil {
+		log.Ctx(ctx).Warn().Err(err).Msg("failed to insert audit event into UDP events table")
+	}
+}
+
+// parseResourceScope parses the spacePath into resource scope components
+// Expected format: account/org/project or account/org
+func parseResourceScope(spacePath string) map[string]interface{} {
+	scope := make(map[string]interface{})
+	
+	// Parse spacePath format: account/org/project
+	parts := splitPath(spacePath)
+	
+	if len(parts) >= 1 {
+		scope[FieldAccountIdentifier] = parts[0]
+	} else {
+		scope[FieldAccountIdentifier] = ""
+	}
+	
+	if len(parts) >= 2 {
+		scope[FieldOrgIdentifier] = parts[1]
+	} else {
+		scope[FieldOrgIdentifier] = ""
+	}
+	
+	if len(parts) >= 3 {
+		scope[FieldProjectIdentifier] = parts[2]
+	} else {
+		scope[FieldProjectIdentifier] = ""
+	}
+	
+	return scope
+}
+
+// splitPath splits a space path by '/' separator
+func splitPath(path string) []string {
+	if path == "" {
+		return []string{}
+	}
+	
+	var parts []string
+	start := 0
+	for i := 0; i < len(path); i++ {
+		if path[i] == '/' {
+			if i > start {
+				parts = append(parts, path[start:i])
+			}
+			start = i + 1
+		}
+	}
+	if start < len(path) {
+		parts = append(parts, path[start:])
+	}
+	
+	return parts
+}

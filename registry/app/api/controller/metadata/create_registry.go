@@ -26,6 +26,7 @@ import (
 	"github.com/harness/gitness/app/auth"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
@@ -269,6 +270,18 @@ func (c *APIController) createUpstreamProxyWithAudit(
 		)
 	}
 
+	// Also insert into UDP events table
+	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
+		audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, registryName),
+		audit.ActionCreated,
+		registryaudit.ActionRegistryCreated,
+		parentRef,
+		audit.WithNewObject(audit.RegistryUpstreamProxyConfigObject{
+			ID: id, RegistryID: upstreamProxy.RegistryID, Source: upstreamProxy.Source,
+			URL: upstreamProxy.URL, AuthType: upstreamProxy.AuthType,
+			CreatedAt: upstreamProxy.CreatedAt, UpdatedAt: upstreamProxy.UpdatedAt,
+			CreatedBy: upstreamProxy.CreatedBy, UpdatedBy: upstreamProxy.UpdatedBy}))
+
 	return id, err
 }
 
@@ -310,6 +323,15 @@ func (c *APIController) createRegistryWithAudit(
 	if auditErr != nil {
 		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for create registry operation: %s", auditErr)
 	}
+
+	// Also insert into UDP events table
+	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
+		audit.NewResource(audit.ResourceTypeRegistry, registry.Name),
+		audit.ActionCreated,
+		registryaudit.ActionRegistryCreated,
+		parentRef,
+		audit.WithNewObject(audit.RegistryObject{Registry: *registry}))
+
 	return id, err
 }
 

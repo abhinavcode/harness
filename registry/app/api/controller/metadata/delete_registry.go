@@ -25,6 +25,7 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
@@ -203,7 +204,17 @@ func (c *APIController) deleteRegistryWithAudit(
 	if auditErr != nil {
 		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for delete registry operation: %s", auditErr)
 	}
-	return err
+
+	// Also insert into UDP events table
+	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
+		audit.NewResource(typeRegistry, registry.Name),
+		audit.ActionDeleted,
+		registryaudit.ActionRegistryDeleted,
+		parentRef,
+		audit.WithOldObject(audit.RegistryObject{Registry: *registry}),
+		audit.WithData("registry name", registry.Name))
+
+	return nil
 }
 
 func throwDeleteRegistry500Error(err error) artifact.DeleteRegistry500JSONResponse {

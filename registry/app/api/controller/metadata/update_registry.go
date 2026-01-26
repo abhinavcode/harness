@@ -28,6 +28,7 @@ import (
 	"github.com/harness/gitness/app/auth"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/types"
 	types2 "github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
@@ -292,7 +293,27 @@ func (c *APIController) updateUpstreamProxyWithAudit(
 					"config operation: %s", auditErr,
 			)
 		}
+
+		// Also insert into UDP events table
+		registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
+			audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, registryName),
+			audit.ActionUpdated,
+			registryaudit.ActionRegistryUpdated,
+			parentRef,
+			audit.WithOldObject(audit.RegistryUpstreamProxyConfigObject{
+				ID: existingUpstreamProxy.ID, RegistryID: existingUpstreamProxy.RegistryID,
+				Source: existingUpstreamProxy.Source, URL: existingUpstreamProxy.RepoURL,
+				AuthType: existingUpstreamProxy.RepoAuthType, CreatedAt: existingUpstreamProxy.CreatedAt,
+				UpdatedAt: existingUpstreamProxy.UpdatedAt, CreatedBy: existingUpstreamProxy.CreatedBy,
+				UpdatedBy: existingUpstreamProxy.UpdatedBy}),
+			audit.WithNewObject(audit.RegistryUpstreamProxyConfigObject{
+				ID: upstreamProxy.ID, RegistryID: upstreamProxy.RegistryID,
+				Source: upstreamProxy.Source, URL: upstreamProxy.URL,
+				AuthType: upstreamProxy.AuthType, CreatedAt: upstreamProxy.CreatedAt,
+				UpdatedAt: upstreamProxy.UpdatedAt, CreatedBy: upstreamProxy.CreatedBy,
+				UpdatedBy: upstreamProxy.UpdatedBy}))
 	}
+
 	return err
 }
 
@@ -321,6 +342,14 @@ func (c *APIController) updateRegistryWithAudit(
 	if auditErr != nil {
 		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for update registry operation: %s", auditErr)
 	}
+
+	// Also insert into UDP events table
+	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
+		audit.NewResource(audit.ResourceTypeRegistry, newRegistry.Name),
+		audit.ActionUpdated,
+		registryaudit.ActionRegistryUpdated,
+		parentRef,
+		audit.WithOldObject(oldRegistry), audit.WithNewObject(newRegistry))
 
 	return err
 }
