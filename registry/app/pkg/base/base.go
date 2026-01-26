@@ -101,12 +101,6 @@ type LocalBase interface {
 
 	ExistsByFilePath(ctx context.Context, registryID int64, filePath string) (bool, error)
 
-	// AuditPush logs audit trail for artifact push operations.
-	AuditPush(
-		ctx context.Context, info pkg.ArtifactInfo, version string,
-		artifactUUID string,
-	)
-
 	CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error)
 
 	DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error
@@ -349,7 +343,6 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 							"resourceName", artifactIdentifier,
 							"artifactUuid", artifactUUID,
 						),
-						audit.ActionUploaded,
 						registryaudit.ActionArtifactUploaded,
 						parentSpace.Path,
 					)
@@ -517,7 +510,6 @@ func (l *localBase) postUploadArtifact(
 						l.db,
 						session.Principal,
 						audit.NewResource(audit.ResourceTypeRegistryArtifact, info.Image),
-						audit.ActionUploaded,
 						registryaudit.ActionArtifactUploaded,
 						parentSpace.Path,
 						audit.WithData("registry name", info.RegIdentifier),
@@ -797,34 +789,4 @@ func (l *localBase) DeleteVersion(ctx context.Context, info pkg.PackageArtifactI
 		return err
 	}
 	return nil
-}
-
-// AuditPush inserts artifact upload audit event into UDP events table.
-func (l *localBase) AuditPush(
-	ctx context.Context, info pkg.ArtifactInfo, version string,
-	artifactUUID string,
-) {
-	session, ok := request.AuthSessionFrom(ctx)
-	if !ok {
-		return
-	}
-
-	parentSpace, err := l.spaceFinder.FindByID(ctx, info.ParentID)
-	if err != nil {
-		return
-	}
-
-	registryaudit.InsertUDPAuditEvent(
-		ctx,
-		l.db,
-		session.Principal,
-		audit.NewResource(audit.ResourceTypeRegistryArtifact, info.Image),
-		audit.ActionUploaded,
-		registryaudit.ActionArtifactUploaded,
-		parentSpace.Path,
-		audit.WithData("registry name", info.RegIdentifier),
-		audit.WithData("artifact name", info.Image),
-		audit.WithData("version name", version),
-		audit.WithData("artifactUuid", artifactUUID),
-	)
 }

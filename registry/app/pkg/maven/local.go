@@ -222,7 +222,6 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 							r.db,
 							session.Principal,
 							audit.NewResource(audit.ResourceTypeRegistryArtifact, info.ArtifactInfo.Image),
-							audit.ActionUploaded,
 							registryaudit.ActionArtifactUploaded,
 							parentSpace.Path,
 							audit.WithData("registry name", info.ArtifactInfo.RegIdentifier),

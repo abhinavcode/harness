@@ -201,7 +201,6 @@ func (c Controller) UploadArtifact(
 					c.db,
 					session.Principal,
 					audit.NewResource(audit.ResourceTypeRegistryArtifact, info.Image),
-					audit.ActionCreated,
 					registryaudit.ActionArtifactUploaded,
 					parentSpace.Path,
 					audit.WithData("registry name", info.RegIdentifier),

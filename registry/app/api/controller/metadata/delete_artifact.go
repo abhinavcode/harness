@@ -141,7 +141,6 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 	// Also insert into UDP events table
 	registryaudit.InsertUDPAuditEvent(ctx, c.db, session.Principal,
 		audit.NewResource(audit.ResourceTypeRegistryArtifact, string(r.Artifact)),
-		audit.ActionDeleted,
 		registryaudit.ActionArtifactDeleted,
 		regInfo.ParentRef,
 		audit.WithData("registry name", repoEntity.Name),

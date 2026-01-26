@@ -208,7 +208,6 @@ func (c *APIController) deleteRegistryWithAudit(
 	// Also insert into UDP events table
 	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
 		audit.NewResource(typeRegistry, registry.Name),
-		audit.ActionDeleted,
 		registryaudit.ActionRegistryDeleted,
 		parentRef,
 		audit.WithOldObject(audit.RegistryObject{Registry: *registry}),

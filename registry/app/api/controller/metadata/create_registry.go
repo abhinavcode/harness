@@ -273,7 +273,6 @@ func (c *APIController) createUpstreamProxyWithAudit(
 	// Also insert into UDP events table
 	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
 		audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, registryName),
-		audit.ActionCreated,
 		registryaudit.ActionRegistryCreated,
 		parentRef,
 		audit.WithNewObject(audit.RegistryUpstreamProxyConfigObject{
@@ -327,7 +326,6 @@ func (c *APIController) createRegistryWithAudit(
 	// Also insert into UDP events table
 	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
 		audit.NewResource(audit.ResourceTypeRegistry, registry.Name),
-		audit.ActionCreated,
 		registryaudit.ActionRegistryCreated,
 		parentRef,
 		audit.WithNewObject(audit.RegistryObject{Registry: *registry}))

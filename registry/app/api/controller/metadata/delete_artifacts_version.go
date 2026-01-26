@@ -174,7 +174,6 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	// Also insert into UDP events table
 	registryaudit.InsertUDPAuditEvent(ctx, c.db, session.Principal,
 		audit.NewResource(audit.ResourceTypeRegistry, artifactName),
-		audit.ActionDeleted,
 		registryaudit.ActionVersionDeleted,
 		regInfo.ParentRef,
 		audit.WithData("registry name", registryName),

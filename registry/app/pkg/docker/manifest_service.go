@@ -530,7 +530,6 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 				l.db,
 				session.Principal,
 				audit.NewResource(audit.ResourceTypeRegistryArtifact, info.ArtifactInfo.Image),
-				audit.ActionUploaded,
 				registryaudit.ActionArtifactUploaded,
 				parentSpace.Path,
 				audit.WithData("registry name", info.ArtifactInfo.RegIdentifier),

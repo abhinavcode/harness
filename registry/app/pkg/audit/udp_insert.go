@@ -78,16 +78,11 @@ const (
 )
 
 // InsertUDPAuditEvent inserts an audit event into the UDP events table.
-// This should be called AFTER the regular audit service call.
-// It creates a payload matching the exact structure of job_data.
-// The db parameter should be the AccessorTx from the controller.
-// The udpAction parameter should be one of the Action* constants (e.g., ActionRegistryCreated).
 func InsertUDPAuditEvent(
 	ctx context.Context,
 	db dbtx.Accessor,
 	principal gitnesstypes.Principal,
 	resource audit.Resource,
-	action audit.Action,
 	udpAction string,
 	spacePath string,
 	options ...audit.Option,
