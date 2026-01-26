@@ -30,6 +30,7 @@ import (
 	"github.com/harness/gitness/app/auth/authz"
 	"github.com/harness/gitness/app/services/refcache"
 	corestore "github.com/harness/gitness/app/store"
+	"github.com/harness/gitness/registry/app/api/interfaces"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
 	"github.com/harness/gitness/registry/app/metadata"
@@ -48,16 +49,17 @@ import (
 )
 
 type Controller struct {
-	SpaceStore       corestore.SpaceStore
-	Authorizer       authz.Authorizer
-	DBStore          *DBStore
-	fileManager      filemanager.FileManager
-	tx               dbtx.Transactor
-	db               dbtx.AccessorTx
-	spaceFinder      refcache.SpaceFinder
-	local            generic.LocalRegistry
-	proxy            generic.Proxy
-	quarantineFinder quarantine.Finder
+	SpaceStore                corestore.SpaceStore
+	Authorizer                authz.Authorizer
+	DBStore                   *DBStore
+	fileManager               filemanager.FileManager
+	tx                        dbtx.Transactor
+	db                        dbtx.AccessorTx
+	spaceFinder               refcache.SpaceFinder
+	local                     generic.LocalRegistry
+	proxy                     generic.Proxy
+	quarantineFinder          quarantine.Finder
+	dependencyFirewallChecker interfaces.DependencyFirewallChecker
 }
 
 type DBStore struct {
@@ -80,18 +82,20 @@ func NewController(
 	local generic.LocalRegistry,
 	proxy generic.Proxy,
 	quarantineFinder quarantine.Finder,
+	dependencyFirewallChecker interfaces.DependencyFirewallChecker,
 ) *Controller {
 	return &Controller{
-		SpaceStore:       spaceStore,
-		Authorizer:       authorizer,
-		fileManager:      fileManager,
-		DBStore:          dBStore,
-		tx:               tx,
-		db:               db,
-		spaceFinder:      spaceFinder,
-		local:            local,
-		proxy:            proxy,
-		quarantineFinder: quarantineFinder,
+		SpaceStore:                spaceStore,
+		Authorizer:                authorizer,
+		fileManager:               fileManager,
+		DBStore:                   dBStore,
+		tx:                        tx,
+		db:                        db,
+		spaceFinder:               spaceFinder,
+		local:                     local,
+		proxy:                     proxy,
+		quarantineFinder:          quarantineFinder,
+		dependencyFirewallChecker: dependencyFirewallChecker,
 	}
 }
 
