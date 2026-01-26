@@ -30,6 +30,7 @@ import (
 	"github.com/harness/gitness/app/auth/authz"
 	"github.com/harness/gitness/app/services/refcache"
 	corestore "github.com/harness/gitness/app/store"
+	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
 	"github.com/harness/gitness/registry/app/metadata"
 	"github.com/harness/gitness/registry/app/pkg"
@@ -42,6 +43,8 @@ import (
 	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store/database/dbtx"
 	"github.com/harness/gitness/types/enum"
+
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 )
 
 type Controller struct {
@@ -50,6 +53,7 @@ type Controller struct {
 	DBStore          *DBStore
 	fileManager      filemanager.FileManager
 	tx               dbtx.Transactor
+	db               dbtx.AccessorTx
 	spaceFinder      refcache.SpaceFinder
 	local            generic.LocalRegistry
 	proxy            generic.Proxy
@@ -71,6 +75,7 @@ func NewController(
 	fileManager filemanager.FileManager,
 	dBStore *DBStore,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	spaceFinder refcache.SpaceFinder,
 	local generic.LocalRegistry,
 	proxy generic.Proxy,
@@ -82,6 +87,7 @@ func NewController(
 		fileManager:      fileManager,
 		DBStore:          dBStore,
 		tx:               tx,
+		db:               db,
 		spaceFinder:      spaceFinder,
 		local:            local,
 		proxy:            proxy,
@@ -169,7 +175,7 @@ func (c Controller) UploadArtifact(
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
 
-			_, err = c.DBStore.ArtifactDao.CreateOrUpdate(ctx, &types.Artifact{
+			artifactID, err := c.DBStore.ArtifactDao.CreateOrUpdate(ctx, &types.Artifact{
 				ImageID:  image.ID,
 				Version:  info.Version,
 				Metadata: metadataJSON,
@@ -178,6 +184,33 @@ func (c Controller) UploadArtifact(
 				return fmt.Errorf("failed to create artifact : [%s] with "+
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
+
+			// Fetch the created artifact to get UUID for audit event
+			dbArtifact, err = c.DBStore.ArtifactDao.Get(ctx, artifactID)
+			if err != nil {
+				return fmt.Errorf("failed to fetch artifact : [%s] with "+
+					regNameFormat, info.Image, info.RegIdentifier)
+			}
+
+			// Insert UDP audit event for artifact upload
+			session, _ := request.AuthSessionFrom(ctx)
+			parentSpace, err := c.spaceFinder.FindByID(ctx, info.ParentID)
+			if err == nil {
+				registryaudit.InsertUDPAuditEvent(
+					ctx,
+					c.db,
+					session.Principal,
+					audit.NewResource(audit.ResourceTypeRegistryArtifact, info.Image),
+					audit.ActionCreated,
+					registryaudit.ActionArtifactUploaded,
+					parentSpace.Path,
+					audit.WithData("registry name", info.RegIdentifier),
+					audit.WithData("artifact name", info.Image),
+					audit.WithData("version name", info.Version),
+					audit.WithData("artifactUuid", dbArtifact.UUID),
+				)
+			}
+
 			return nil
 		})
 

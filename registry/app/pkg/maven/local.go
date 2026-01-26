@@ -26,7 +26,10 @@ import (
 	"time"
 
 	"github.com/harness/gitness/app/api/request"
+	"github.com/harness/gitness/app/services/refcache"
+	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/app/metadata"
 	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/base"
@@ -49,13 +52,17 @@ func NewLocalRegistry(
 	localBase base.LocalBase,
 	dBStore *DBStore,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	fileManager filemanager.FileManager,
+	spaceFinder refcache.SpaceFinder,
 ) Registry {
 	return &LocalRegistry{
 		localBase:   localBase,
 		DBStore:     dBStore,
 		tx:          tx,
+		db:          db,
 		fileManager: fileManager,
+		spaceFinder: spaceFinder,
 	}
 }
 
@@ -63,7 +70,9 @@ type LocalRegistry struct {
 	localBase   base.LocalBase
 	DBStore     *DBStore
 	tx          dbtx.Transactor
+	db          dbtx.AccessorTx
 	fileManager filemanager.FileManager
+	spaceFinder refcache.SpaceFinder
 }
 
 func (r *LocalRegistry) GetMavenArtifactType() string {
@@ -154,8 +163,6 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 		return responseHeaders, []error{errcode.ErrCodeUnknown.WithDetail(err)}
 	}
 
-	var imageUUID string
-	var artifactUUID string
 	err = r.tx.WithTx(
 		ctx, func(ctx context.Context) error {
 			name := info.GroupID + ":" + info.ArtifactID
@@ -169,7 +176,6 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 			if err2 != nil {
 				return err2
 			}
-			imageUUID = dbImage.UUID
 
 			if info.Version == "" {
 				return nil
@@ -205,10 +211,27 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 				return err2
 			}
 
-			// Get UUID for audit
+			// Insert artifact upload audit event into UDP events table
 			if utils.IsMainArtifactFile(info) && info.Version != "" {
-				// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
-				artifactUUID = newArtifact.UUID
+				session, ok := request.AuthSessionFrom(ctx)
+				if ok {
+					parentSpace, err := r.spaceFinder.FindByID(ctx, info.ArtifactInfo.ParentID)
+					if err == nil {
+						registryaudit.InsertUDPAuditEvent(
+							ctx,
+							r.db,
+							session.Principal,
+							audit.NewResource(audit.ResourceTypeRegistryArtifact, info.ArtifactInfo.Image),
+							audit.ActionUploaded,
+							registryaudit.ActionArtifactUploaded,
+							parentSpace.Path,
+							audit.WithData("registry name", info.ArtifactInfo.RegIdentifier),
+							audit.WithData("artifact name", info.ArtifactInfo.Image),
+							audit.WithData("version name", info.Version),
+							audit.WithData("artifactUuid", newArtifact.UUID),
+						)
+					}
+				}
 			}
 
 			return nil
@@ -216,11 +239,6 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 
 	if err != nil {
 		return responseHeaders, []error{errcode.ErrCodeUnknown.WithDetail(err)}
-	}
-
-	// Audit log for Maven artifact push
-	if utils.IsMainArtifactFile(info) && info.Version != "" && artifactUUID != "" {
-		r.localBase.AuditPush(ctx, *info.ArtifactInfo, info.Version, imageUUID, artifactUUID)
 	}
 
 	responseHeaders = &commons.ResponseHeaders{

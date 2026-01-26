@@ -43,12 +43,13 @@ func ControllerProvider(
 	fileManager filemanager.FileManager,
 	dBStore *DBStore,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	spaceFinder refcache.SpaceFinder,
 	local generic.LocalRegistry,
 	proxy generic.Proxy,
 	quarantineFinder quarantine.Finder,
 ) *Controller {
-	return NewController(spaceStore, authorizer, fileManager, dBStore, tx, spaceFinder, local, proxy, quarantineFinder)
+	return NewController(spaceStore, authorizer, fileManager, dBStore, tx, db, spaceFinder, local, proxy, quarantineFinder)
 }
 
 var DBStoreSet = wire.NewSet(DBStoreProvider)

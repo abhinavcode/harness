@@ -30,11 +30,12 @@ import (
 
 // Action constants for UDP audit events
 const (
-	ActionRegistryCreated = "REGISTRY_CREATED"
-	ActionRegistryUpdated = "REGISTRY_UPDATED"
-	ActionRegistryDeleted = "REGISTRY_DELETED"
-	ActionArtifactDeleted = "ARTIFACT_DELETED"
-	ActionVersionDeleted  = "VERSION_DELETED"
+	ActionRegistryCreated  = "REGISTRY_CREATED"
+	ActionRegistryUpdated  = "REGISTRY_UPDATED"
+	ActionRegistryDeleted  = "REGISTRY_DELETED"
+	ActionArtifactDeleted  = "ARTIFACT_DELETED"
+	ActionVersionDeleted   = "VERSION_DELETED"
+	ActionArtifactUploaded = "ARTIFACT_UPLOADED"
 )
 
 // Constants for audit payload field names

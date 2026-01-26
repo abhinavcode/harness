@@ -33,13 +33,17 @@ func LocalRegistryProvider(
 	localBase base.LocalBase,
 	dBStore *DBStore,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	fileManager filemanager.FileManager,
+	spaceFinder refcache.SpaceFinder,
 ) *LocalRegistry {
 	//nolint:errcheck
 	return NewLocalRegistry(localBase,
 		dBStore,
 		tx,
+		db,
 		fileManager,
+		spaceFinder,
 	).(*LocalRegistry)
 }
 

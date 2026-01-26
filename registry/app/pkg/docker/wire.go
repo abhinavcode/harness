@@ -70,7 +70,7 @@ func ManifestServiceProvider(
 	manifestDao store.ManifestRepository, blobRepo store.BlobRepository, mtRepository store.MediaTypesRepository,
 	manifestRefDao store.ManifestReferenceRepository, tagDao store.TagRepository, imageDao store.ImageRepository,
 	artifactDao store.ArtifactRepository, layerDao store.LayerRepository,
-	gcService gc.Service, tx dbtx.Transactor, reporter event.Reporter, spaceFinder refcache.SpaceFinder,
+	gcService gc.Service, tx dbtx.Transactor, db dbtx.AccessorTx, reporter event.Reporter, spaceFinder refcache.SpaceFinder,
 	ociImageIndexMappingDao store.OCIImageIndexMappingRepository,
 	artifactEventReporter *registryevents.Reporter,
 	urlProvider url.Provider,
@@ -78,7 +78,7 @@ func ManifestServiceProvider(
 ) ManifestService {
 	return NewManifestService(
 		registryDao, manifestDao, blobRepo, mtRepository, tagDao, imageDao,
-		artifactDao, layerDao, manifestRefDao, tx, gcService, reporter, spaceFinder,
+		artifactDao, layerDao, manifestRefDao, tx, db, gcService, reporter, spaceFinder,
 		ociImageIndexMappingDao, *artifactEventReporter, urlProvider, func(_ context.Context) bool {
 			return true
 		}, auditService)

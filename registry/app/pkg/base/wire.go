@@ -17,7 +17,6 @@ package base
 import (
 	"github.com/harness/gitness/app/auth/authz"
 	"github.com/harness/gitness/app/services/refcache"
-	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	registryrefcache "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/store"
@@ -31,17 +30,17 @@ func LocalBaseProvider(
 	registryFinder registryrefcache.RegistryFinder,
 	fileManager filemanager.FileManager,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	imageDao store.ImageRepository,
 	artifactDao store.ArtifactRepository,
 	nodesDao store.NodesRepository,
 	tagsDao store.PackageTagRepository,
 	authorizer authz.Authorizer,
 	spaceFinder refcache.SpaceFinder,
-	auditService audit.Service,
 ) LocalBase {
 	return NewLocalBase(
-		registryDao, registryFinder, fileManager, tx, imageDao, artifactDao, nodesDao,
-		tagsDao, authorizer, spaceFinder, auditService,
+		registryDao, registryFinder, fileManager, tx, db, imageDao, artifactDao, nodesDao,
+		tagsDao, authorizer, spaceFinder,
 	)
 }
 

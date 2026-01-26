@@ -69,6 +69,7 @@ type manifestService struct {
 	spaceFinder             refcache.SpaceFinder
 	gcService               gc.Service
 	tx                      dbtx.Transactor
+	db                      dbtx.AccessorTx
 	reporter                event.Reporter
 	artifactEventReporter   registryevents.Reporter
 	urlProvider             urlprovider.Provider
@@ -81,7 +82,7 @@ func NewManifestService(
 	blobRepo store.BlobRepository, mtRepository store.MediaTypesRepository, tagDao store.TagRepository,
 	imageDao store.ImageRepository, artifactDao store.ArtifactRepository,
 	layerDao store.LayerRepository, manifestRefDao store.ManifestReferenceRepository,
-	tx dbtx.Transactor, gcService gc.Service, reporter event.Reporter, spaceFinder refcache.SpaceFinder,
+	tx dbtx.Transactor, db dbtx.AccessorTx, gcService gc.Service, reporter event.Reporter, spaceFinder refcache.SpaceFinder,
 	ociImageIndexMappingDao store.OCIImageIndexMappingRepository, artifactEventReporter registryevents.Reporter,
 	urlProvider urlprovider.Provider, untaggedImagesEnabled func(ctx context.Context) bool,
 	auditService audit.Service,
@@ -98,6 +99,7 @@ func NewManifestService(
 		manifestRefDao:          manifestRefDao,
 		gcService:               gcService,
 		tx:                      tx,
+		db:                      db,
 		reporter:                reporter,
 		spaceFinder:             spaceFinder,
 		ociImageIndexMappingDao: ociImageIndexMappingDao,
@@ -518,11 +520,26 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 		return err
 	}
 
-	// Audit log for OCI/Docker/Helm artifact push
-	registryaudit.LogArtifactPush(
-		ctx, l.auditService, l.spaceFinder, *info.ArtifactInfo,
-		dgst.String(), dbImage.UUID, dbArtifact.UUID,
-	)
+	// Insert artifact upload audit event into UDP events table
+	session, ok := request.AuthSessionFrom(ctx)
+	if ok {
+		parentSpace, err := l.spaceFinder.FindByID(ctx, info.ArtifactInfo.ParentID)
+		if err == nil {
+			registryaudit.InsertUDPAuditEvent(
+				ctx,
+				l.db,
+				session.Principal,
+				audit.NewResource(audit.ResourceTypeRegistryArtifact, info.ArtifactInfo.Image),
+				audit.ActionUploaded,
+				registryaudit.ActionArtifactUploaded,
+				parentSpace.Path,
+				audit.WithData("registry name", info.ArtifactInfo.RegIdentifier),
+				audit.WithData("artifact name", info.ArtifactInfo.Image),
+				audit.WithData("version name", dgst.String()),
+				audit.WithData("artifactUuid", dbArtifact.UUID),
+			)
+		}
+	}
 
 	return nil
 }

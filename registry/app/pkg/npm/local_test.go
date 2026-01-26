@@ -60,7 +60,7 @@ type mockLocalBase struct {
 	) (*commons.ResponseHeaders, string, int64, bool, error)
 	auditPush func(
 		ctx context.Context, info pkg.ArtifactInfo, version string,
-		imageUUID string, artifactUUID string,
+		artifactUUID string,
 	)
 }
 
@@ -200,10 +200,10 @@ func (m *mockLocalBase) MoveMultipleTempFilesAndCreateArtifact(
 
 func (m *mockLocalBase) AuditPush(
 	ctx context.Context, info pkg.ArtifactInfo, version string,
-	imageUUID string, artifactUUID string,
+	artifactUUID string,
 ) {
 	if m.auditPush != nil {
-		m.auditPush(ctx, info, version, imageUUID, artifactUUID)
+		m.auditPush(ctx, info, version, artifactUUID)
 	}
 }
 

@@ -104,7 +104,7 @@ type LocalBase interface {
 	// AuditPush logs audit trail for artifact push operations.
 	AuditPush(
 		ctx context.Context, info pkg.ArtifactInfo, version string,
-		imageUUID string, artifactUUID string,
+		artifactUUID string,
 	)
 
 	CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error)
@@ -125,13 +125,13 @@ type localBase struct {
 	registryFinder registryrefcache.RegistryFinder
 	fileManager    filemanager.FileManager
 	tx             dbtx.Transactor
+	db             dbtx.AccessorTx
 	imageDao       store.ImageRepository
 	artifactDao    store.ArtifactRepository
 	nodesDao       store.NodesRepository
 	tagsDao        store.PackageTagRepository
 	authorizer     authz.Authorizer
 	spaceFinder    refcache.SpaceFinder
-	auditService   audit.Service
 }
 
 func NewLocalBase(
@@ -139,26 +139,26 @@ func NewLocalBase(
 	registryFinder registryrefcache.RegistryFinder,
 	fileManager filemanager.FileManager,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	imageDao store.ImageRepository,
 	artifactDao store.ArtifactRepository,
 	nodesDao store.NodesRepository,
 	tagsDao store.PackageTagRepository,
 	authorizer authz.Authorizer,
 	spaceFinder refcache.SpaceFinder,
-	auditService audit.Service,
 ) LocalBase {
 	return &localBase{
 		registryDao:    registryDao,
 		registryFinder: registryFinder,
 		fileManager:    fileManager,
 		tx:             tx,
+		db:             db,
 		imageDao:       imageDao,
 		artifactDao:    artifactDao,
 		nodesDao:       nodesDao,
 		tagsDao:        tagsDao,
 		authorizer:     authorizer,
 		spaceFinder:    spaceFinder,
-		auditService:   auditService,
 	}
 }
 
@@ -271,7 +271,6 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 		}
 	}
 
-	var imageUUID string
 	var artifactUUID string
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
@@ -289,7 +288,6 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 				return fmt.Errorf("failed to create image for artifact: [%s], error: %w",
 					info.Image, err)
 			}
-			imageUUID = image.UUID
 
 			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
 
@@ -330,14 +328,39 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 			// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
 			artifactUUID = newArtifact.UUID
 
+			// Insert artifact upload audit event into UDP events table
+			session, ok := request.AuthSessionFrom(ctx)
+			if ok {
+				parentSpace, err := l.spaceFinder.FindByID(ctx, info.ParentID)
+				if err == nil {
+					packageName := info.Image
+					artifactIdentifier := fmt.Sprintf("%s:%s", packageName, version)
+					if version == "" {
+						artifactIdentifier = packageName
+					}
+
+					registryaudit.InsertUDPAuditEvent(
+						ctx,
+						l.db,
+						session.Principal,
+						audit.NewResource(
+							audit.ResourceTypeRegistryArtifact,
+							artifactIdentifier,
+							"resourceName", artifactIdentifier,
+							"artifactUuid", artifactUUID,
+						),
+						audit.ActionUploaded,
+						registryaudit.ActionArtifactUploaded,
+						parentSpace.Path,
+					)
+				}
+			}
+
 			return nil
 		})
 	if err != nil {
 		return err
 	}
-
-	// Audit log for artifact push
-	l.AuditPush(ctx, *info, version, imageUUID, artifactUUID)
 
 	return nil
 }
@@ -437,7 +460,6 @@ func (l *localBase) postUploadArtifact(
 	fileInfo types.FileInfo,
 ) (int64, error) {
 	var artifactID int64
-	var imageUUID string
 	var artifactUUID string
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
@@ -450,8 +472,6 @@ func (l *localBase) postUploadArtifact(
 			if err != nil {
 				return fmt.Errorf("failed to create image for artifact: [%s], error: %w", info.Image, err)
 			}
-
-			imageUUID = image.UUID
 
 			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
 
@@ -484,10 +504,29 @@ func (l *localBase) postUploadArtifact(
 				return fmt.Errorf("failed to create artifact : [%s] with error: %w", info.Image, err)
 			}
 
-			// Audit log for push/upload operation
 			// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
 			artifactUUID = newArtifact.UUID
-			l.AuditPush(ctx, info, version, imageUUID, artifactUUID)
+
+			// Insert artifact upload audit event into UDP events table
+			session, ok := request.AuthSessionFrom(ctx)
+			if ok {
+				parentSpace, err := l.spaceFinder.FindByID(ctx, info.ParentID)
+				if err == nil {
+					registryaudit.InsertUDPAuditEvent(
+						ctx,
+						l.db,
+						session.Principal,
+						audit.NewResource(audit.ResourceTypeRegistryArtifact, info.Image),
+						audit.ActionUploaded,
+						registryaudit.ActionArtifactUploaded,
+						parentSpace.Path,
+						audit.WithData("registry name", info.RegIdentifier),
+						audit.WithData("artifact name", info.Image),
+						audit.WithData("version name", version),
+						audit.WithData("artifactUuid", artifactUUID),
+					)
+				}
+			}
 
 			return nil
 		})
@@ -760,12 +799,32 @@ func (l *localBase) DeleteVersion(ctx context.Context, info pkg.PackageArtifactI
 	return nil
 }
 
-// AuditPush is a convenience wrapper for calling the centralized audit function from localBase.
+// AuditPush inserts artifact upload audit event into UDP events table.
 func (l *localBase) AuditPush(
 	ctx context.Context, info pkg.ArtifactInfo, version string,
-	imageUUID string, artifactUUID string,
+	artifactUUID string,
 ) {
-	registryaudit.LogArtifactPush(
-		ctx, l.auditService, l.spaceFinder, info, version, imageUUID, artifactUUID,
+	session, ok := request.AuthSessionFrom(ctx)
+	if !ok {
+		return
+	}
+
+	parentSpace, err := l.spaceFinder.FindByID(ctx, info.ParentID)
+	if err != nil {
+		return
+	}
+
+	registryaudit.InsertUDPAuditEvent(
+		ctx,
+		l.db,
+		session.Principal,
+		audit.NewResource(audit.ResourceTypeRegistryArtifact, info.Image),
+		audit.ActionUploaded,
+		registryaudit.ActionArtifactUploaded,
+		parentSpace.Path,
+		audit.WithData("registry name", info.RegIdentifier),
+		audit.WithData("artifact name", info.Image),
+		audit.WithData("version name", version),
+		audit.WithData("artifactUuid", artifactUUID),
 	)
 }
