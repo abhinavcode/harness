@@ -25,12 +25,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/app/services/refcache"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
 	"github.com/harness/gitness/registry/app/metadata"
 	"github.com/harness/gitness/registry/app/pkg"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/app/pkg/base"
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
@@ -39,10 +42,6 @@ import (
 	"github.com/harness/gitness/registry/types"
 	gitnessstore "github.com/harness/gitness/store"
 	"github.com/harness/gitness/store/database/dbtx"
-
-	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
-
-	"github.com/rs/zerolog/log"
 )
 
 const (
