@@ -49,93 +49,115 @@ func LogWithUDPEvent(
 
 	// Also insert into UDP events table if store is available
 	if udpEventStore != nil {
-		// Build the audit event to extract data
-		event := &audit.Event{}
-		for _, opt := range options {
-			opt.Apply(event)
-		}
-
-		// Build payload structure similar to what audit service creates
-		// This matches the structure that would be in job_data
-		auditPayload := map[string]interface{}{
-			"principal": map[string]interface{}{
-				"email":       principal.Email,
-				"uid":         principal.UID,
-				"displayName": principal.DisplayName,
-				"type":        string(principal.Type),
-			},
-			"resource": map[string]interface{}{
-				"type":       string(resource.Type),
-				"identifier": resource.Identifier,
-				"data":       resource.DataAsSlice(),
-			},
-			"action":    string(action),
-			"spacePath": spacePath,
-			"timestamp": time.Now().Unix(),
-		}
-
-		// Add additional event data if present
-		if len(event.Data) > 0 {
-			auditPayload["eventData"] = event.Data
-		}
-
-		// Add old/new objects if present (for update operations)
-		if event.DiffObject.OldObject != nil {
-			oldYAML, err := yaml.Marshal(event.DiffObject.OldObject)
-			if err == nil {
-				auditPayload["oldValue"] = string(oldYAML)
-			}
-		}
-
-		if event.DiffObject.NewObject != nil {
-			newYAML, err := yaml.Marshal(event.DiffObject.NewObject)
-			if err == nil {
-				auditPayload["newValue"] = string(newYAML)
-			}
-		}
-
-		// Add client info
-		clientIP := event.ClientIP
-		if clientIP == "" {
-			clientIP = audit.GetRealIP(ctx)
-		}
-		if clientIP != "" {
-			auditPayload["clientIP"] = clientIP
-		}
-
-		requestMethod := event.RequestMethod
-		if requestMethod == "" {
-			requestMethod = audit.GetRequestMethod(ctx)
-		}
-		if requestMethod != "" {
-			auditPayload["requestMethod"] = requestMethod
-		}
-
-		// Add correlation ID
-		correlationID := audit.GetRequestID(ctx)
-		if correlationID != "" {
-			auditPayload["correlationID"] = correlationID
-		}
-
-		// Marshal to JSON (similar format as job_data)
-		payloadJSON, err := json.Marshal(auditPayload)
-		if err != nil {
-			log.Ctx(ctx).Warn().Err(err).Msg("failed to marshal audit payload for UDP events")
-			// Don't fail the operation if UDP event creation fails
-			return nil
-		}
-
-		// Insert into UDP events table
-		udpEvent := &types.UDPEvent{
-			DataType: types.UDPEventTypeAudits,
-			Payload:  string(payloadJSON),
-		}
-
-		if udpErr := udpEventStore.Create(ctx, udpEvent); udpErr != nil {
-			log.Ctx(ctx).Warn().Err(udpErr).Msg("failed to insert audit event into UDP events table")
-			// Don't fail the operation if UDP event insertion fails
-		}
+		insertUDPEvent(ctx, udpEventStore, principal, resource, action, spacePath, options)
 	}
 
 	return nil
+}
+
+func insertUDPEvent(
+	ctx context.Context,
+	udpEventStore store.UDPEventRepository,
+	principal gitnesstypes.Principal,
+	resource audit.Resource,
+	action audit.Action,
+	spacePath string,
+	options []audit.Option,
+) {
+	// Build the audit event to extract data
+	event := &audit.Event{}
+	for _, opt := range options {
+		opt.Apply(event)
+	}
+
+	// Build payload structure similar to what audit service creates
+	auditPayload := buildAuditPayload(ctx, principal, resource, action, spacePath, event)
+
+	// Marshal to JSON (similar format as job_data)
+	payloadJSON, err := json.Marshal(auditPayload)
+	if err != nil {
+		log.Ctx(ctx).Warn().Err(err).Msg("failed to marshal audit payload for UDP events")
+		return
+	}
+
+	// Insert into UDP events table
+	udpEvent := &types.UDPEvent{
+		DataType: types.UDPEventTypeAudits,
+		Payload:  string(payloadJSON),
+	}
+
+	if udpErr := udpEventStore.Create(ctx, udpEvent); udpErr != nil {
+		log.Ctx(ctx).Warn().Err(udpErr).Msg("failed to insert audit event into UDP events table")
+	}
+}
+
+func buildAuditPayload(
+	ctx context.Context,
+	principal gitnesstypes.Principal,
+	resource audit.Resource,
+	action audit.Action,
+	spacePath string,
+	event *audit.Event,
+) map[string]interface{} {
+	auditPayload := map[string]interface{}{
+		"principal": map[string]interface{}{
+			"email":       principal.Email,
+			"uid":         principal.UID,
+			"displayName": principal.DisplayName,
+			"type":        string(principal.Type),
+		},
+		"resource": map[string]interface{}{
+			"type":       string(resource.Type),
+			"identifier": resource.Identifier,
+			"data":       resource.DataAsSlice(),
+		},
+		"action":    string(action),
+		"spacePath": spacePath,
+		"timestamp": time.Now().Unix(),
+	}
+
+	// Add additional event data if present
+	if len(event.Data) > 0 {
+		auditPayload["eventData"] = event.Data
+	}
+
+	// Add old/new objects if present (for update operations)
+	if event.DiffObject.OldObject != nil {
+		oldYAML, err := yaml.Marshal(event.DiffObject.OldObject)
+		if err == nil {
+			auditPayload["oldValue"] = string(oldYAML)
+		}
+	}
+
+	if event.DiffObject.NewObject != nil {
+		newYAML, err := yaml.Marshal(event.DiffObject.NewObject)
+		if err == nil {
+			auditPayload["newValue"] = string(newYAML)
+		}
+	}
+
+	// Add client info
+	clientIP := event.ClientIP
+	if clientIP == "" {
+		clientIP = audit.GetRealIP(ctx)
+	}
+	if clientIP != "" {
+		auditPayload["clientIP"] = clientIP
+	}
+
+	requestMethod := event.RequestMethod
+	if requestMethod == "" {
+		requestMethod = audit.GetRequestMethod(ctx)
+	}
+	if requestMethod != "" {
+		auditPayload["requestMethod"] = requestMethod
+	}
+
+	// Add correlation ID
+	correlationID := audit.GetRequestID(ctx)
+	if correlationID != "" {
+		auditPayload["correlationID"] = correlationID
+	}
+
+	return auditPayload
 }

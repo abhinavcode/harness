@@ -28,7 +28,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Action constants for UDP audit events
+// Action constants for UDP audit events.
 const (
 	ActionRegistryCreated  = "REGISTRY_CREATED"
 	ActionRegistryUpdated  = "REGISTRY_UPDATED"
@@ -38,7 +38,7 @@ const (
 	ActionArtifactUploaded = "ARTIFACT_UPLOADED"
 )
 
-// Constants for audit payload field names
+// Constants for audit payload field names.
 const (
 	FieldResourceScope      = "resourceScope"
 	FieldHTTPRequestInfo    = "httpRequestInfo"
@@ -49,31 +49,31 @@ const (
 	FieldResource           = "resource"
 	FieldAction             = "action"
 
-	// Resource scope fields
+	// Resource scope fields.
 	FieldAccountIdentifier = "accountIdentifier"
 	FieldOrgIdentifier     = "orgIdentifier"
 	FieldProjectIdentifier = "projectIdentifier"
 
-	// HTTP request info fields
+	// HTTP request info fields.
 	FieldRequestMethod = "requestMethod"
 
-	// Request metadata fields
+	// Request metadata fields.
 	FieldClientIP = "clientIP"
 
-	// Authentication info fields
+	// Authentication info fields.
 	FieldPrincipal = "principal"
 	FieldLabels    = "labels"
 
-	// Principal fields
+	// Principal fields.
 	FieldType       = "type"
 	FieldIdentifier = "identifier"
 
-	// Labels fields
+	// Labels fields.
 	FieldUserID       = "userId"
 	FieldUsername     = "username"
 	FieldResourceName = "resourceName"
 
-	// Module constant
+	// Module constant.
 	ModuleHAR = "HAR"
 )
 
@@ -175,7 +175,7 @@ func InsertUDPAuditEvent(
 }
 
 // parseResourceScope parses the spacePath into resource scope components.
-// Expected format: account/org/project or account/org
+// Expected format: account/org/project or account/org.
 func parseResourceScope(spacePath string) map[string]interface{} {
 	scope := make(map[string]interface{})
 	parts := splitPath(spacePath)

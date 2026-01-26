@@ -29,7 +29,6 @@ import (
 	"github.com/harness/gitness/app/services/refcache"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
-	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/app/metadata"
 	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/base"
@@ -40,6 +39,8 @@ import (
 	"github.com/harness/gitness/registry/types"
 	gitnessstore "github.com/harness/gitness/store"
 	"github.com/harness/gitness/store/database/dbtx"
+
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 
 	"github.com/rs/zerolog/log"
 )
@@ -213,14 +214,14 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 
 			// Insert artifact upload audit event into UDP events table
 			if utils.IsMainArtifactFile(info) && info.Version != "" {
-				session, ok := request.AuthSessionFrom(ctx)
+				authSession, ok := request.AuthSessionFrom(ctx)
 				if ok {
 					parentSpace, err := r.spaceFinder.FindByID(ctx, info.ArtifactInfo.ParentID)
 					if err == nil {
 						registryaudit.InsertUDPAuditEvent(
 							ctx,
 							r.db,
-							session.Principal,
+							authSession.Principal,
 							audit.NewResource(audit.ResourceTypeRegistryArtifact, info.ArtifactInfo.Image),
 							registryaudit.ActionArtifactUploaded,
 							parentSpace.Path,

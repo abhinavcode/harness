@@ -82,10 +82,10 @@ func NewManifestService(
 	blobRepo store.BlobRepository, mtRepository store.MediaTypesRepository, tagDao store.TagRepository,
 	imageDao store.ImageRepository, artifactDao store.ArtifactRepository,
 	layerDao store.LayerRepository, manifestRefDao store.ManifestReferenceRepository,
-	tx dbtx.Transactor, db dbtx.AccessorTx, gcService gc.Service, reporter event.Reporter, spaceFinder refcache.SpaceFinder,
-	ociImageIndexMappingDao store.OCIImageIndexMappingRepository, artifactEventReporter registryevents.Reporter,
-	urlProvider urlprovider.Provider, untaggedImagesEnabled func(ctx context.Context) bool,
-	auditService audit.Service,
+	tx dbtx.Transactor, db dbtx.AccessorTx, gcService gc.Service, reporter event.Reporter,
+	spaceFinder refcache.SpaceFinder, ociImageIndexMappingDao store.OCIImageIndexMappingRepository,
+	artifactEventReporter registryevents.Reporter, urlProvider urlprovider.Provider,
+	untaggedImagesEnabled func(ctx context.Context) bool, auditService audit.Service,
 ) ManifestService {
 	return &manifestService{
 		registryDao:             registryDao,

@@ -323,7 +323,7 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 			artifactUUID = newArtifact.UUID
 
 			// Insert artifact upload audit event into UDP events table
-			session, ok := request.AuthSessionFrom(ctx)
+			authSession, ok := request.AuthSessionFrom(ctx)
 			if ok {
 				parentSpace, err := l.spaceFinder.FindByID(ctx, info.ParentID)
 				if err == nil {
@@ -336,7 +336,7 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 					registryaudit.InsertUDPAuditEvent(
 						ctx,
 						l.db,
-						session.Principal,
+						authSession.Principal,
 						audit.NewResource(
 							audit.ResourceTypeRegistryArtifact,
 							artifactIdentifier,
