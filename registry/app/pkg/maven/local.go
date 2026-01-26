@@ -156,6 +156,8 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 
 	var imageUUID string
 	var artifactUUID string
+	var artifactID int64
+	var isNewArtifact bool
 	err = r.tx.WithTx(
 		ctx, func(ctx context.Context) error {
 			name := info.GroupID + ":" + info.ArtifactID
@@ -183,6 +185,8 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 				return err3
 			}
 
+			isNewArtifact = (dbArtifact == nil)
+
 			err3 = r.updateArtifactMetadata(dbArtifact, metadata, info, fileInfo)
 			if err3 != nil {
 				return err3
@@ -200,7 +204,7 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 				Metadata: metadataJSON,
 			}
 
-			_, err2 = r.DBStore.ArtifactDao.CreateOrUpdate(ctx, newArtifact)
+			artifactID, err2 = r.DBStore.ArtifactDao.CreateOrUpdate(ctx, newArtifact)
 			if err2 != nil {
 				return err2
 			}
@@ -221,6 +225,11 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 	// Audit log for Maven artifact push
 	if utils.IsMainArtifactFile(info) && info.Version != "" && artifactUUID != "" {
 		r.localBase.AuditPush(ctx, *info.ArtifactInfo, info.Version, imageUUID, artifactUUID)
+	}
+
+	// Publish artifact push event for stats processing only on NEW artifact creation
+	if isNewArtifact && info.Version != "" {
+		r.localBase.PublishStatsEvent(ctx, artifactID)
 	}
 
 	responseHeaders = &commons.ResponseHeaders{

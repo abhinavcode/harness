@@ -207,6 +207,10 @@ func (m *mockLocalBase) AuditPush(
 	}
 }
 
+func (m *mockLocalBase) PublishStatsEvent(context.Context, int64) {
+	// No-op for tests
+}
+
 type mockTagsDAO struct {
 	findByImageNameAndRegID func(ctx context.Context,
 		image string, regID int64, imageType *string) ([]*types.PackageTagMetadata, error)
@@ -321,7 +325,7 @@ func (m *mockArtifactDAO) GetByRegistryImageAndVersion(
 	return nil, nil //nolint:nilnil
 }
 func (m *mockArtifactDAO) GetByRegistryImageVersionAndArtifactType(
-	ctx context.Context, registryID int64, image string, version string, artifactType string,
+	_ context.Context, _ int64, _ string, _ string, _ string,
 ) (*types.Artifact, error) {
 	return nil, nil //nolint:nilnil
 }

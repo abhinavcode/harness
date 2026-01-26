@@ -116,8 +116,7 @@ func (m *MockLocalBase) MoveTempFileAndCreateArtifact(
 	_ types.FileInfo,
 	_ bool,
 ) (*commons.ResponseHeaders, string, int64, bool, error) {
-	// TODO implement me
-	panic("implement me")
+	return nil, "", 0, false, nil
 }
 
 func (m *MockLocalBase) CheckIfVersionExists(_ context.Context, _ pkg.PackageArtifactInfo) (bool, error) {
@@ -203,6 +202,10 @@ func (m *MockLocalBase) AuditPush(
 	artifactUUID string,
 ) {
 	m.Called(ctx, info, version, imageUUID, artifactUUID)
+}
+
+func (m *MockLocalBase) PublishStatsEvent(context.Context, int64) {
+	// No-op for tests
 }
 
 type MockReadCloser struct {

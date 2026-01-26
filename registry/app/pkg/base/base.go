@@ -107,6 +107,9 @@ type LocalBase interface {
 		imageUUID string, artifactUUID string,
 	)
 
+	// PublishStatsEvent publishes artifact stats events for processing.
+	PublishStatsEvent(ctx context.Context, artifactID int64)
+
 	CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error)
 
 	DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error
@@ -121,17 +124,18 @@ type LocalBase interface {
 }
 
 type localBase struct {
-	registryDao    store.RegistryRepository
-	registryFinder registryrefcache.RegistryFinder
-	fileManager    filemanager.FileManager
-	tx             dbtx.Transactor
-	imageDao       store.ImageRepository
-	artifactDao    store.ArtifactRepository
-	nodesDao       store.NodesRepository
-	tagsDao        store.PackageTagRepository
-	authorizer     authz.Authorizer
-	spaceFinder    refcache.SpaceFinder
-	auditService   audit.Service
+	registryDao            store.RegistryRepository
+	registryFinder         registryrefcache.RegistryFinder
+	fileManager            filemanager.FileManager
+	tx                     dbtx.Transactor
+	imageDao               store.ImageRepository
+	artifactDao            store.ArtifactRepository
+	nodesDao               store.NodesRepository
+	tagsDao                store.PackageTagRepository
+	authorizer             authz.Authorizer
+	spaceFinder            refcache.SpaceFinder
+	auditService           audit.Service
+	artifactStatsPublisher pkg.ArtifactStatsPublisher
 }
 
 func NewLocalBase(
@@ -146,19 +150,21 @@ func NewLocalBase(
 	authorizer authz.Authorizer,
 	spaceFinder refcache.SpaceFinder,
 	auditService audit.Service,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) LocalBase {
 	return &localBase{
-		registryDao:    registryDao,
-		registryFinder: registryFinder,
-		fileManager:    fileManager,
-		tx:             tx,
-		imageDao:       imageDao,
-		artifactDao:    artifactDao,
-		nodesDao:       nodesDao,
-		tagsDao:        tagsDao,
-		authorizer:     authorizer,
-		spaceFinder:    spaceFinder,
-		auditService:   auditService,
+		registryDao:            registryDao,
+		registryFinder:         registryFinder,
+		fileManager:            fileManager,
+		tx:                     tx,
+		imageDao:               imageDao,
+		artifactDao:            artifactDao,
+		nodesDao:               nodesDao,
+		tagsDao:                tagsDao,
+		authorizer:             authorizer,
+		spaceFinder:            spaceFinder,
+		auditService:           auditService,
+		artifactStatsPublisher: artifactStatsPublisher,
 	}
 }
 
@@ -273,6 +279,7 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 
 	var imageUUID string
 	var artifactUUID string
+	var artifactID int64
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
 			image := &types.Image{
@@ -327,8 +334,9 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 				return fmt.Errorf("failed to create artifact : [%s] with error: %w", info.Image, err)
 			}
 
-			// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
+			// UUID and ID are populated by CreateOrUpdate
 			artifactUUID = newArtifact.UUID
+			artifactID = newArtifact.ID
 
 			return nil
 		})
@@ -338,6 +346,9 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 
 	// Audit log for artifact push
 	l.AuditPush(ctx, *info, version, imageUUID, artifactUUID)
+
+	// Publish artifact stats event
+	l.PublishStatsEvent(ctx, artifactID)
 
 	return nil
 }
@@ -484,14 +495,30 @@ func (l *localBase) postUploadArtifact(
 				return fmt.Errorf("failed to create artifact : [%s] with error: %w", info.Image, err)
 			}
 
-			// Audit log for push/upload operation
-			// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
+			// UUID is populated by CreateOrUpdate
 			artifactUUID = newArtifact.UUID
+
+			// Audit log for push/upload operation
 			l.AuditPush(ctx, info, version, imageUUID, artifactUUID)
+
+			// Publish artifact push event for stats processing only on NEW artifact creation
+			if dbArtifact == nil && l.artifactStatsPublisher != nil {
+				log.Ctx(ctx).Info().Int64("artifact_id", artifactID).Msg("Publishing artifact push event")
+				if err2 := l.artifactStatsPublisher.PublishArtifactPushEvent(ctx, artifactID); err2 != nil {
+					log.Ctx(ctx).Warn().Err(err2).Int64("artifact_id", artifactID).
+						Msg("failed to publish artifact push event")
+				} else {
+					log.Ctx(ctx).Info().Int64("artifact_id", artifactID).Msg("Successfully published artifact push event")
+				}
+			}
 
 			return nil
 		})
-	return artifactID, err
+	if err != nil {
+		return artifactID, err
+	}
+
+	return artifactID, nil
 }
 
 func (l *localBase) Download(
@@ -768,4 +795,15 @@ func (l *localBase) AuditPush(
 	registryaudit.LogArtifactPush(
 		ctx, l.auditService, l.spaceFinder, info, version, imageUUID, artifactUUID,
 	)
+}
+
+// PublishStatsEvent is a convenience wrapper for publishing artifact stats events from localBase.
+func (l *localBase) PublishStatsEvent(ctx context.Context, artifactID int64) {
+	if l.artifactStatsPublisher != nil {
+		log.Ctx(ctx).Info().Int64("artifact_id", artifactID).Msg("Publishing artifact push event")
+		if err := l.artifactStatsPublisher.PublishArtifactPushEvent(ctx, artifactID); err != nil {
+			log.Ctx(ctx).Warn().Err(err).Int64("artifact_id", artifactID).
+				Msg("failed to publish artifact push event")
+		}
+	}
 }

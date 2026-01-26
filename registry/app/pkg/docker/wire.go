@@ -75,13 +75,14 @@ func ManifestServiceProvider(
 	artifactEventReporter *registryevents.Reporter,
 	urlProvider url.Provider,
 	auditService audit.Service,
+	artStatsService pkg.ArtifactStatsPublisher,
 ) ManifestService {
 	return NewManifestService(
 		registryDao, manifestDao, blobRepo, mtRepository, tagDao, imageDao,
 		artifactDao, layerDao, manifestRefDao, tx, gcService, reporter, spaceFinder,
 		ociImageIndexMappingDao, *artifactEventReporter, urlProvider, func(_ context.Context) bool {
 			return true
-		}, auditService)
+		}, auditService, artStatsService)
 }
 
 func RemoteRegistryProvider(
@@ -150,12 +151,19 @@ func getManifestCacheHandler(
 	}
 }
 
+// ProvideNilArtifactStatsPublisher provides a nil implementation for gitness.
+// This will be overridden in harness-code with the actual service.
+func ProvideNilArtifactStatsPublisher() pkg.ArtifactStatsPublisher {
+	return nil
+}
+
 var ControllerSet = wire.NewSet(ControllerProvider)
 var DBStoreSet = wire.NewSet(DBStoreProvider)
 var RegistrySet = wire.NewSet(LocalRegistryProvider, ManifestServiceProvider, RemoteRegistryProvider)
 var ProxySet = wire.NewSet(ProvideProxyController)
 var StorageServiceSet = wire.NewSet(StorageServiceProvider)
 var AppSet = wire.NewSet(NewApp)
+var ArtifactStatsPublisherSet = wire.NewSet(ProvideNilArtifactStatsPublisher)
 
 // OciBlobStoreFactory is a function that creates an OciBlobStore with the provided context and identifiers.
 type OciBlobStoreFactory func(ctx context.Context, repoKey string, rootParentRef string) storage.OciBlobStore
@@ -190,6 +198,7 @@ var WireSet = wire.NewSet(
 	StorageServiceSet,
 	AppSet,
 	ProxySet,
+	ArtifactStatsPublisherSet,
 )
 
 // OpenSourceWireSet is used by the open-source version.

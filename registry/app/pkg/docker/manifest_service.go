@@ -74,6 +74,7 @@ type manifestService struct {
 	urlProvider             urlprovider.Provider
 	untaggedImagesEnabled   func(ctx context.Context) bool
 	auditService            audit.Service
+	artStatsService         pkg.ArtifactStatsPublisher
 }
 
 func NewManifestService(
@@ -85,6 +86,7 @@ func NewManifestService(
 	ociImageIndexMappingDao store.OCIImageIndexMappingRepository, artifactEventReporter registryevents.Reporter,
 	urlProvider urlprovider.Provider, untaggedImagesEnabled func(ctx context.Context) bool,
 	auditService audit.Service,
+	artStatsService pkg.ArtifactStatsPublisher,
 ) ManifestService {
 	return &manifestService{
 		registryDao:             registryDao,
@@ -105,6 +107,7 @@ func NewManifestService(
 		urlProvider:             urlProvider,
 		untaggedImagesEnabled:   untaggedImagesEnabled,
 		auditService:            auditService,
+		artStatsService:         artStatsService,
 	}
 }
 
@@ -514,8 +517,19 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 		Version: dgst.String(),
 	}
 
-	if _, err := l.artifactDao.CreateOrUpdate(ctx, dbArtifact); err != nil {
+	artifactID, err := l.artifactDao.CreateOrUpdate(ctx, dbArtifact)
+	if err != nil {
 		return err
+	}
+
+	// Publish artifact push event to outbox for async stats processing
+	if l.artStatsService != nil {
+		if err := l.artStatsService.PublishArtifactPushEvent(ctx, artifactID); err != nil {
+			log.Ctx(ctx).Warn().Err(err).
+				Int64("artifact_id", artifactID).
+				Msg("failed to publish artifact push event")
+			// Don't fail the whole operation if event publishing fails
+		}
 	}
 
 	// Audit log for OCI/Docker/Helm artifact push

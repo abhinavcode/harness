@@ -582,7 +582,8 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	manifestService := docker.ManifestServiceProvider(registryRepository, manifestRepository, blobRepository, mediaTypesRepository, manifestReferenceRepository, tagRepository, imageRepository, artifactRepository, layerRepository, gcService, transactor, eventReporter, spaceFinder, ociImageIndexMappingRepository, artifactReporter, provider, auditService)
+	artifactStatsPublisher := docker.ProvideNilArtifactStatsPublisher()
+	manifestService := docker.ManifestServiceProvider(registryRepository, manifestRepository, blobRepository, mediaTypesRepository, manifestReferenceRepository, tagRepository, imageRepository, artifactRepository, layerRepository, gcService, transactor, eventReporter, spaceFinder, ociImageIndexMappingRepository, artifactReporter, provider, auditService, artifactStatsPublisher)
 	registryBlobRepository := database2.ProvideRegistryBlobDao(db)
 	bandwidthStatRepository := database2.ProvideBandwidthStatDao(db)
 	downloadStatRepository := database2.ProvideDownloadStatDao(db)
@@ -633,7 +634,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	packageWrapper := helpers.ProvidePackageWrapperProvider(interfacesRegistryHelper, registryFinder, registryHelper)
 	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, storageDriver, spaceFinder, transactor, authenticator, provider, authorizer, auditService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, registryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder)
 	packageTagRepository := database2.ProvidePackageTagDao(db)
-	localBase := base.LocalBaseProvider(registryRepository, registryFinder, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService)
+	localBase := base.LocalBaseProvider(registryRepository, registryFinder, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService, artifactStatsPublisher)
 	mavenDBStore := maven.DBStoreProvider(registryRepository, imageRepository, artifactRepository, spaceStore, bandwidthStatRepository, downloadStatRepository, nodesRepository, upstreamProxyConfigRepository)
 	mavenLocalRegistry := maven.LocalRegistryProvider(localBase, mavenDBStore, transactor, fileManager)
 	mavenController := maven.ProvideProxyController(mavenLocalRegistry, secretService, spaceFinder)
@@ -646,7 +647,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	genericLocalRegistry := generic2.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider)
 	localRegistryHelper := generic2.LocalRegistryHelperProvider(genericLocalRegistry, localBase)
 	proxy := generic2.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, localRegistryHelper)
-	genericController := generic.ControllerProvider(spaceStore, authorizer, fileManager, genericDBStore, transactor, spaceFinder, genericLocalRegistry, proxy, finder, dependencyFirewallChecker)
+	genericController := generic.ControllerProvider(spaceStore, authorizer, fileManager, genericDBStore, transactor, spaceFinder, genericLocalRegistry, proxy, finder, dependencyFirewallChecker, artifactStatsPublisher)
 	packagesHandler := api2.NewPackageHandlerProvider(registryRepository, downloadStatRepository, bandwidthStatRepository, spaceStore, tokenStore, controller, authenticator, provider, authorizer, spaceFinder, registryFinder, fileManager, finder, packageWrapper)
 	genericHandler := api2.NewGenericHandlerProvider(spaceStore, genericController, tokenStore, controller, authenticator, provider, authorizer, packagesHandler, spaceFinder, registryFinder)
 	handler3 := router.GenericHandlerProvider(genericHandler)

@@ -56,6 +56,7 @@ type Controller struct {
 	proxy                     generic.Proxy
 	quarantineFinder          quarantine.Finder
 	dependencyFirewallChecker interfaces.DependencyFirewallChecker
+	artifactStatsPublisher    pkg.ArtifactStatsPublisher
 }
 
 type DBStore struct {
@@ -78,6 +79,7 @@ func NewController(
 	proxy generic.Proxy,
 	quarantineFinder quarantine.Finder,
 	dependencyFirewallChecker interfaces.DependencyFirewallChecker,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) *Controller {
 	return &Controller{
 		SpaceStore:                spaceStore,
@@ -90,6 +92,7 @@ func NewController(
 		proxy:                     proxy,
 		quarantineFinder:          quarantineFinder,
 		dependencyFirewallChecker: dependencyFirewallChecker,
+		artifactStatsPublisher:    artifactStatsPublisher,
 	}
 }
 
@@ -173,7 +176,7 @@ func (c Controller) UploadArtifact(
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
 
-			_, err = c.DBStore.ArtifactDao.CreateOrUpdate(ctx, &types.Artifact{
+			artifactID, err := c.DBStore.ArtifactDao.CreateOrUpdate(ctx, &types.Artifact{
 				ImageID:  image.ID,
 				Version:  info.Version,
 				Metadata: metadataJSON,
@@ -182,6 +185,12 @@ func (c Controller) UploadArtifact(
 				return fmt.Errorf("failed to create artifact : [%s] with "+
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
+
+			// Publish artifact push event for stats processing
+			if c.artifactStatsPublisher != nil {
+				_ = c.artifactStatsPublisher.PublishArtifactPushEvent(ctx, artifactID)
+			}
+
 			return nil
 		})
 
