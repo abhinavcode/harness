@@ -67,8 +67,8 @@ const (
 	FieldIdentifier = "identifier"
 
 	// Labels fields
-	FieldUserID      = "userId"
-	FieldUsername    = "username"
+	FieldUserID       = "userId"
+	FieldUsername     = "username"
 	FieldResourceName = "resourceName"
 
 	// Module constant
@@ -179,7 +179,7 @@ func InsertUDPAuditEvent(
 	const udpEventInsertQuery = `
 		INSERT INTO udp_events (data_type, payload) VALUES ($1, $2)
 	`
-	
+
 	_, err = db.ExecContext(ctx, udpEventInsertQuery, types.UDPEventTypeAudits, string(payloadJSON))
 	if err != nil {
 		log.Ctx(ctx).Warn().Err(err).Msg("failed to insert audit event into UDP events table")
@@ -190,28 +190,28 @@ func InsertUDPAuditEvent(
 // Expected format: account/org/project or account/org
 func parseResourceScope(spacePath string) map[string]interface{} {
 	scope := make(map[string]interface{})
-	
+
 	// Parse spacePath format: account/org/project
 	parts := splitPath(spacePath)
-	
+
 	if len(parts) >= 1 {
 		scope[FieldAccountIdentifier] = parts[0]
 	} else {
 		scope[FieldAccountIdentifier] = ""
 	}
-	
+
 	if len(parts) >= 2 {
 		scope[FieldOrgIdentifier] = parts[1]
 	} else {
 		scope[FieldOrgIdentifier] = ""
 	}
-	
+
 	if len(parts) >= 3 {
 		scope[FieldProjectIdentifier] = parts[2]
 	} else {
 		scope[FieldProjectIdentifier] = ""
 	}
-	
+
 	return scope
 }
 
@@ -220,7 +220,7 @@ func splitPath(path string) []string {
 	if path == "" {
 		return []string{}
 	}
-	
+
 	var parts []string
 	start := 0
 	for i := 0; i < len(path); i++ {
@@ -234,6 +234,6 @@ func splitPath(path string) []string {
 	if start < len(path) {
 		parts = append(parts, path[start:])
 	}
-	
+
 	return parts
 }

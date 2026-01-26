@@ -19,6 +19,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/harness/gitness/app/services/merge"
 
 	checkcontroller "github.com/harness/gitness/app/api/controller/check"
