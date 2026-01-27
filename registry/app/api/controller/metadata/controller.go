@@ -28,6 +28,7 @@ import (
 	storagedriver "github.com/harness/gitness/registry/app/driver"
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
+	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/refcache"
@@ -78,6 +79,7 @@ type APIController struct {
 	UntaggedImagesEnabled        func(ctx context.Context) bool
 	PackageWrapper               interfaces.PackageWrapper
 	PublicAccess                 publicaccess.Service
+	artifactStatsPublisher       pkg.ArtifactStatsPublisher
 }
 
 func NewAPIController(
@@ -115,6 +117,7 @@ func NewAPIController(
 	untaggedImagesEnabled func(ctx context.Context) bool,
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.Service,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) *APIController {
 	return &APIController{
 		fileManager:                  fileManager,
@@ -151,5 +154,6 @@ func NewAPIController(
 		UntaggedImagesEnabled:        untaggedImagesEnabled,
 		PackageWrapper:               packageWrapper,
 		PublicAccess:                 publicAccess,
+		artifactStatsPublisher:       artifactStatsPublisher,
 	}
 }

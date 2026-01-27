@@ -43,6 +43,7 @@ import (
 	storagedriver "github.com/harness/gitness/registry/app/driver"
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
+	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/publicaccess"
@@ -99,6 +100,7 @@ func APIHandlerProvider(
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.CacheService,
 	quarantineFinder quarantine.Finder,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) harness.APIHandler {
 	return harness.NewAPIHandler(
 		repoDao,
@@ -134,6 +136,7 @@ func APIHandlerProvider(
 		packageWrapper,
 		publicAccess,
 		quarantineFinder,
+		artifactStatsPublisher,
 	)
 }
 

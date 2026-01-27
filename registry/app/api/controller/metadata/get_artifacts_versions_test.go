@@ -300,7 +300,7 @@ func setupVersionsController(_ *testing.T, packageType artifact.PackageType) *me
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		mockPackageWrapper, nil,
+		mockPackageWrapper, nil, nil,
 	)
 }
 
@@ -353,7 +353,7 @@ func setupVersionsControllerWithError(_ *testing.T, errorType string) *metadata.
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 

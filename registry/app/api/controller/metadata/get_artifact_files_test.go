@@ -344,7 +344,7 @@ func setupFilesController(_ *testing.T, packageType artifact.PackageType) *metad
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		mockPackageWrapper, nil,
+		mockPackageWrapper, nil, nil,
 	)
 }
 
@@ -391,7 +391,7 @@ func setupFilesControllerWithError(_ *testing.T, errorType string) *metadata.API
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 

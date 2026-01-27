@@ -279,7 +279,7 @@ func setupBasicController(_ *testing.T) *metadata.APIController {
 		mockRegistryMetadataHelper, nil, eventReporter, mockDownloadStatRepo, "",
 		nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 
@@ -326,7 +326,7 @@ func setupControllerWithError(_ *testing.T, errorType string) *metadata.APIContr
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 
@@ -485,7 +485,7 @@ func setupSnapshotController(_ *testing.T, packageType artifact.PackageType) *me
 		mockRegistryMetadataHelper, nil, eventReporter, mockDownloadStatRepo, "",
 		nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 

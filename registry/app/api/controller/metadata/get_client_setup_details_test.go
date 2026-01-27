@@ -560,7 +560,7 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 				func(_ context.Context) bool {
 					return tt.untaggedImagesEnabled
 				},
-				nil, nil,
+				nil, nil, nil,
 			)
 
 			ctx := context.Background()
@@ -606,7 +606,7 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 		mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 
 	ctx := context.Background()
@@ -713,7 +713,7 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "Authorization: Bearer", nil, nil, nil,
 		nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 
@@ -776,7 +776,7 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "", nil, nil, nil,
 		nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 
@@ -902,7 +902,7 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 				mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "Authorization: Bearer",
 				nil, nil, nil, nil, nil, nil, nil, nil,
 				func(_ context.Context) bool { return false },
-				nil, nil,
+				nil, nil, nil,
 			)
 
 			ctx := context.Background()

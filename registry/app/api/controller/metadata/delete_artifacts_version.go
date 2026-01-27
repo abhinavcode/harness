@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	apiauth "github.com/harness/gitness/app/api/auth"
 	"github.com/harness/gitness/app/api/request"
@@ -104,14 +105,23 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 		}, nil
 	}
 
+	// Fetch artifact ID before deletion for stats event
+	var artifactID int64
+	if regInfo.PackageType == artifact.PackageTypeDOCKER || regInfo.PackageType == artifact.PackageTypeHELM {
+		artifactID = c.getOciArtifactIDForStats(ctx, regInfo, imageInfo, artifactName, versionName)
+	} else {
+		artifactToDelete, getArtErr := c.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName)
+		if getArtErr == nil && artifactToDelete != nil {
+			artifactID = artifactToDelete.ID
+		}
+	}
+
 	//nolint: exhaustive
 	switch regInfo.PackageType {
 	case artifact.PackageTypeDOCKER:
-		err = c.deleteOciVersionWithAudit(ctx, regInfo, registryName, session.Principal, artifactName,
-			versionName)
+		err = c.deleteOciVersionWithAudit(ctx, regInfo, registryName, session.Principal, artifactName, versionName)
 	case artifact.PackageTypeHELM:
-		err = c.deleteOciVersionWithAudit(ctx, regInfo, registryName, session.Principal, artifactName,
-			versionName)
+		err = c.deleteOciVersionWithAudit(ctx, regInfo, registryName, session.Principal, artifactName, versionName)
 	case artifact.PackageTypeNPM:
 		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
 	case artifact.PackageTypeMAVEN:
@@ -156,6 +166,13 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 		return throwDeleteArtifactVersion500Error(err), nil
 	}
 
+	if artifactID > 0 {
+		if publishErr := c.artifactStatsPublisher.PublishArtifactDeleteEvent(ctx, artifactID); publishErr != nil {
+			log.Ctx(ctx).Warn().Err(publishErr).Int64("artifact_id", artifactID).
+				Msg("failed to publish artifact delete event")
+		}
+	}
+
 	auditErr := c.AuditService.Log(
 		ctx,
 		session.Principal,
@@ -173,6 +190,51 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	return artifact.DeleteArtifactVersion200JSONResponse{
 		SuccessJSONResponse: artifact.SuccessJSONResponse(*GetSuccessResponse()),
 	}, nil
+}
+
+func (c *APIController) getOciArtifactIDForStats(
+	ctx context.Context,
+	regInfo *registryTypes.RegistryRequestBaseInfo,
+	imageInfo *registryTypes.Image,
+	artifactName string,
+	versionName string,
+) int64 {
+	if !c.UntaggedImagesEnabled(ctx) {
+		return 0
+	}
+
+	var existingManifest *registryTypes.Manifest
+	var manifestErr error
+
+	d := digest.Digest(versionName)
+	if _, err := registryTypes.NewDigest(d); err == nil && strings.HasPrefix(versionName, "sha256:") {
+		dgst, _ := registryTypes.NewDigest(d)
+		existingManifest, manifestErr = c.ManifestStore.FindManifestByDigest(
+			ctx, regInfo.RegistryID, artifactName, dgst,
+		)
+	} else {
+		existingManifest, manifestErr = c.ManifestStore.FindManifestByTagName(
+			ctx, regInfo.RegistryID, artifactName, versionName,
+		)
+	}
+
+	if manifestErr != nil {
+		return 0
+	}
+
+	// Convert manifest digest from OCI format to DB format
+	manifestDigestDB, convErr := registryTypes.NewDigest(digest.Digest(existingManifest.Digest.String()))
+	if convErr != nil {
+		return 0
+	}
+
+	// Fetch artifact by DB format digest
+	artifactToDelete, getArtErr := c.ArtifactStore.GetByName(ctx, imageInfo.ID, manifestDigestDB.String())
+	if getArtErr == nil && artifactToDelete != nil {
+		return artifactToDelete.ID
+	}
+
+	return 0
 }
 
 func (c *APIController) deleteOciVersionWithAudit(

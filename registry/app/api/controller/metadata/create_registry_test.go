@@ -276,6 +276,7 @@ func TestCreateRegistry(t *testing.T) {
 					},
 					packageWrapper,
 					mockPublicAccessService,
+					nil,
 				)
 			},
 		},
@@ -346,21 +347,22 @@ func TestCreateRegistry(t *testing.T) {
 					mockRegistryMetadataHelper,
 					nil, // webhookService.
 					eventReporter,
-					nil, //
-					"",  // downloadStatRepository.
-					nil,
+					nil, // downloadStatRepository.
+					"",  // setupDetailsAuthHeaderPrefix
+					nil, // registryBlobStore
 					mockRegFinder,
-					nil, // PostProcessingReporter - not needed for this test.
-					nil,
-					nil,
-					nil,
-					nil,
-					nil,
+					nil, // PostProcessingReporter
+					nil, // cargoRegistryHelper
+					nil, // spaceController
+					nil, // quarantineArtifactRepository
+					nil, // quarantineFinder
+					nil, // spaceStore
 					func(_ context.Context) bool {
 						return true
 					},
-					nil,
+					nil, // packageWrapper
 					mockPublicAccessService,
+					nil, // artifactStatsPublisher
 				)
 			},
 		},

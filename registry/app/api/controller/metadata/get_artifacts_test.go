@@ -224,7 +224,7 @@ func setupArtifactsControllerWithError(_ *testing.T, errorType string) *metadata
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil,
 	)
 }
 
@@ -362,7 +362,7 @@ func setupArtifactsSnapshotController(
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return untaggedImagesEnabled },
-		mockPackageWrapper, nil,
+		mockPackageWrapper, nil, nil,
 	)
 }
 
