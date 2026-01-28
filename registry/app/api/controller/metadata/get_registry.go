@@ -17,6 +17,7 @@ package metadata
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	apiauth "github.com/harness/gitness/app/api/auth"
@@ -107,7 +108,7 @@ func (c *APIController) GetRegistry(
 		if len(repoEntity.Name) == 0 {
 			return artifact.GetRegistry404JSONResponse{
 				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-					*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+					*GetErrorResponse(http.StatusNotFound, fmt.Sprintf("registry %s doesn't exist", regInfo.RegistryIdentifier)),
 				),
 			}, nil
 		}
@@ -133,7 +134,7 @@ func (c *APIController) GetRegistry(
 	if len(upstreamproxyEntity.RepoKey) == 0 {
 		return artifact.GetRegistry404JSONResponse{
 			NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-				*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+				*GetErrorResponse(http.StatusNotFound, fmt.Sprintf("registry %s doesn't exist", regInfo.RegistryIdentifier)),
 			),
 		}, nil
 	}

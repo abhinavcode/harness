@@ -99,7 +99,7 @@ func (c *APIController) DeleteRegistry(
 				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
 					*GetErrorResponse(
 						http.StatusNotFound,
-						"registry doesn't exist with this key",
+						fmt.Sprintf("registry %s doesn't exist", regInfo.RegistryIdentifier),
 					),
 				),
 			}, nil

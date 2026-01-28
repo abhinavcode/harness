@@ -88,7 +88,7 @@ func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArt
 			//nolint:nilerr
 			return artifact.DeleteArtifact404JSONResponse{
 				NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-					*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+					*GetErrorResponse(http.StatusNotFound, fmt.Sprintf("registry %s doesn't exist", regInfo.RegistryIdentifier)),
 				),
 			}, nil
 		}

@@ -537,22 +537,19 @@ func (r registryDao) fetchArtifactCounts(
 		`
 	case types.SoftDeleteFilterExclude:
 		query = `
-			SELECT i.image_registry_id, COUNT(i.image_id) AS count
-			FROM images i
-			JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE i.image_registry_id IN (?)
-			  AND i.image_deleted_at IS NULL
-			  AND r.registry_deleted_at IS NULL
-			GROUP BY i.image_registry_id
+			SELECT image_registry_id, COUNT(image_id) AS count
+			FROM images
+			WHERE image_registry_id IN (?)
+			  AND image_deleted_at IS NULL
+			GROUP BY image_registry_id
 		`
 	case types.SoftDeleteFilterOnly:
 		query = `
-			SELECT i.image_registry_id, COUNT(i.image_id) AS count
-			FROM images i
-			JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE i.image_registry_id IN (?)
-			  AND (i.image_deleted_at IS NOT NULL OR r.registry_deleted_at IS NOT NULL)
-			GROUP BY i.image_registry_id
+			SELECT image_registry_id, COUNT(image_id) AS count
+			FROM images
+			WHERE image_registry_id IN (?)
+			  AND image_deleted_at IS NOT NULL
+			GROUP BY image_registry_id
 		`
 	}
 
@@ -604,10 +601,8 @@ func (r registryDao) fetchOCIBlobSizes(
 			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
 			FROM registry_blobs rb
 			LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
-			JOIN registries r ON rb.rblob_registry_id = r.registry_id
 			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
 			WHERE rb.rblob_registry_id IN (?)
-			  AND r.registry_deleted_at IS NULL
 			  AND (rb.rblob_image_name IS NULL OR i.image_deleted_at IS NULL)
 			GROUP BY rb.rblob_registry_id
 		`
@@ -616,11 +611,10 @@ func (r registryDao) fetchOCIBlobSizes(
 			SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
 			FROM registry_blobs rb
 			LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
-			JOIN registries r ON rb.rblob_registry_id = r.registry_id
 			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
 			WHERE rb.rblob_registry_id IN (?)
-			  AND (r.registry_deleted_at IS NOT NULL OR (rb.rblob_image_name IS NOT NULL AND i.image_deleted_at IS NOT NULL))
-		GROUP BY rb.rblob_registry_id
+			  AND (rb.rblob_image_name IS NOT NULL AND i.image_deleted_at IS NOT NULL)
+			GROUP BY rb.rblob_registry_id
 		`
 	}
 
@@ -674,12 +668,10 @@ func (r registryDao) fetchGenericBlobSizes(
 			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
 			FROM nodes n
 			LEFT JOIN generic_blobs gb ON gb.generic_blob_id = n.node_generic_blob_id
-			JOIN registries r ON n.node_registry_id = r.registry_id
 			LEFT JOIN images i ON i.image_registry_id = n.node_registry_id AND i.image_name = SPLIT_PART(n.node_path, '/', 2)
 			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
 			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
 			  AND n.node_registry_id IN (?)
-			  AND r.registry_deleted_at IS NULL
 			  AND (i.image_id IS NULL OR (i.image_deleted_at IS NULL AND (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL)))
 			GROUP BY n.node_registry_id
 		`
@@ -688,10 +680,11 @@ func (r registryDao) fetchGenericBlobSizes(
 			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
 			FROM nodes n
 			LEFT JOIN generic_blobs gb ON gb.generic_blob_id = n.node_generic_blob_id
-			JOIN registries r ON n.node_registry_id = r.registry_id
+			LEFT JOIN images i ON i.image_registry_id = n.node_registry_id AND i.image_name = SPLIT_PART(n.node_path, '/', 2)
+			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
 			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
 			  AND n.node_registry_id IN (?)
-			  AND r.registry_deleted_at IS NOT NULL
+			  AND (i.image_id IS NOT NULL AND (i.image_deleted_at IS NOT NULL OR (a.artifact_id IS NOT NULL AND a.artifact_deleted_at IS NOT NULL)))
 			GROUP BY n.node_registry_id
 		`
 	}

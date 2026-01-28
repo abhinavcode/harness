@@ -101,7 +101,7 @@ func (c *APIController) ModifyRegistry(
 	if len(upstreamproxyEntity.RepoKey) == 0 {
 		return artifact.ModifyRegistry404JSONResponse{
 			NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-				*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+				*GetErrorResponse(http.StatusNotFound, fmt.Sprintf("registry %s doesn't exist", regInfo.RegistryIdentifier)),
 			),
 		}, nil
 	}
@@ -176,7 +176,7 @@ func (c *APIController) updateVirtualRegistry(
 	if len(repoEntity.Name) == 0 {
 		return artifact.ModifyRegistry404JSONResponse{
 			NotFoundJSONResponse: artifact.NotFoundJSONResponse(
-				*GetErrorResponse(http.StatusNotFound, "registry doesn't exist with this key"),
+				*GetErrorResponse(http.StatusNotFound, fmt.Sprintf("registry %s doesn't exist", regInfo.RegistryIdentifier)),
 			),
 		}, nil
 	}
