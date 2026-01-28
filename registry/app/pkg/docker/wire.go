@@ -104,8 +104,9 @@ func ControllerProvider(
 	authorizer authz.Authorizer,
 	dBStore *DBStore,
 	spaceFinder refcache.SpaceFinder,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) *Controller {
-	return NewController(local, remote, controller, spaceStore, authorizer, dBStore, spaceFinder)
+	return NewController(local, remote, controller, spaceStore, authorizer, dBStore, spaceFinder, artifactStatsPublisher)
 }
 
 func DBStoreProvider(

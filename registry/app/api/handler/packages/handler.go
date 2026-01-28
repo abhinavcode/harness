@@ -58,40 +58,49 @@ func NewHandler(
 	regFinder refcache2.RegistryFinder,
 	fileManager filemanager.FileManager, quarantineFinder quarantine.Finder,
 	packageWrapper interfaces.PackageWrapper,
+	imageDao store.ImageRepository,
+	artifactDao store.ArtifactRepository,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) Handler {
 	return &handler{
-		RegistryDao:      registryDao,
-		DownloadStatDao:  downloadStatDao,
-		BandwidthStatDao: bandwidthStatDao,
-		SpaceStore:       spaceStore,
-		TokenStore:       tokenStore,
-		UserCtrl:         userCtrl,
-		Authenticator:    authenticator,
-		URLProvider:      urlProvider,
-		Authorizer:       authorizer,
-		SpaceFinder:      spaceFinder,
-		RegFinder:        regFinder,
-		fileManager:      fileManager,
-		quarantineFinder: quarantineFinder,
-		PackageWrapper:   packageWrapper,
+		RegistryDao:            registryDao,
+		DownloadStatDao:        downloadStatDao,
+		BandwidthStatDao:       bandwidthStatDao,
+		SpaceStore:             spaceStore,
+		TokenStore:             tokenStore,
+		UserCtrl:               userCtrl,
+		Authenticator:          authenticator,
+		URLProvider:            urlProvider,
+		Authorizer:             authorizer,
+		SpaceFinder:            spaceFinder,
+		RegFinder:              regFinder,
+		fileManager:            fileManager,
+		quarantineFinder:       quarantineFinder,
+		PackageWrapper:         packageWrapper,
+		ImageDao:               imageDao,
+		ArtifactDao:            artifactDao,
+		artifactStatsPublisher: artifactStatsPublisher,
 	}
 }
 
 type handler struct {
-	RegistryDao      store.RegistryRepository
-	DownloadStatDao  store.DownloadStatRepository
-	BandwidthStatDao store.BandwidthStatRepository
-	SpaceStore       corestore.SpaceStore
-	TokenStore       corestore.TokenStore
-	UserCtrl         *usercontroller.Controller
-	Authenticator    authn.Authenticator
-	URLProvider      urlprovider.Provider
-	Authorizer       authz.Authorizer
-	SpaceFinder      refcache.SpaceFinder
-	RegFinder        refcache2.RegistryFinder
-	fileManager      filemanager.FileManager
-	quarantineFinder quarantine.Finder
-	PackageWrapper   interfaces.PackageWrapper
+	RegistryDao            store.RegistryRepository
+	DownloadStatDao        store.DownloadStatRepository
+	BandwidthStatDao       store.BandwidthStatRepository
+	SpaceStore             corestore.SpaceStore
+	TokenStore             corestore.TokenStore
+	UserCtrl               *usercontroller.Controller
+	Authenticator          authn.Authenticator
+	URLProvider            urlprovider.Provider
+	Authorizer             authz.Authorizer
+	SpaceFinder            refcache.SpaceFinder
+	RegFinder              refcache2.RegistryFinder
+	fileManager            filemanager.FileManager
+	quarantineFinder       quarantine.Finder
+	PackageWrapper         interfaces.PackageWrapper
+	ImageDao               store.ImageRepository
+	ArtifactDao            store.ArtifactRepository
+	artifactStatsPublisher pkg.ArtifactStatsPublisher
 }
 
 type Handler interface {
@@ -156,6 +165,21 @@ func (h *handler) TrackDownloadStats(
 		log.Ctx(ctx).Error().Msgf("failed to create download stat: %v", err.Error())
 		return usererror.ErrInternal
 	}
+
+	// Publish artifact download event for stats processing
+	if h.artifactStatsPublisher != nil {
+		image, imgErr := h.ImageDao.GetByName(ctx, info.BaseArtifactInfo().RegistryID, info.BaseArtifactInfo().Image)
+		if imgErr == nil && image != nil {
+			artifact, artErr := h.ArtifactDao.GetByName(ctx, image.ID, info.GetVersion())
+			if artErr == nil && artifact != nil {
+				if publishErr := h.artifactStatsPublisher.PublishArtifactDownloadEvent(ctx, artifact.ID); publishErr != nil {
+					log.Ctx(ctx).Warn().Err(publishErr).Int64("artifact_id", artifact.ID).
+						Msg("failed to publish artifact download event")
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
