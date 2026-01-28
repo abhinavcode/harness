@@ -85,7 +85,10 @@ type OciVersionMetadata struct {
 	Tags              []string
 	IsQuarantined     bool
 	QuarantineReason  string
-	ArtifactDeletedAt *int64
+	ArtifactDeletedAt *int64 // Cascade from artifact
+	ImageDeletedAt    *int64 // Cascade from image
+	RegistryDeletedAt *int64 // Cascade from registry
+	ArtifactUUID      string
 }
 
 type TagDetail struct {

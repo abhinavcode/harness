@@ -163,8 +163,9 @@ func (c *APIController) FetchArtifactSummary(
 			deletedAt = &timestamp
 		}
 
-		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason, nil, deletedAt,
-			"", "", nil
+		// Artifact UUID is fetched directly from the database via join in GetOCIVersionMetadata
+		return image, ociVersion.Name, ociVersion.PackageType, isQuarantined, quarantineReason,
+			nil, deletedAt, ociVersion.ArtifactUUID, registry.UUID, nil
 	}
 	metadata, err := c.ArtifactStore.GetArtifactMetadata(
 		ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version, artifactType, types.WithAllDeleted())

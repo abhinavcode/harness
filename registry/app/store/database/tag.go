@@ -48,6 +48,7 @@ const (
 	labelSeparatorEnd   string          = "^_%"
 	downloadCount       string          = "download_count"
 	imageName           string          = "image_name"
+	driverPostgres      string          = "postgres"
 	name                string          = "name"
 	postgresStringAgg   string          = "string_agg"
 	sqliteGroupConcat   string          = "group_concat"
@@ -116,6 +117,7 @@ type tagMetadataDB struct {
 	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"` // For cascade logic
 	ImageDeletedAt    *int64               `db:"image_deleted_at"`    // For cascade logic
 	RegistryDeletedAt *int64               `db:"registry_deleted_at"` // For cascade logic
+	ArtifactUUID      sql.NullString       `db:"artifact_uuid"`
 }
 
 type ociVersionMetadataDB struct {
@@ -133,6 +135,7 @@ type ociVersionMetadataDB struct {
 	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"` // For cascade logic
 	ImageDeletedAt    *int64               `db:"image_deleted_at"`    // For cascade logic
 	RegistryDeletedAt *int64               `db:"registry_deleted_at"` // For cascade logic
+	ArtifactUUID      sql.NullString       `db:"artifact_uuid"`
 }
 
 type tagDetailDB struct {
@@ -676,7 +679,7 @@ func (t tagDao) getArtifactEnrichmentData(ctx context.Context, artifactIDs []int
 
 	// Pick aggregation function and decode function depending on database
 	var tagAggExpr, decodeFunction string
-	if driver == "postgres" {
+	if driver == driverPostgres {
 		tagAggExpr = "STRING_AGG(t.tag_name, ',')"
 		decodeFunction = "decode(ar.artifact_version, 'hex')"
 	} else {
@@ -690,7 +693,7 @@ func (t tagDao) getArtifactEnrichmentData(ctx context.Context, artifactIDs []int
 	const placeholderSeparator = ", ?"
 
 	// nolint:nestif
-	if driver == "postgres" {
+	if driver == driverPostgres {
 		// PostgreSQL: sequential parameter numbering across entire query
 		paramIndex := 1
 
@@ -1304,15 +1307,25 @@ func (t tagDao) GetTagMetadata(
 	imageName string,
 	name string,
 ) (*types.OciVersionMetadata, error) {
+	// Build query with database-specific decode function for artifact version comparison
+	var decodeFunction string
+	if t.db.DriverName() == driverPostgres {
+		decodeFunction = "decode(a.artifact_version, 'hex')"
+	} else {
+		decodeFunction = "unhex(a.artifact_version)"
+	}
+
 	q := databaseg.Builder.Select(
-		"registry_package_type as package_type, tag_name as name,"+
+		"registry_package_type as package_type, tag_name as name, "+
 			"tag_updated_at as modified_at, manifest_total_size as size, "+
-			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at",
+			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at, "+
+			"a.artifact_uuid as artifact_uuid",
 	).
 		From("tags t").
 		Join("registries r ON t.tag_registry_id = r.registry_id").
 		Join("manifests ON manifest_id = t.tag_manifest_id").
 		Join("images i ON i.image_registry_id = r.registry_id AND i.image_name = t.tag_image_name").
+		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND manifest_digest = "+decodeFunction).
 		Where(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
 				" AND t.tag_image_name = ? AND t.tag_name = ?", parentID, repoKey, imageName, name,
@@ -1344,14 +1357,25 @@ func (t tagDao) GetOCIVersionMetadata(
 	if err != nil {
 		return nil, err
 	}
+
+	// Build query with database-specific decode function for artifact version comparison
+	var decodeFunction string
+	if t.db.DriverName() == driverPostgres {
+		decodeFunction = "decode(a.artifact_version, 'hex')"
+	} else {
+		decodeFunction = "unhex(a.artifact_version)"
+	}
+
 	q := databaseg.Builder.Select(
 		"registry_package_type as package_type, manifest_digest, "+
 			"manifest_created_at as modified_at, manifest_total_size as size, "+
-			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at",
+			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at, "+
+			"a.artifact_uuid as artifact_uuid",
 	).
 		From("manifests").
 		Join("registries r ON manifest_registry_id = r.registry_id").
 		Join("images i ON i.image_registry_id = r.registry_id AND i.image_name = manifest_image_name").
+		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND manifest_digest = "+decodeFunction).
 		Where(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
 				" AND manifest_image_name = ? AND manifest_digest = ?", parentID, repoKey, imageName, digestBytes,
@@ -2155,6 +2179,10 @@ func (t tagDao) mapToTagMetadata(
 		tagMetadata.Digest = string(dgst)
 	}
 
+	if dst.ArtifactUUID.Valid {
+		tagMetadata.ArtifactUUID = dst.ArtifactUUID.String
+	}
+
 	return tagMetadata, nil
 }
 
@@ -2178,6 +2206,10 @@ func (t tagDao) mapToOciVersion(
 		ociVersion.Tags = strings.Split(*dst.Tags, ",")
 	} else {
 		ociVersion.Tags = []string{}
+	}
+
+	if dst.ArtifactUUID.Valid {
+		ociVersion.ArtifactUUID = dst.ArtifactUUID.String
 	}
 
 	dgst := types.Digest(util.GetHexEncodedString(dst.Digest))
