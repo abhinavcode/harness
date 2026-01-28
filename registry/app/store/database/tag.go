@@ -95,9 +95,10 @@ type artifactMetadataDB struct {
 	QuarantineReason  *string                `db:"quarantine_reason"`
 	ArtifactType      *artifact.ArtifactType `db:"artifact_type"`
 	Tags              *string                `db:"tags"`
-	ArtifactDeletedAt *int64                 `db:"artifact_deleted_at"` // For cascade logic
-	ImageDeletedAt    *int64                 `db:"image_deleted_at"`    // For cascade logic
-	RegistryDeletedAt *int64                 `db:"registry_deleted_at"` // For cascade logic
+	ArtifactDeletedAt *int64                 `db:"artifact_deleted_at"`
+	ImageDeletedAt    *int64                 `db:"image_deleted_at"`
+	RegistryDeletedAt *int64                 `db:"registry_deleted_at"`
+	RegistryType      *artifact.RegistryType `db:"registry_type"`
 }
 
 type tagMetadataDB struct {
@@ -416,7 +417,7 @@ func (t tagDao) GetAllArtifactsByParentID(
     SELECT repo_name, name, package_type, version, modified_at,
            labels, download_count, is_quarantined, quarantine_reason, artifact_type,
            artifact_deleted_at, image_deleted_at, registry_deleted_at,
-		   registry_uuid, uuid
+		   registry_uuid, uuid, registry_type
     FROM (%s UNION ALL %s) AS combined
 `, q1SQL, q2SQL)
 
@@ -467,7 +468,8 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
         i.image_type as artifact_type,
         NULL as artifact_deleted_at,
         i.image_deleted_at as image_deleted_at,
-        r.registry_deleted_at as registry_deleted_at`,
+        r.registry_deleted_at as registry_deleted_at,
+        r.registry_type as registry_type`,
 	).
 		From("tags t").
 		Join("registries r ON t.tag_registry_id = r.registry_id").
@@ -618,7 +620,8 @@ func (t tagDao) getCoreArtifactsQuery(
 		i.image_type as artifact_type,
 		ar.artifact_deleted_at as artifact_deleted_at,
 		i.image_deleted_at as image_deleted_at,
-		r.registry_deleted_at as registry_deleted_at`,
+		r.registry_deleted_at as registry_deleted_at,
+        r.registry_type as registry_type`,
 	).
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").
@@ -847,7 +850,8 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
         i.image_type as artifact_type,
         ar.artifact_deleted_at as artifact_deleted_at,
         i.image_deleted_at as image_deleted_at,
-        r.registry_deleted_at as registry_deleted_at`+suffix,
+        r.registry_deleted_at as registry_deleted_at,
+        r.registry_type as registry_type`+suffix,
 	).
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").
@@ -2087,6 +2091,7 @@ func (t tagDao) mapToArtifactMetadata(
 		QuarantineReason: dst.QuarantineReason,
 		ArtifactType:     dst.ArtifactType,
 		DeletedAt:        deletedAt,
+		RegistryType:     dst.RegistryType,
 	}
 
 	if dst.Tags != nil {

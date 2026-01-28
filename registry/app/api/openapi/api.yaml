@@ -2355,6 +2355,8 @@ components:
         deletedAt:
           type: string
           description: Timestamp in milliseconds when the registry was soft-deleted
+        registryType:
+          $ref: "#/components/schemas/RegistryType"
       required:
         - name
         - registryIdentifier
