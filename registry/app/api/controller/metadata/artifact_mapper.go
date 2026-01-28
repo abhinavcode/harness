@@ -132,6 +132,7 @@ func mapToArtifactMetadata(
 		IsQuarantined:      &artifact.IsQuarantined,
 		QuarantineReason:   artifact.QuarantineReason,
 		ArtifactType:       artifact.ArtifactType,
+		DeletedAt:          deletedAt,
 		RegistryType:       artifact.RegistryType,
 	}
 }

@@ -1656,6 +1656,7 @@ func (a ArtifactDao) mapToArtifactMetadata(
 		IsQuarantined:    dst.IsQuarantined,
 		QuarantineReason: dst.QuarantineReason,
 		ArtifactType:     dst.ArtifactType,
+		DeletedAt:        deletedAt,
 		RegistryType:     dst.RegistryType,
 	}
 	if dst.Metadata != nil {
