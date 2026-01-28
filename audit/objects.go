@@ -36,6 +36,7 @@ type PullRequestObject struct {
 	PullReq        types.PullReq
 	RepoPath       string                 `yaml:"repo_path"`
 	RuleViolations []types.RuleViolations `yaml:"rule_violations"`
+	BypassMessage  string                 `yaml:"bypass_message,omitempty"`
 }
 
 type CommitObject struct {
@@ -66,4 +67,26 @@ type RegistryUpstreamProxyConfigObject struct {
 	UpdatedAt  time.Time
 	CreatedBy  int64
 	UpdatedBy  int64
+}
+
+type RegistryUpstreamProxyConfigObjectEnhanced struct {
+	UUID            string
+	Name            string
+	ParentID        int64
+	RootParentID    int64
+	Description     string
+	Type            string
+	PackageType     string
+	UpstreamProxies []int64
+	AllowedPattern  []string
+	BlockedPattern  []string
+	Labels          []string
+	Source          string
+	URL             string
+	AuthType        string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CreatedBy       int64
+	UpdatedBy       int64
+	IsPublic        bool
 }
