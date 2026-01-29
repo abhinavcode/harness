@@ -34,6 +34,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/types/npm"
+	"github.com/harness/gitness/registry/app/services/hook"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/types"
@@ -74,11 +75,11 @@ func TestParseAndUploadNPMPackage_WithAttachment_UploadsData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("filesystem driver init failed: %v", err)
 	}
-	svc, err := storage.NewStorageService(&storage.StaticStorageResolver{Driver: drv}, nil)
+	svc, err := storage.NewStorageService(&storage.StaticStorageResolver{Driver: drv})
 	if err != nil {
 		t.Fatalf("storage service init failed: %v", err)
 	}
-	fm := filemanager.NewFileManager(nil, nil, nil, nil, nil, svc, nil, nil, nil)
+	fm := filemanager.NewFileManager(nil, nil, nil, nil, nil, svc, nil, nil, hook.NewNoOpBlobActionHook())
 
 	// Wire local registry with a real file manager
 	lr := newLocalForTests(&mockLocalBase{}, nil, nil, nil, nil)

@@ -254,6 +254,7 @@ func setupArtifactsControllerWithError(_ *testing.T, errorType string) *metadata
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -420,6 +421,7 @@ func setupArtifactsSnapshotController(
 		mockPackageWrapper, // packageWrapper
 		nil,                // publicAccess
 		nil,                // storageService
+		nil,                // app
 	)
 }
 

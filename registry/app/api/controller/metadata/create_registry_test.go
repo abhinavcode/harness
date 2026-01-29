@@ -277,6 +277,7 @@ func TestCreateRegistry(t *testing.T) {
 					packageWrapper,          // packageWrapper
 					mockPublicAccessService, // publicAccess
 					nil,                     // storageService
+					nil,                     // app
 				)
 			},
 		},
@@ -362,6 +363,7 @@ func TestCreateRegistry(t *testing.T) {
 					nil, // packageWrapper
 					nil, // publicAccess
 					nil, // storageService
+					nil, // app
 				)
 			},
 		},

@@ -256,7 +256,7 @@ func (c *localRegistry) UploadPackage(
 		return headers, "", fmt.Errorf(
 			"failed to upload file: %s with registry: %d with error: %w", tmpFileName, info.RegistryID, err)
 	}
-	r, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, fileInfo, 0, 0)
+	r, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, fileInfo, info.RootParentID, info.RegistryID)
 	if err != nil {
 		return headers, "", fmt.Errorf(
 			"failed to download file with registry: %d with error: %w",

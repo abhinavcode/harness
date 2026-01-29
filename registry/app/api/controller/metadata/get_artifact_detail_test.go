@@ -308,6 +308,7 @@ func setupBasicController(_ *testing.T) *metadata.APIController {
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -383,6 +384,7 @@ func setupControllerWithError(_ *testing.T, errorType string) *metadata.APIContr
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -570,6 +572,7 @@ func setupSnapshotController(_ *testing.T, packageType artifact.PackageType) *me
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // storageService
+		nil, // app
 	)
 }
 

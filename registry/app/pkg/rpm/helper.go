@@ -63,7 +63,7 @@ func (c *registryHelper) UploadPackage(
 	if err != nil {
 		return nil, "", err
 	}
-	r, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, fileInfo, 0, 0)
+	r, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, fileInfo, info.RootParentID, info.RegistryID)
 	if err != nil {
 		return nil, "", err
 	}

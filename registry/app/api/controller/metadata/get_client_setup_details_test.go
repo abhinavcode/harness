@@ -588,6 +588,7 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 				nil, // packageWrapper
 				nil, // publicAccess
 				nil, // storageService
+				nil, // app
 			)
 
 			ctx := context.Background()
@@ -663,6 +664,7 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // storageService
+		nil, // app
 	)
 
 	ctx := context.Background()
@@ -799,6 +801,7 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -890,6 +893,7 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -1045,6 +1049,7 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 				nil, // packageWrapper
 				nil, // publicAccess
 				nil, // storageService
+				nil, // app
 			)
 
 			ctx := context.Background()

@@ -273,6 +273,10 @@ func NewDigest(d digest.Digest) (Digest, error) {
 		algPrefix = sha1DigestAlgorithmPrefix
 	case crypto.MD5:
 		algPrefix = md5DigestAlgorithmPrefix
+	case digest.SHA384:
+		return "", errors.New("sha384 algorithm not supported")
+	case digest.BLAKE3:
+		return "", errors.New("blake3 algorithm not supported")
 	default:
 		return "", fmt.Errorf("unknown algorithm %q", alg)
 	}

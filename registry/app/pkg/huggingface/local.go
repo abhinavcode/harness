@@ -509,7 +509,8 @@ func (c *localRegistry) readme(
 	for _, lfsFile := range *lfsFiles {
 		file := types.FileInfo{Sha256: lfsFile.Oid}
 		if strings.ToLower(lfsFile.Path) == "readme.md" {
-			reader, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, file, 0, 0)
+			reader, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, file, info.RootParentID,
+				info.RegistryID)
 			if err != nil {
 				log.Ctx(ctx).Warn().Msgf("Failed to download readme file %v", err)
 				return ""
