@@ -113,6 +113,19 @@ func (c *Controller) PreReceive(
 		return output, nil
 	}
 
+	err = c.preReceiveExtender.Extend(ctx, rgit, session, repo, in, &output)
+	if err != nil {
+		return hook.Output{}, fmt.Errorf("failed to extend pre-receive hook: %w", err)
+	}
+	if output.Error != nil {
+		return output, nil
+	}
+
+	// If repository is not active, skip all further processing.
+	if repo.State != enum.RepoStateActive {
+		return output, nil
+	}
+
 	protectionRules, err := c.protectionManager.ListRepoRules(
 		ctx, repo.ID, protection.TypeBranch, protection.TypeTag, protection.TypePush,
 	)
@@ -122,27 +135,21 @@ func (c *Controller) PreReceive(
 		)
 	}
 
-	var principal *types.Principal
-	var dummySession *auth.Session
-	var isRepoOwner bool
-	repoActive := repo.State == enum.RepoStateActive
-	if repoActive {
-		// TODO: use store.PrincipalInfoCache once we abstracted principals.
-		principal, err = c.principalStore.Find(ctx, in.PrincipalID)
-		if err != nil {
-			return hook.Output{}, fmt.Errorf("failed to find inner principal with id %d: %w", in.PrincipalID, err)
-		}
-		dummySession = &auth.Session{Principal: *principal, Metadata: nil}
-		isRepoOwner, err = apiauth.IsRepoOwner(ctx, c.authorizer, dummySession, repo)
-		if err != nil {
-			return hook.Output{}, fmt.Errorf("failed to determine if user is repo owner: %w", err)
-		}
+	// TODO: use store.PrincipalInfoCache once we abstracted principals.
+	principal, err := c.principalStore.Find(ctx, in.PrincipalID)
+	if err != nil {
+		return hook.Output{}, fmt.Errorf("failed to find inner principal with id %d: %w", in.PrincipalID, err)
+	}
+	dummySession := &auth.Session{Principal: *principal, Metadata: nil}
+	isRepoOwner, err := apiauth.IsRepoOwner(ctx, c.authorizer, dummySession, repo)
+	if err != nil {
+		return hook.Output{}, fmt.Errorf("failed to determine if user is repo owner: %w", err)
 	}
 
 	var ruleViolations []types.RuleViolations
 
 	// For internal calls - through the application interface (API) - no need to verify protection rules.
-	if !in.Internal && repoActive {
+	if !in.Internal {
 		protectionRulesViolations, err := c.checkProtectionRules(
 			ctx, dummySession, repo, refUpdates, protectionRules, isRepoOwner,
 		)
@@ -152,26 +159,14 @@ func (c *Controller) PreReceive(
 		ruleViolations = append(ruleViolations, protectionRulesViolations...)
 	}
 
-	err = c.preReceiveExtender.Extend(ctx, rgit, session, repo, in, &output)
+	settingsViolations, pushRulesViolations, err := c.processPushProtection(
+		ctx, rgit, repo, principal, isRepoOwner, refUpdates, protectionRules, in, &output,
+	)
 	if err != nil {
-		return hook.Output{}, fmt.Errorf("failed to extend pre-receive hook: %w", err)
-	}
-	if output.Error != nil {
-		return output, nil
+		return hook.Output{}, fmt.Errorf("failed to process push protection: %w", err)
 	}
 
-	var settingsViolations *settingsViolations
-	if repoActive {
-		var pushRulesViolations []types.RuleViolations
-		settingsViolations, pushRulesViolations, err = c.processPushProtection(
-			ctx, rgit, repo, principal, isRepoOwner, refUpdates, protectionRules, in, &output,
-		)
-		if err != nil {
-			return hook.Output{}, err
-		}
-
-		ruleViolations = append(ruleViolations, pushRulesViolations...)
-	}
+	ruleViolations = append(ruleViolations, pushRulesViolations...)
 
 	processViolations(&output, settingsViolations, ruleViolations)
 
