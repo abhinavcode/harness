@@ -33,7 +33,8 @@ import (
 )
 
 func (c *APIController) DeleteArtifact(ctx context.Context, r artifact.DeleteArtifactRequestObject) (
-	artifact.DeleteArtifactResponseObject, error) {
+	artifact.DeleteArtifactResponseObject, error,
+) {
 	regInfo, err := c.RegistryMetadataHelper.GetRegistryRequestBaseInfo(ctx, "", string(r.RegistryRef))
 	if err != nil {
 		return artifact.DeleteArtifact400JSONResponse{
@@ -210,7 +211,7 @@ func (c *APIController) deleteGenericImage(
 				return fmt.Errorf("failed to get file path: %w", err)
 			}
 			// Delete Artifact Files
-			err = c.fileManager.DeleteNode(ctx, regInfo.RegistryID, filePath)
+			err = c.fileManager.DeleteFile(ctx, regInfo.RegistryID, filePath)
 			if err != nil {
 				return fmt.Errorf("failed to delete artifact files: %w", err)
 			}
