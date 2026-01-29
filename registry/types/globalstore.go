@@ -15,31 +15,19 @@
 package types
 
 import (
-	"time"
-
+	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
 )
 
-// Blob DTO object.
-type Blob struct {
-	ID           int64
-	RootParentID int64
-	// This media type is for S3. The caller should look this up
-	// and override the value for the specific repository.
-	MediaType   string
-	MediaTypeID int64
-	Digest      digest.Digest
-	Size        int64
-	CreatedAt   time.Time
-	CreatedBy   int64
+type BlobLocator struct {
+	Digest        digest.Digest
+	BlobID        int64
+	GenericBlobID uuid.UUID
+	RootParentID  int64
+	RegistryID    int64
 }
 
-// Blobs is a slice of Blob pointers.
-type Blobs []*Blob
-
-type BlobDigests struct {
-	SHA1   digest.Digest
-	SHA256 digest.Digest
-	SHA512 digest.Digest
-	MD5    digest.Digest
+type StorageLookup struct {
+	BlobLocator
+	ClientIP string
 }

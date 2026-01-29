@@ -554,13 +554,40 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 			eventReporter := createEventReporter()
 
 			controller := metadata.NewAPIController(
-				nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "",
-				nil, nil, nil, nil, nil, nil, nil, nil,
-				func(_ context.Context) bool {
-					return tt.untaggedImagesEnabled
-				},
-				nil, nil,
+				nil,             // repositoryStore
+				fileManager,     // fileManager
+				nil,             // blobStore
+				nil,             // genericBlobStore
+				nil,             // upstreamProxyStore
+				nil,             // tagStore
+				nil,             // manifestStore
+				nil,             // cleanupPolicyStore
+				nil,             // imageStore
+				nil,             // spaceFinder
+				nil,             // tx
+				mockURLProvider, // urlProvider
+				nil,             // authorizer
+				nil,             // auditService
+				nil,             // artifactStore
+				nil,             // webhooksRepository
+				nil,             // webhooksExecutionRepository
+				nil,             // registryMetadataHelper
+				nil,             // webhookService
+				eventReporter,   // artifactEventReporter
+				nil,             // downloadStatRepository
+				"",              // setupDetailsAuthHeaderPrefix
+				nil,             // registryBlobStore
+				nil,             // regFinder
+				nil,             // postProcessingReporter
+				nil,             // cargoRegistryHelper
+				nil,             // spaceController
+				nil,             // quarantineArtifactRepository
+				nil,             // quarantineFinder
+				nil,             // spaceStore
+				func(_ context.Context) bool { return tt.untaggedImagesEnabled }, // untaggedImagesEnabled
+				nil, // packageWrapper
+				nil, // publicAccess
+				nil, // storageService
 			)
 
 			ctx := context.Background()
@@ -602,11 +629,40 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 	eventReporter := createEventReporter()
 
 	controller := metadata.NewAPIController(
-		nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-		mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "",
-		nil, nil, nil, nil, nil, nil, nil, nil,
-		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil,             // repositoryStore
+		fileManager,     // fileManager
+		nil,             // blobStore
+		nil,             // genericBlobStore
+		nil,             // upstreamProxyStore
+		nil,             // tagStore
+		nil,             // manifestStore
+		nil,             // cleanupPolicyStore
+		nil,             // imageStore
+		nil,             // spaceFinder
+		nil,             // tx
+		mockURLProvider, // urlProvider
+		nil,             // authorizer
+		nil,             // auditService
+		nil,             // artifactStore
+		nil,             // webhooksRepository
+		nil,             // webhooksExecutionRepository
+		nil,             // registryMetadataHelper
+		nil,             // webhookService
+		eventReporter,   // artifactEventReporter
+		nil,             // downloadStatRepository
+		"",              // setupDetailsAuthHeaderPrefix
+		nil,             // registryBlobStore
+		nil,             // regFinder
+		nil,             // postProcessingReporter
+		nil,             // cargoRegistryHelper
+		nil,             // spaceController
+		nil,             // quarantineArtifactRepository
+		nil,             // quarantineFinder
+		nil,             // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		nil, // packageWrapper
+		nil, // publicAccess
+		nil, // storageService
 	)
 
 	ctx := context.Background()
@@ -644,10 +700,11 @@ func createFileManager() filemanager.FileManager {
 		mockGenericBlobRepo,
 		nil, // nodesRepo
 		mockTransactor,
-		nil, // reporter
 		nil, // config
 		nil, // storageService
 		nil, // bucketService
+		nil, // replicationReporter
+		nil, // blobCreationDBHook
 	)
 }
 
@@ -708,12 +765,40 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 	eventReporter := createEventReporter()
 
 	return metadata.NewAPIController(
-		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, nil, nil,
-		mockSpaceFinder, nil, mockURLProvider, mockAuthorizer, nil, nil, nil, nil,
-		mockRegistryMetadataHelper, nil, eventReporter, nil, "Authorization: Bearer", nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		func(_ context.Context) bool { return false },
-		nil, nil,
+		mockRegistryRepo,           // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // blobStore
+		nil,                        // genericBlobStore
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		nil,                        // imageStore
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		mockURLProvider,            // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		nil,                        // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
+		mockRegistryMetadataHelper, // registryMetadataHelper
+		nil,                        // webhookService
+		eventReporter,              // artifactEventReporter
+		nil,                        // downloadStatRepository
+		"Authorization: Bearer",    // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		nil,                        // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		nil, // packageWrapper
+		nil, // publicAccess
+		nil, // storageService
 	)
 }
 
@@ -771,12 +856,40 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 	eventReporter := createEventReporter()
 
 	return metadata.NewAPIController(
-		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, nil, nil,
-		mockSpaceFinder, nil, nil, mockAuthorizer, nil, nil, nil, nil,
-		mockRegistryMetadataHelper, nil, eventReporter, nil, "", nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		func(_ context.Context) bool { return false },
-		nil, nil,
+		mockRegistryRepo,           // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // blobStore
+		nil,                        // genericBlobStore
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		nil,                        // imageStore
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		nil,                        // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		nil,                        // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
+		mockRegistryMetadataHelper, // registryMetadataHelper
+		nil,                        // webhookService
+		eventReporter,              // artifactEventReporter
+		nil,                        // downloadStatRepository
+		"",                         // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		nil,                        // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		nil, // packageWrapper
+		nil, // publicAccess
+		nil, // storageService
 	)
 }
 
@@ -898,11 +1011,40 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 			eventReporter := createEventReporter()
 
 			controller := metadata.NewAPIController(
-				nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "Authorization: Bearer",
-				nil, nil, nil, nil, nil, nil, nil, nil,
-				func(_ context.Context) bool { return false },
-				nil, nil,
+				nil,                     // repositoryStore
+				fileManager,             // fileManager
+				nil,                     // blobStore
+				nil,                     // genericBlobStore
+				nil,                     // upstreamProxyStore
+				nil,                     // tagStore
+				nil,                     // manifestStore
+				nil,                     // cleanupPolicyStore
+				nil,                     // imageStore
+				nil,                     // spaceFinder
+				nil,                     // tx
+				mockURLProvider,         // urlProvider
+				nil,                     // authorizer
+				nil,                     // auditService
+				nil,                     // artifactStore
+				nil,                     // webhooksRepository
+				nil,                     // webhooksExecutionRepository
+				nil,                     // registryMetadataHelper
+				nil,                     // webhookService
+				eventReporter,           // artifactEventReporter
+				nil,                     // downloadStatRepository
+				"Authorization: Bearer", // setupDetailsAuthHeaderPrefix
+				nil,                     // registryBlobStore
+				nil,                     // regFinder
+				nil,                     // postProcessingReporter
+				nil,                     // cargoRegistryHelper
+				nil,                     // spaceController
+				nil,                     // quarantineArtifactRepository
+				nil,                     // quarantineFinder
+				nil,                     // spaceStore
+				func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+				nil, // packageWrapper
+				nil, // publicAccess
+				nil, // storageService
 			)
 
 			ctx := context.Background()

@@ -30,12 +30,13 @@ import (
 	"github.com/harness/gitness/registry/app/api/controller/metadata"
 	"github.com/harness/gitness/registry/app/api/interfaces"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
-	storagedriver "github.com/harness/gitness/registry/app/driver"
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
+	"github.com/harness/gitness/registry/app/pkg/docker"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/refcache"
+	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
 	registrywebhook "github.com/harness/gitness/registry/services/webhook"
@@ -69,7 +70,6 @@ func NewAPIHandler(
 	manifestDao store.ManifestRepository,
 	cleanupPolicyDao store.CleanupPolicyRepository,
 	imageDao store.ImageRepository,
-	driver storagedriver.StorageDriver,
 	baseURL string,
 	spaceFinder interfaces.SpaceFinder,
 	tx dbtx.Transactor,
@@ -95,6 +95,8 @@ func NewAPIHandler(
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.Service,
 	quarantineFinder quarantine.Finder,
+	storageService *storage.Service,
+	app *docker.App,
 ) APIHandler {
 	r := chi.NewRouter()
 	r.Use(audit.Middleware())
@@ -111,7 +113,6 @@ func NewAPIHandler(
 		manifestDao,
 		cleanupPolicyDao,
 		imageDao,
-		driver,
 		spaceFinder,
 		tx,
 		urlProvider,
@@ -138,6 +139,8 @@ func NewAPIHandler(
 		},
 		packageWrapper,
 		publicAccess,
+		storageService,
+		app,
 	)
 
 	handler := artifact.NewStrictHandler(apiController, []artifact.StrictMiddlewareFunc{})

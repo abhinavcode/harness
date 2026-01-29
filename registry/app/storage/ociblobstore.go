@@ -321,3 +321,7 @@ func (bs *ociBlobStore) newBlobUpload(
 
 	return bw, nil
 }
+
+func (bs *ociBlobStore) BucketKey() string {
+	return DefaultBucketKey
+}

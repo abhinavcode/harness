@@ -295,12 +295,40 @@ func setupVersionsController(_ *testing.T, packageType artifact.PackageType) *me
 		Return((*artifact.ArtifactVersionMetadata)(nil))
 
 	return metadata.NewAPIController(
-		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, mockImageStore, nil,
-		mockSpaceFinder, nil, mockURLProvider, mockAuthorizer, nil, mockArtifactStore, nil, nil,
-		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
-		nil, nil, nil, nil, nil, nil, nil, nil,
-		func(_ context.Context) bool { return false },
-		mockPackageWrapper, nil,
+		mockRegistryRepo,           // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // blobStore
+		nil,                        // genericBlobStore
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		mockImageStore,             // imageStore
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		mockURLProvider,            // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		mockArtifactStore,          // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
+		mockRegistryMetadataHelper, // registryMetadataHelper
+		nil,                        // webhookService
+		eventReporter,              // artifactEventReporter
+		nil,                        // downloadStatRepository
+		"",                         // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		nil,                        // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		mockPackageWrapper,                            // packageWrapper
+		nil,                                           // publicAccess
+		nil,                                           // storageService
 	)
 }
 
@@ -348,12 +376,40 @@ func setupVersionsControllerWithError(_ *testing.T, errorType string) *metadata.
 	fileManager := createFileManager()
 
 	return metadata.NewAPIController(
-		nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil,
-		mockSpaceFinder, nil, nil, mockAuthorizer, nil, nil, nil, nil,
-		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
-		nil, nil, nil, nil, nil, nil, nil, nil,
-		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil,                        // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // blobStore
+		nil,                        // genericBlobStore
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		nil,                        // imageStore
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		nil,                        // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		nil,                        // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
+		mockRegistryMetadataHelper, // registryMetadataHelper
+		nil,                        // webhookService
+		eventReporter,              // artifactEventReporter
+		nil,                        // downloadStatRepository
+		"",                         // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		nil,                        // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		nil, // packageWrapper
+		nil, // publicAccess
+		nil, // storageService
 	)
 }
 

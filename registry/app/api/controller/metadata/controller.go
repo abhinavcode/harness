@@ -25,12 +25,13 @@ import (
 	urlprovider "github.com/harness/gitness/app/url"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/interfaces"
-	storagedriver "github.com/harness/gitness/registry/app/driver"
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
+	"github.com/harness/gitness/registry/app/pkg/docker"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/refcache"
+	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
 	"github.com/harness/gitness/registry/services/webhook"
@@ -55,7 +56,6 @@ type APIController struct {
 	CleanupPolicyStore           store.CleanupPolicyRepository
 	SpaceFinder                  interfaces.SpaceFinder
 	tx                           dbtx.Transactor
-	StorageDriver                storagedriver.StorageDriver
 	URLProvider                  urlprovider.Provider
 	Authorizer                   authz.Authorizer
 	AuditService                 audit.Service
@@ -78,6 +78,8 @@ type APIController struct {
 	UntaggedImagesEnabled        func(ctx context.Context) bool
 	PackageWrapper               interfaces.PackageWrapper
 	PublicAccess                 publicaccess.Service
+	StorageService               *storage.Service
+	app                          *docker.App
 }
 
 func NewAPIController(
@@ -90,7 +92,6 @@ func NewAPIController(
 	manifestStore store.ManifestRepository,
 	cleanupPolicyStore store.CleanupPolicyRepository,
 	imageStore store.ImageRepository,
-	driver storagedriver.StorageDriver,
 	spaceFinder interfaces.SpaceFinder,
 	tx dbtx.Transactor,
 	urlProvider urlprovider.Provider,
@@ -115,6 +116,8 @@ func NewAPIController(
 	untaggedImagesEnabled func(ctx context.Context) bool,
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.Service,
+	storageService *storage.Service,
+	app *docker.App,
 ) *APIController {
 	return &APIController{
 		fileManager:                  fileManager,
@@ -127,7 +130,6 @@ func NewAPIController(
 		CleanupPolicyStore:           cleanupPolicyStore,
 		ImageStore:                   imageStore,
 		SpaceFinder:                  spaceFinder,
-		StorageDriver:                driver,
 		tx:                           tx,
 		URLProvider:                  urlProvider,
 		Authorizer:                   authorizer,
@@ -151,5 +153,7 @@ func NewAPIController(
 		UntaggedImagesEnabled:        untaggedImagesEnabled,
 		PackageWrapper:               packageWrapper,
 		PublicAccess:                 publicAccess,
+		StorageService:               storageService,
+		app:                          app,
 	}
 }
