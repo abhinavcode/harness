@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/harness/gitness/app/services/protection"
 	"github.com/harness/gitness/git"
 	"github.com/harness/gitness/git/hook"
 	"github.com/harness/gitness/types"
@@ -30,22 +31,26 @@ func (c *Controller) processObjects(
 	principal *types.Principal,
 	refUpdates changedRefs,
 	checks *protectionChecks,
+	violationsInput *protection.PushViolationsInput,
+	settingsViolations *settingsViolations,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
-) (git.ProcessPreReceiveObjectsOutput, error) {
+) error {
 	if refUpdates.hasOnlyDeletedBranches() {
-		return git.ProcessPreReceiveObjectsOutput{}, nil
+		return nil
 	}
 
 	sizeLimit := checks.SettingsFileSizeLimit
-	if checks.RulesFileSizeLimit != 0 && checks.RulesFileSizeLimit < sizeLimit {
-		sizeLimit = checks.RulesFileSizeLimit
+	if checks.RulesFileSizeLimit != 0 {
+		if sizeLimit == 0 || checks.RulesFileSizeLimit < sizeLimit {
+			sizeLimit = checks.RulesFileSizeLimit
+		}
 	}
 
 	principalCommitterMatch := checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch
 
 	if sizeLimit == 0 && !principalCommitterMatch && !checks.SettingsGitLFSEnabled {
-		return git.ProcessPreReceiveObjectsOutput{}, nil
+		return nil
 	}
 
 	preReceiveObjsIn := git.ProcessPreReceiveObjectsParams{
@@ -76,7 +81,7 @@ func (c *Controller) processObjects(
 		preReceiveObjsIn,
 	)
 	if err != nil {
-		return git.ProcessPreReceiveObjectsOutput{}, fmt.Errorf("failed to process pre-receive objects: %w", err)
+		return fmt.Errorf("failed to process pre-receive objects: %w", err)
 	}
 
 	if preReceiveObjsOut.FindOversizeFilesOutput != nil &&
@@ -87,6 +92,9 @@ func (c *Controller) processObjects(
 			preReceiveObjsOut.FindOversizeFilesOutput.Total,
 			sizeLimit,
 		)
+		if checks.SettingsFileSizeLimit > 0 {
+			settingsViolations.FileSizeLimitExceeded = true
+		}
 	}
 
 	if preReceiveObjsOut.FindCommitterMismatchOutput != nil &&
@@ -97,6 +105,9 @@ func (c *Controller) processObjects(
 			preReceiveObjsIn.FindCommitterMismatchParams.PrincipalEmail,
 			preReceiveObjsOut.FindCommitterMismatchOutput.Total,
 		)
+		if checks.SettingsPrincipalCommitterMatch {
+			settingsViolations.CommitterMismatchFound = true
+		}
 	}
 
 	if preReceiveObjsOut.FindLFSPointersOutput != nil &&
@@ -108,7 +119,7 @@ func (c *Controller) processObjects(
 
 		existingObjs, err := c.lfsStore.FindMany(ctx, in.RepoID, objIDs)
 		if err != nil {
-			return git.ProcessPreReceiveObjectsOutput{}, fmt.Errorf("failed to find lfs objects: %w", err)
+			return fmt.Errorf("failed to find lfs objects: %w", err)
 		}
 
 		//nolint:lll
@@ -118,8 +129,17 @@ func (c *Controller) processObjects(
 				preReceiveObjsOut.FindLFSPointersOutput.LFSInfos,
 				preReceiveObjsOut.FindLFSPointersOutput.Total,
 			)
+
+			if checks.SettingsGitLFSEnabled {
+				settingsViolations.UnknownLFSObjectsFound = true
+			}
 		}
 	}
 
-	return preReceiveObjsOut, nil
+	violationsInput.FindOversizeFilesOutput = preReceiveObjsOut.FindOversizeFilesOutput
+	if preReceiveObjsOut.FindCommitterMismatchOutput != nil {
+		violationsInput.CommitterMismatchCount = preReceiveObjsOut.FindCommitterMismatchOutput.Total
+	}
+
+	return nil
 }

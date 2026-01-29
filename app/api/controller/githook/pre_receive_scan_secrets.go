@@ -40,6 +40,7 @@ func (c *Controller) scanSecrets(
 	repo *types.RepositoryCore,
 	checks *protectionChecks,
 	violationsInput *protection.PushViolationsInput,
+	settingsViolations *settingsViolations,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
 ) error {
@@ -60,6 +61,10 @@ func (c *Controller) scanSecrets(
 	}
 
 	violationsInput.FoundSecretCount = len(findings)
+
+	if len(findings) > 0 && checks.SettingsSecretScanningEnabled {
+		settingsViolations.SecretsFound = true
+	}
 
 	// always print result (handles both no results and results found)
 	printScanSecretsFindings(output, findings, len(in.RefUpdates) > 1, time.Since(startTime))

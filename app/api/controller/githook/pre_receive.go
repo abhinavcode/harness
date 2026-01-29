@@ -34,6 +34,25 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+type protectionChecks struct {
+	RulesSecretScanningEnabled   bool
+	RulesFileSizeLimit           int64
+	RulesPrincipalCommitterMatch bool
+
+	SettingsSecretScanningEnabled   bool
+	SettingsFileSizeLimit           int64
+	SettingsPrincipalCommitterMatch bool
+
+	SettingsGitLFSEnabled bool
+}
+
+type settingsViolations struct {
+	SecretsFound           bool
+	FileSizeLimitExceeded  bool
+	CommitterMismatchFound bool
+	UnknownLFSObjectsFound bool
+}
+
 // allowedRepoStatesForPush lists repository states that git push is allowed for internal and external calls.
 var allowedRepoStatesForPush = []enum.RepoState{enum.RepoStateActive, enum.RepoStateMigrateGitPush}
 
@@ -124,13 +143,13 @@ func (c *Controller) PreReceive(
 
 	// For internal calls - through the application interface (API) - no need to verify protection rules.
 	if !in.Internal && repoActive {
-		violations, err := c.checkProtectionRules(
+		protectionRulesViolations, err := c.checkProtectionRules(
 			ctx, dummySession, repo, refUpdates, protectionRules, isRepoOwner,
 		)
 		if err != nil {
 			return hook.Output{}, fmt.Errorf("failed to check protection rules: %w", err)
 		}
-		ruleViolations = append(ruleViolations, violations...)
+		ruleViolations = append(ruleViolations, protectionRulesViolations...)
 	}
 
 	err = c.preReceiveExtender.Extend(ctx, rgit, session, repo, in, &output)
@@ -141,39 +160,22 @@ func (c *Controller) PreReceive(
 		return output, nil
 	}
 
+	var settingsViolations *settingsViolations
 	if repoActive {
-		violations, err := c.processPushProtection(
+		var pushRulesViolations []types.RuleViolations
+		settingsViolations, pushRulesViolations, err = c.processPushProtection(
 			ctx, rgit, repo, principal, isRepoOwner, refUpdates, protectionRules, in, &output,
 		)
 		if err != nil {
 			return hook.Output{}, err
 		}
 
-		ruleViolations = append(ruleViolations, violations...)
+		ruleViolations = append(ruleViolations, pushRulesViolations...)
 	}
 
-	processRuleViolations(&output, ruleViolations)
+	processViolations(&output, settingsViolations, ruleViolations)
 
 	return output, nil
-}
-
-type protectionChecks struct {
-	RulesSecretScanningEnabled   bool
-	RulesFileSizeLimit           int64
-	RulesPrincipalCommitterMatch bool
-
-	SettingsSecretScanningEnabled   bool
-	SettingsFileSizeLimit           int64
-	SettingsPrincipalCommitterMatch bool
-
-	SettingsGitLFSEnabled bool
-}
-
-type settingsViolations struct {
-	SecretsFound           bool
-	FileSizeLimitExceeded  bool
-	CommitterMismatchFound bool
-	UnknownLFSObjectsFound bool
 }
 
 func (c *Controller) populateProtectionChecks(
@@ -246,7 +248,7 @@ func (c *Controller) processPushProtection(
 	protectionRules []types.RuleInfoInternal,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
-) ([]types.RuleViolations, error) {
+) (*settingsViolations, []types.RuleViolations, error) {
 	pushProtection := c.protectionManager.FilterCreatePushProtection(protectionRules)
 	out, _, err := pushProtection.PushVerify(
 		ctx,
@@ -259,12 +261,12 @@ func (c *Controller) processPushProtection(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to verify git objects: %w", err)
+		return nil, nil, fmt.Errorf("failed to verify git objects: %w", err)
 	}
 
 	checks, err := c.populateProtectionChecks(ctx, repo, &out)
 	if err != nil {
-		return nil, fmt.Errorf("failed to populate protection checks: %w", err)
+		return nil, nil, fmt.Errorf("failed to populate protection checks: %w", err)
 	}
 
 	violationsInput := &protection.PushViolationsInput{
@@ -277,32 +279,30 @@ func (c *Controller) processPushProtection(
 		SecretScanningEnabled:   checks.RulesSecretScanningEnabled,
 	}
 
-	err = c.scanSecrets(ctx, rgit, repo, &checks, violationsInput, in, output)
+	settingsViolations := new(settingsViolations)
+
+	err = c.scanSecrets(ctx, rgit, repo, &checks, violationsInput, settingsViolations, in, output)
 	if err != nil {
-		return nil, fmt.Errorf("failed to scan secrets: %w", err)
+		return nil, nil, fmt.Errorf("failed to scan secrets: %w", err)
 	}
 
-	objs, err := c.processObjects(
+	if err := c.processObjects(
 		ctx, rgit,
 		repo, principal, refUpdates,
 		&checks,
+		violationsInput,
+		settingsViolations,
 		in, output,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to process pre-receive objects: %w", err)
-	}
-
-	violationsInput.FindOversizeFilesOutput = objs.FindOversizeFilesOutput
-	if objs.FindCommitterMismatchOutput != nil {
-		violationsInput.CommitterMismatchCount = objs.FindCommitterMismatchOutput.Total
+	); err != nil {
+		return nil, nil, fmt.Errorf("failed to process pre-receive objects: %w", err)
 	}
 
 	ruleViolations, err := pushProtection.Violations(ctx, violationsInput)
 	if err != nil {
-		return nil, fmt.Errorf("failed to backfill violations: %w", err)
+		return nil, nil, fmt.Errorf("failed to backfill violations: %w", err)
 	}
 
-	return ruleViolations.Violations, nil
+	return settingsViolations, ruleViolations.Violations, nil
 }
 
 func (c *Controller) blockPullReqRefUpdate(refUpdates changedRefs, state enum.RepoState) bool {
@@ -400,15 +400,13 @@ func (c *Controller) checkProtectionRules(
 	return ruleViolations, nil
 }
 
-func processRuleViolations(
+func processViolations(
 	output *hook.Output,
+	settingsViolations *settingsViolations,
 	ruleViolations []types.RuleViolations,
 ) {
-	if len(ruleViolations) == 0 {
-		return
-	}
-
 	var criticalViolation bool
+	var outErrorMsg string
 
 	for _, ruleViolation := range ruleViolations {
 		criticalViolation = criticalViolation || ruleViolation.IsCritical()
@@ -424,7 +422,50 @@ func processRuleViolations(
 	}
 
 	if criticalViolation {
-		output.Error = ptr.String("Blocked by protection rules.")
+		outErrorMsg = "Blocked by protection rules. "
+	}
+
+	criticalViolation = false
+
+	const repoSettingsBlockPrefix = "Push blocked by repository settings: "
+
+	if settingsViolations != nil {
+		if settingsViolations.SecretsFound {
+			output.Messages = append(
+				output.Messages,
+				repoSettingsBlockPrefix+"secrets detected.",
+			)
+			criticalViolation = true
+		}
+		if settingsViolations.FileSizeLimitExceeded {
+			output.Messages = append(
+				output.Messages,
+				repoSettingsBlockPrefix+"file size limit exceeded.",
+			)
+			criticalViolation = true
+		}
+		if settingsViolations.CommitterMismatchFound {
+			output.Messages = append(
+				output.Messages,
+				repoSettingsBlockPrefix+"committer user mismatch.",
+			)
+			criticalViolation = true
+		}
+		if settingsViolations.UnknownLFSObjectsFound {
+			output.Messages = append(
+				output.Messages,
+				repoSettingsBlockPrefix+"unknown Git LFS objects.",
+			)
+			criticalViolation = true
+		}
+	}
+
+	if criticalViolation {
+		outErrorMsg += "Blocked by repository settings. "
+	}
+
+	if outErrorMsg != "" {
+		output.Error = ptr.String(outErrorMsg)
 	}
 }
 
