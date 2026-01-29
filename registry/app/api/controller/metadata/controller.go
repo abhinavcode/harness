@@ -78,6 +78,7 @@ type APIController struct {
 	UntaggedImagesEnabled        func(ctx context.Context) bool
 	PackageWrapper               interfaces.PackageWrapper
 	PublicAccess                 publicaccess.Service
+	db                           dbtx.AccessorTx
 }
 
 func NewAPIController(
@@ -93,6 +94,7 @@ func NewAPIController(
 	driver storagedriver.StorageDriver,
 	spaceFinder interfaces.SpaceFinder,
 	tx dbtx.Transactor,
+	db dbtx.AccessorTx,
 	urlProvider urlprovider.Provider,
 	authorizer authz.Authorizer,
 	auditService audit.Service,
@@ -151,5 +153,6 @@ func NewAPIController(
 		UntaggedImagesEnabled:        untaggedImagesEnabled,
 		PackageWrapper:               packageWrapper,
 		PublicAccess:                 publicAccess,
+		db:                           db,
 	}
 }

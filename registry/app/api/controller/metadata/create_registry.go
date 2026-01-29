@@ -26,6 +26,7 @@ import (
 	"github.com/harness/gitness/app/auth"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
@@ -281,6 +282,12 @@ func (c *APIController) createUpstreamProxyWithAudit(
 		)
 	}
 
+	// Also insert into UDP events table
+	registryaudit.InsertUDPAuditEvent(ctx, c.db, principal,
+		audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, registry.Name),
+		registryaudit.ActionRegistryCreated,
+		parentRef)
+
 	return id, err
 }
 
@@ -331,6 +338,12 @@ func (c *APIController) createRegistry(
 		if auditErr != nil {
 			log.Ctx(ctx).Warn().Msgf("failed to insert audit log for create registry operation: %s", auditErr)
 		}
+
+		// Also insert into UDP events table
+		registryaudit.InsertUDPAuditEvent(ctx, c.db, *principal,
+			audit.NewResource(audit.ResourceTypeRegistry, registry.Name),
+			registryaudit.ActionRegistryCreated,
+			parentRef)
 	}
 
 	return id, err
