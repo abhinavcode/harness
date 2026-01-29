@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React from 'react'
+import React, { Fragment } from 'react'
 import { Container, Layout, Text } from '@harnessio/uicore'
 import { Color, FontVariation, type KVO } from '@harnessio/design-system'
 import type {
@@ -48,7 +48,7 @@ function SecurityPolicyFailureDetailsItem({ data }: { data: SecurityPolicyFailur
         {getString('violationsList.violationDetailsModal.violatedPoliciesSection.securityViolation.cvssThreshold')}
       </Text>
       {vulnerabilities.map(each => (
-        <>
+        <Fragment key={each.cveId}>
           <Text lineClamp={1} font={{ variation: FontVariation.BODY }} color={Color.GREY_700}>
             {each.cveId}
           </Text>
@@ -58,7 +58,7 @@ function SecurityPolicyFailureDetailsItem({ data }: { data: SecurityPolicyFailur
           <Text lineClamp={1} font={{ variation: FontVariation.BODY }} color={Color.GREY_700}>
             {each.cvssThreshold}
           </Text>
-        </>
+        </Fragment>
       ))}
     </Container>
   )
