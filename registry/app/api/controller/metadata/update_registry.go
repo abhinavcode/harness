@@ -475,7 +475,7 @@ func (c *APIController) UpdateUpstreamProxyEntity(
 	}
 	labels := []string{}
 	if dto.Labels != nil {
-		blockedPattern = *dto.Labels
+		labels = *dto.Labels
 	}
 
 	e := ValidatePackageTypeChange(string(u.PackageType), string(dto.PackageType))
