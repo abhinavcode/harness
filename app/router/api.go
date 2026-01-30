@@ -302,7 +302,7 @@ func setupSpaces(
 			r.Route("/settings", func(r chi.Router) {
 				// r.Get("/security", handlerreposettings.HandleSecurityFind(repoSettingsCtrl))
 				// r.Patch("/security", handlerreposettings.HandleSecurityUpdate(repoSettingsCtrl))
-				// r.Get("/general", handlerreposettings.HandleGeneralFind(repoSettingsCtrl))
+				r.Get("/general", handlerreposettings.HandleGeneralFindSpace(repoSettingsCtrl))
 				r.Patch("/general", handlerreposettings.HandleGeneralUpdateSpace(repoSettingsCtrl))
 			})
 		})

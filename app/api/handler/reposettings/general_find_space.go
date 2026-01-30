@@ -15,7 +15,6 @@
 package reposettings
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/harness/gitness/app/api/controller/reposettings"
@@ -23,7 +22,7 @@ import (
 	"github.com/harness/gitness/app/api/request"
 )
 
-func HandleGeneralUpdateSpace(repoSettingCtrl *reposettings.Controller) http.HandlerFunc {
+func HandleGeneralFindSpace(repoSettingCtrl *reposettings.Controller) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		session, _ := request.AuthSessionFrom(ctx)
@@ -33,14 +32,7 @@ func HandleGeneralUpdateSpace(repoSettingCtrl *reposettings.Controller) http.Han
 			return
 		}
 
-		in := new(reposettings.GeneralSettingsSpace)
-		err = json.NewDecoder(r.Body).Decode(in)
-		if err != nil {
-			render.BadRequestf(ctx, w, "Invalid request body: %s.", err)
-			return
-		}
-
-		settings, err := repoSettingCtrl.GeneralUpdateSpace(ctx, session, spaceRef, in)
+		settings, err := repoSettingCtrl.GeneralFindSpace(ctx, session, spaceRef)
 		if err != nil {
 			render.TranslatedUserError(ctx, w, err)
 			return
