@@ -23,6 +23,7 @@ const (
 	requestID
 	requestMethod
 	pathKey
+	regionLocationKey
 )
 
 // GetRealIP returns IP address from context.
@@ -63,4 +64,19 @@ func GetRequestMethod(ctx context.Context) string {
 	}
 
 	return method
+}
+
+// RegionLocation holds lat/long for a region (hacky test solution).
+type RegionLocation struct {
+	Latitude  float64
+	Longitude float64
+}
+
+// GetRegionLocation returns the region-based location from context (hacky test solution).
+func GetRegionLocation(ctx context.Context) *RegionLocation {
+	loc, ok := ctx.Value(regionLocationKey).(*RegionLocation)
+	if !ok {
+		return nil
+	}
+	return loc
 }

@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/harness/gitness/app/api/usererror"
+	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/crypto"
 	"github.com/harness/gitness/registry/app/events/replication"
 	"github.com/harness/gitness/registry/app/pkg/docker"
@@ -367,10 +368,16 @@ func (f *fileManager) DownloadFileByPath(
 	if allowRedirect {
 		fileReader, redirectURL, err = blobContext.genericBlobStore.GetGeneric(ctx, blob.Size, node.Name,
 			rootIdentifier, blob.Sha256)
-		hook.EmitReadEventAsync(ctx, f.blobActionHook, hook.BlobReadEvent{
+		location := audit.GetRegionLocation(ctx)
+		event := hook.BlobReadEvent{
 			BlobLocator: blobLocator,
 			BucketKey:   blobContext.genericBlobStore.BucketKey(),
-		})
+		}
+		if location != nil {
+			event.Lat = location.Latitude
+			event.Long = location.Longitude
+		}
+		hook.EmitReadEventAsync(ctx, f.blobActionHook, event)
 	} else {
 		fileReader, err = blobContext.genericBlobStore.GetV2NoRedirect(ctx, rootIdentifier, blob.Sha256, blob.Size)
 	}

@@ -434,6 +434,9 @@ func FromParameters(ctx context.Context, parameters map[string]any) (*Driver, er
 		return nil, fmt.Errorf("no region parameter provided")
 	}
 	region := fmt.Sprint(regionName)
+
+	// TODO: FIXME: DO NOT MERGE WITH THIS CHANGE!!!!
+	region = "us-east-1"
 	// Don't check the region value if a custom endpoint is provided.
 	if regionEndpoint == "" {
 		if _, ok := validRegions[region]; !ok {

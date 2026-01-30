@@ -104,7 +104,8 @@ func (s *Service) GenericBlobsStore(
 	})
 	if err != nil {
 		// TODO(Arvind): Return this error
-		log.Fatal().Err(err).Msg("Failed to resolve storage target")
+		log.Ctx(ctx).Err(err).Msg("Failed to resolve storage target")
+		return nil
 	}
 
 	if !target.IsDefault() {

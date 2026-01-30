@@ -25,6 +25,7 @@ var (
 	trueClientIP  = http.CanonicalHeaderKey("True-Client-IP")
 	xForwardedFor = http.CanonicalHeaderKey("X-Forwarded-For")
 	xRealIP       = http.CanonicalHeaderKey("X-Real-IP")
+	xRegion       = http.CanonicalHeaderKey("X-Region")
 )
 
 // Middleware process request headers to fill internal info data.
@@ -40,9 +41,34 @@ func Middleware() func(next http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, requestMethod, r.Method)
 			ctx = context.WithValue(ctx, requestID, w.Header().Get("X-Request-Id"))
 
+			// HACK: Set region-based location from x-region header for testing.
+			if region := r.Header.Get(xRegion); region != "" {
+				if loc := getRegionLocation(region); loc != nil {
+					ctx = context.WithValue(ctx, regionLocationKey, loc)
+				} else {
+					ctx = context.WithValue(ctx, regionLocationKey, loc)
+				}
+			} else {
+				ctx = context.WithValue(ctx, regionLocationKey, getRegionLocation(region))
+			}
+
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
+	}
+}
+
+// getRegionLocation returns lat/long for known regions (hacky test solution).
+func getRegionLocation(region string) *RegionLocation {
+	switch strings.ToLower(region) {
+	case "apac":
+		// Mumbai, India.
+		return &RegionLocation{Latitude: 19.0760, Longitude: 72.8777}
+	case "wnam":
+		// San Jose, California.
+		return &RegionLocation{Latitude: 37.3382, Longitude: -121.8863}
+	default:
+		return &RegionLocation{Latitude: 37.3382, Longitude: -121.8863}
 	}
 }
 

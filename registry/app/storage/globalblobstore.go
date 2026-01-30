@@ -64,7 +64,7 @@ func (bs *globalBlobStore) GetV2NoRedirect(
 ) (*FileReader, error) {
 	log.Ctx(ctx).Debug().Msg("(*globalBlobStore).GetV2")
 
-	path, err := bs.globalPathFn(digest.Digest(sha256))
+	path, err := GlobalPathFn(digest.Digest(sha256))
 
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (bs *globalBlobStore) GetGeneric(
 ) (*FileReader, string, error) {
 	dcontext.GetLogger(ctx, log.Ctx(ctx).Debug()).Msg("(*globalBlobStore).Get")
 
-	path, err := bs.globalPathFn(digest.NewDigestFromEncoded(digest.SHA256, sha256))
+	path, err := GlobalPathFn(digest.NewDigestFromEncoded(digest.SHA256, sha256))
 
 	if err != nil {
 		return nil, "", err
@@ -196,7 +196,7 @@ func (bs *globalBlobStore) move(ctx context.Context, id string, sha256 string) e
 			err)
 	}
 
-	dstPath, err := bs.globalPathFn(digest.NewDigestFromEncoded(digest.SHA256, sha256))
+	dstPath, err := GlobalPathFn(digest.NewDigestFromEncoded(digest.SHA256, sha256))
 	if err != nil {
 		return fmt.Errorf("failed to create dstPath id: %s, digest: %s, %w", id, sha256,
 			err)
@@ -211,7 +211,7 @@ func (bs *globalBlobStore) move(ctx context.Context, id string, sha256 string) e
 func (bs *globalBlobStore) StatByDigest(ctx context.Context, rootIdentifier, sha256 string) (int64, error) {
 	log.Ctx(ctx).Debug().Msg("(*globalBlobStore).StatByDigest")
 
-	path, err := bs.globalPathFn(digest.NewDigestFromEncoded(digest.SHA256, sha256))
+	path, err := GlobalPathFn(digest.NewDigestFromEncoded(digest.SHA256, sha256))
 	if err != nil {
 		return 0, err
 	}
@@ -279,7 +279,7 @@ func (bs *globalBlobStore) ServeBlobInternal(
 		headers[HeaderContentType] = desc.MediaType
 	}
 	size := desc.Size
-	path, err := bs.globalPathFn(desc.Digest)
+	path, err := GlobalPathFn(desc.Digest)
 	if err != nil {
 		return nil, "", size, err
 	}
@@ -339,7 +339,7 @@ func (bs *globalBlobStore) GetBlobInternal(
 		return nil, 0, err
 	}
 	size := desc.Size
-	path, err := bs.globalPathFn(desc.Digest)
+	path, err := GlobalPathFn(desc.Digest)
 	if err != nil {
 		return nil, size, err
 	}
@@ -363,7 +363,7 @@ func (bs *globalBlobStore) Get(
 		return nil, err
 	}
 
-	bp, err := bs.globalPathFn(canonical.Digest)
+	bp, err := GlobalPathFn(canonical.Digest)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +388,7 @@ func (bs *globalBlobStore) Open(
 		return nil, err
 	}
 
-	path, err := bs.globalPathFn(desc.Digest)
+	path, err := GlobalPathFn(desc.Digest)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +419,7 @@ func (bs *globalBlobStore) Put(
 		return manifest.Descriptor{}, err
 	}
 
-	bp, err := bs.globalPathFn(dgst)
+	bp, err := GlobalPathFn(dgst)
 	if err != nil {
 		return manifest.Descriptor{}, err
 	}
@@ -439,7 +439,7 @@ func (bs *globalBlobStore) Stat(
 	ctx context.Context, pathPrefix string,
 	dgst digest.Digest,
 ) (manifest.Descriptor, error) {
-	path, err := bs.globalPathFn(dgst)
+	path, err := GlobalPathFn(dgst)
 	if err != nil {
 		return manifest.Descriptor{}, err
 	}
@@ -467,7 +467,7 @@ func (bs *globalBlobStore) Stat(
 	}, nil
 }
 
-func (bs *globalBlobStore) globalPathFn(dgst digest.Digest) (string, error) {
+func GlobalPathFn(dgst digest.Digest) (string, error) {
 	bp, err := pathFor(
 		globalBlobPathSpec{
 			digest: dgst,

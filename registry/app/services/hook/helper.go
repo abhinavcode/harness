@@ -25,7 +25,7 @@ import (
 
 const (
 	// DefaultAsyncTimeout is the default timeout for async hook operations.
-	DefaultAsyncTimeout = 10 * time.Second
+	DefaultAsyncTimeout = 100 * time.Second
 )
 
 // EmitReadEventAsync emits a read event asynchronously in a goroutine.

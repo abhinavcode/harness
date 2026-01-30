@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/harness/gitness/registry/types"
-
 	"github.com/rs/zerolog/log"
 )
 
@@ -39,6 +38,9 @@ type BlobReadEvent struct {
 
 	// Result from storage resolution
 	BucketKey string
+	ClientIP  string
+	Lat       float64
+	Long      float64
 }
 
 type BlobActionHook interface {
