@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/harness/gitness/app/api/usererror"
+	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/crypto"
 	"github.com/harness/gitness/registry/app/events/replication"
 	"github.com/harness/gitness/registry/app/pkg/docker"
@@ -367,9 +368,12 @@ func (f *fileManager) DownloadFileByPath(
 	if allowRedirect {
 		fileReader, redirectURL, err = blobContext.genericBlobStore.GetGeneric(ctx, blob.Size, node.Name,
 			rootIdentifier, blob.Sha256)
-		hook.EmitReadEventAsync(ctx, f.blobActionHook, hook.BlobReadEvent{
-			BlobLocator: blobLocator,
-			BucketKey:   blobContext.genericBlobStore.BucketKey(),
+		hook.EmitReadEvent(ctx, f.blobActionHook, hook.BlobReadEvent{
+			BlobEventBase: hook.BlobEventBase{
+				BlobLocator: blobLocator,
+				BucketKey:   blobContext.genericBlobStore.BucketKey(),
+				ClientIP:    audit.GetRealIP(ctx),
+			},
 		})
 	} else {
 		fileReader, err = blobContext.genericBlobStore.GetV2NoRedirect(ctx, rootIdentifier, blob.Sha256, blob.Size)
@@ -613,15 +617,18 @@ func (f *fileManager) uploadAndMove(
 
 	// Emit commit event with all computed digests and request context
 	err = f.blobActionHook.OnCommit(ctx, hook.BlobCommitEvent{
-		BlobLocator: blobLocator,
+		BlobEventBase: hook.BlobEventBase{
+			BlobLocator: blobLocator,
+			ClientIP:    audit.GetRealIP(ctx),
+			BucketKey:   blobContext.genericBlobStore.BucketKey(),
+		},
 		Digests: types.BlobDigests{
 			SHA1:   digest.NewDigestFromEncoded(crypto.SHA1, fileInfo.Sha1),
 			SHA256: digest.NewDigestFromEncoded(digest.SHA256, fileInfo.Sha256),
 			SHA512: digest.NewDigestFromEncoded(digest.SHA512, fileInfo.Sha512),
 			MD5:    digest.NewDigestFromEncoded(crypto.MD5, fileInfo.MD5),
 		},
-		Size:      fileInfo.Size,
-		BucketKey: blobContext.genericBlobStore.BucketKey(),
+		Size: fileInfo.Size,
 	})
 	if err != nil {
 		return types.FileInfo{}, fmt.Errorf("failed to commit the file upload %w", err)

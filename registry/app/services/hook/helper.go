@@ -16,35 +16,21 @@ package hook
 
 import (
 	"context"
-	"time"
-
-	cfg "github.com/harness/gitness/registry/config"
 
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	// DefaultAsyncTimeout is the default timeout for async hook operations.
-	DefaultAsyncTimeout = 10 * time.Second
-)
-
-// EmitReadEventAsync emits a read event asynchronously in a goroutine.
-// The event contains all necessary context for external tracking/billing.
-func EmitReadEventAsync(
+// EmitReadEvent emits a read event.
+// Important: The implementer should trigger this in async as this is on active read path and it is responsibility
+// of the implementer of this hook.
+func EmitReadEvent(
 	ctx context.Context,
 	hook BlobActionHook,
 	event BlobReadEvent,
 ) {
-	go func() {
-		ctx2 := context.WithoutCancel(ctx)
-		ctx2, cancel := context.WithTimeout(ctx2, DefaultAsyncTimeout)
-		defer cancel()
-		ctx2 = context.WithValue(ctx2, cfg.GoRoutineKey, "Emit Blob Read Event")
-
-		if err := hook.OnRead(ctx2, event); err != nil {
-			log.Ctx(ctx2).Error().Err(err).
-				Str("digest", event.BlobLocator.Digest.String()).
-				Msg("failed to emit read event")
-		}
-	}()
+	if err := hook.OnRead(ctx, event); err != nil {
+		log.Ctx(ctx).Error().Err(err).
+			Str("digest", event.BlobLocator.Digest.String()).
+			Msg("failed to emit read event")
+	}
 }

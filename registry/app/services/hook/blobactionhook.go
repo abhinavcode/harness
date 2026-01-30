@@ -22,23 +22,20 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// BlobCommitEvent contains all information about a blob commit operation.
-type BlobCommitEvent struct {
+type BlobEventBase struct {
 	BlobLocator types.BlobLocator
-
-	Digests types.BlobDigests
-	Size    int64
-
-	// Result from storage resolution
-	BucketKey string
+	ClientIP    string
+	BucketKey   string
 }
 
-// BlobReadEvent contains information about a blob read operation.
-type BlobReadEvent struct {
-	BlobLocator types.BlobLocator
+type BlobCommitEvent struct {
+	BlobEventBase
+	Digests types.BlobDigests
+	Size    int64
+}
 
-	// Result from storage resolution
-	BucketKey string
+type BlobReadEvent struct {
+	BlobEventBase
 }
 
 type BlobActionHook interface {
