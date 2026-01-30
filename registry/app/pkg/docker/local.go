@@ -1681,8 +1681,6 @@ func (r *LocalRegistry) dbPutBlobUploadComplete(
 				return err
 			}
 
-			// Execute the commit callback inside the transaction
-			// If this fails, the entire transaction will be rolled back
 			if commitCallback != nil {
 				if err = commitCallback(ctx); err != nil {
 					return fmt.Errorf("failed to execute commit callback: %w", err)

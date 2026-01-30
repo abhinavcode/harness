@@ -179,8 +179,6 @@ func (f *fileManager) dbSaveFile(
 		if err != nil {
 			return err
 		}
-		// Execute the commit callback inside the transaction
-		// If this fails, the entire transaction will be rolled back
 		if commitCallback != nil {
 			if err = commitCallback(ctx); err != nil {
 				return fmt.Errorf("failed to execute commit callback: %w", err)
@@ -701,13 +699,11 @@ func (f *fileManager) PostFileUpload(
 	fileInfo types.FileInfo,
 	principalID int64,
 ) error {
-	// No commit callback needed as this is a post-upload DB save operation
 	blobID, created, err := f.dbSaveFile(ctx, filePath, regID, rootParentID, fileInfo, principalID, nil)
 	if err != nil {
 		return err
 	}
 
-	// Emit blob create event
 	if created {
 		destinations := []replication.CloudLocation{}
 		f.replicationReporter.ReportEventAsync(ctx, rootIdentifier, replication.BlobCreate, 0, blobID, fileInfo.Sha256,
