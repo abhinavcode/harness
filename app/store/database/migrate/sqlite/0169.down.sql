@@ -1,1 +1,1 @@
-DROP INDEX IF EXISTS jobs_scheduled_priority;
+DROP INDEX IF EXISTS jobs_priority_scheduled;
