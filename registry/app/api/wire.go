@@ -160,6 +160,9 @@ func NewPackageHandlerProvider(
 	regFinder refcache2.RegistryFinder,
 	fileManager filemanager.FileManager, quarantineFinder quarantine.Finder,
 	packageWrapper interfaces.PackageWrapper,
+	imageDao store.ImageRepository,
+	artifactDao store.ArtifactRepository,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) packages.Handler {
 	return packages.NewHandler(
 		registryDao,
@@ -176,6 +179,9 @@ func NewPackageHandlerProvider(
 		fileManager,
 		quarantineFinder,
 		packageWrapper,
+		imageDao,
+		artifactDao,
+		artifactStatsPublisher,
 	)
 }
 

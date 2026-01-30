@@ -50,6 +50,7 @@ func TrackDownloadStat(h *oci.Handler) func(http.Handler) http.Handler {
 
 				requestType := utils.GetRouteTypeV2(path)
 
+				ctx := r.Context()
 				sw := &StatusWriter{ResponseWriter: w}
 
 				if utils.Manifests == requestType && http.MethodGet == methodType {
@@ -62,7 +63,6 @@ func TrackDownloadStat(h *oci.Handler) func(http.Handler) http.Handler {
 				if sw.StatusCode != http.StatusOK {
 					return
 				}
-				ctx := r.Context()
 
 				info, err := h.GetRegistryInfo(r, true)
 				if err != nil {
@@ -116,6 +116,14 @@ func dbDownloadStat(
 	if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
 		return err
 	}
+
+	if c.ArtifactStatsPublisher != nil {
+		if publishErr := c.ArtifactStatsPublisher.PublishArtifactDownloadEvent(ctx, artifact.ID); publishErr != nil {
+			log.Ctx(ctx).Warn().Err(publishErr).Int64("artifact_id", artifact.ID).
+				Msg("failed to publish artifact download event")
+		}
+	}
+
 	return nil
 }
 
@@ -228,6 +236,14 @@ func dbDownloadStatForGenericArtifact(
 	if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
 		return errcode.ErrCodeNameUnknown.WithDetail(err)
 	}
+
+	if c.ArtifactStatsPublisher != nil {
+		if publishErr := c.ArtifactStatsPublisher.PublishArtifactDownloadEvent(ctx, artifact.ID); publishErr != nil {
+			log.Ctx(ctx).Warn().Err(publishErr).Int64("artifact_id", artifact.ID).
+				Msg("failed to publish artifact download event")
+		}
+	}
+
 	return errcode.Error{}
 }
 
@@ -262,6 +278,14 @@ func dbDownloadStatForMavenArtifact(
 	if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
 		return errcode.ErrCodeNameUnknown.WithDetail(err)
 	}
+
+	if c.ArtifactStatsPublisher != nil {
+		if publishErr := c.ArtifactStatsPublisher.PublishArtifactDownloadEvent(ctx, artifact.ID); publishErr != nil {
+			log.Ctx(ctx).Warn().Err(publishErr).Int64("artifact_id", artifact.ID).
+				Msg("failed to publish artifact download event")
+		}
+	}
+
 	return errcode.Error{}
 }
 

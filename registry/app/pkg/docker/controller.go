@@ -45,12 +45,13 @@ import (
 
 type Controller struct {
 	*pkg.CoreController
-	local       *LocalRegistry
-	remote      *RemoteRegistry
-	spaceStore  corestore.SpaceStore
-	authorizer  authz.Authorizer
-	DBStore     *DBStore
-	SpaceFinder refcache.SpaceFinder
+	local                  *LocalRegistry
+	remote                 *RemoteRegistry
+	spaceStore             corestore.SpaceStore
+	authorizer             authz.Authorizer
+	DBStore                *DBStore
+	SpaceFinder            refcache.SpaceFinder
+	ArtifactStatsPublisher pkg.ArtifactStatsPublisher
 }
 
 type DBStore struct {
@@ -79,15 +80,17 @@ func NewController(
 	authorizer authz.Authorizer,
 	dBStore *DBStore,
 	spaceFinder refcache.SpaceFinder,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) *Controller {
 	c := &Controller{
-		CoreController: coreController,
-		local:          local,
-		remote:         remote,
-		spaceStore:     spaceStore,
-		authorizer:     authorizer,
-		DBStore:        dBStore,
-		SpaceFinder:    spaceFinder,
+		CoreController:         coreController,
+		local:                  local,
+		remote:                 remote,
+		spaceStore:             spaceStore,
+		authorizer:             authorizer,
+		DBStore:                dBStore,
+		SpaceFinder:            spaceFinder,
+		ArtifactStatsPublisher: artifactStatsPublisher,
 	}
 
 	pkg.TypeRegistry[pkg.LocalRegistry] = local
