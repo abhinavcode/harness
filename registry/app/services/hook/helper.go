@@ -34,3 +34,26 @@ func EmitReadEvent(
 			Msg("failed to emit read event")
 	}
 }
+
+// EmitCommitEventCallback returns a callback function that emits a commit event when executed.
+// The callback should be executed inside a database transaction so that if it fails,
+// the transaction can be rolled back.
+func EmitCommitEventCallback(
+	ctx context.Context,
+	hook BlobActionHook,
+	event BlobCommitEvent,
+) func(ctx context.Context) error {
+	return func(ctx context.Context) error {
+		if err := hook.OnCommit(ctx, event); err != nil {
+			log.Ctx(ctx).Error().Err(err).
+				Str("sha256", event.Digests.SHA256.String()).
+				Int64("size", event.Size).
+				Str("bucket_key", event.BucketKey).
+				Int64("registry_id", event.BlobLocator.RegistryID).
+				Int64("root_parent_id", event.BlobLocator.RootParentID).
+				Msg("failed to emit commit event")
+			return err
+		}
+		return nil
+	}
+}

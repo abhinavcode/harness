@@ -1172,7 +1172,7 @@ func (r *LocalRegistry) PushBlob(
 		return responseHeaders, errs
 	}
 
-	err = r.blobActionHook.OnCommit(ctx2, hook.BlobCommitEvent{
+	commitCallback := hook.EmitCommitEventCallback(ctx2, r.blobActionHook, hook.BlobCommitEvent{
 		BlobEventBase: hook.BlobEventBase{
 			BlobLocator: types.BlobLocator{
 				Digest:       desc.Digest,
@@ -1188,14 +1188,8 @@ func (r *LocalRegistry) PushBlob(
 		Size: desc.Size,
 	})
 
-	if err != nil {
-		errs = append(errs, err)
-		log.Ctx(ctx2).Error().Err(err).Msgf("error committing blob")
-		return responseHeaders, errs
-	}
-
 	err = r.dbPutBlobUploadComplete(ctx2, "application/octet-stream", artInfo.Digest, int(desc.Size),
-		ctx.OciBlobStore.Path(), artInfo)
+		ctx.OciBlobStore.Path(), artInfo, commitCallback)
 	if err != nil {
 		errs = append(errs, err)
 		log.Ctx(ctx2).Error().Msgf("failed to put blob in database: %v", err)
@@ -1657,6 +1651,7 @@ func (r *LocalRegistry) dbPutBlobUploadComplete(
 	size int,
 	path string,
 	info pkg.RegistryInfo,
+	commitCallback func(context.Context) error,
 ) error {
 	blob := &types.Blob{
 		RootParentID: info.RootParentID,
@@ -1684,6 +1679,14 @@ func (r *LocalRegistry) dbPutBlobUploadComplete(
 			err = r.ms.UpsertImage(ctx, info)
 			if err != nil {
 				return err
+			}
+
+			// Execute the commit callback inside the transaction
+			// If this fails, the entire transaction will be rolled back
+			if commitCallback != nil {
+				if err = commitCallback(ctx); err != nil {
+					return fmt.Errorf("failed to execute commit callback: %w", err)
+				}
 			}
 
 			return nil

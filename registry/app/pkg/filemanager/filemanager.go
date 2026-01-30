@@ -94,12 +94,12 @@ func (f *fileManager) UploadFile(
 		RootParentID: rootParentID,
 	}
 	blobContext := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
-	fileInfo, err := f.uploadAndMove(ctx, blobContext, rootIdentifier, file, fileReader, blobLocator)
+	fileInfo, commitCallback, err := f.uploadAndMove(ctx, blobContext, rootIdentifier, file, fileReader, blobLocator)
 	if err != nil {
 		return fileInfo, err
 	}
 
-	blobID, created, err := f.dbSaveFile(ctx, filePath, regID, rootParentID, fileInfo, principalID)
+	blobID, created, err := f.dbSaveFile(ctx, filePath, regID, rootParentID, fileInfo, principalID, commitCallback)
 	if err != nil {
 		return fileInfo, err
 	}
@@ -142,6 +142,7 @@ func (f *fileManager) dbSaveFile(
 	rootParentID int64,
 	fileInfo types.FileInfo,
 	createdBy int64,
+	commitCallback func(context.Context) error,
 ) (string, bool, error) {
 	// Saving in the generic blobs table
 	var blobID = ""
@@ -169,6 +170,13 @@ func (f *fileManager) dbSaveFile(
 		err = f.createNodes(ctx, filePath, blobID, regID, createdBy)
 		if err != nil {
 			return err
+		}
+		// Execute the commit callback inside the transaction
+		// If this fails, the entire transaction will be rolled back
+		if commitCallback != nil {
+			if err = commitCallback(ctx); err != nil {
+				return fmt.Errorf("failed to execute commit callback: %w", err)
+			}
 		}
 		return nil
 	})
@@ -559,9 +567,16 @@ func (f *fileManager) UploadFileNoDBUpdate(
 		RegistryID:   regID,
 	}
 	blobContext := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
-	fileInfo, err := f.uploadAndMove(ctx, blobContext, rootIdentifier, file, fileReader, blobLocator)
+	fileInfo, commitCallback, err := f.uploadAndMove(ctx, blobContext, rootIdentifier, file, fileReader, blobLocator)
 	if err != nil {
 		return fileInfo, err
+	}
+
+	// Execute the commit callback immediately since there's no DB transaction
+	if commitCallback != nil {
+		if err = commitCallback(ctx); err != nil {
+			return fileInfo, fmt.Errorf("failed to execute commit callback: %w", err)
+		}
 	}
 	return fileInfo, nil
 }
@@ -593,12 +608,12 @@ func (f *fileManager) uploadAndMove(
 	file multipart.File,
 	fileReader io.Reader,
 	blobLocator types.BlobLocator,
-) (types.FileInfo, error) {
+) (types.FileInfo, func(context.Context) error, error) {
 	fw, err := blobContext.genericBlobStore.CreateGeneric(ctx, rootIdentifier)
 
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("failed to initiate the file upload for file with error : %s", err.Error())
-		return types.FileInfo{}, fmt.Errorf("failed to initiate the file upload "+
+		return types.FileInfo{}, nil, fmt.Errorf("failed to initiate the file upload "+
 			"for file with error : %w", err)
 	}
 	defer fw.Close()
@@ -607,16 +622,15 @@ func (f *fileManager) uploadAndMove(
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("failed to upload the file on temparary location"+
 			" with error : %s", err.Error())
-		return types.FileInfo{}, fmt.Errorf("failed to upload the file on temporary "+
+		return types.FileInfo{}, nil, fmt.Errorf("failed to upload the file on temporary "+
 			"location with with error : %w", err)
 	}
 	err = fw.PlainCommit(ctx, fileInfo.Sha256)
 	if err != nil {
-		return types.FileInfo{}, err
+		return types.FileInfo{}, nil, err
 	}
 
-	// Emit commit event with all computed digests and request context
-	err = f.blobActionHook.OnCommit(ctx, hook.BlobCommitEvent{
+	commitCallback := hook.EmitCommitEventCallback(ctx, f.blobActionHook, hook.BlobCommitEvent{
 		BlobEventBase: hook.BlobEventBase{
 			BlobLocator: blobLocator,
 			ClientIP:    audit.GetRealIP(ctx),
@@ -630,11 +644,8 @@ func (f *fileManager) uploadAndMove(
 		},
 		Size: fileInfo.Size,
 	})
-	if err != nil {
-		return types.FileInfo{}, fmt.Errorf("failed to commit the file upload %w", err)
-	}
 
-	return fileInfo, nil
+	return fileInfo, commitCallback, nil
 }
 
 // DownloadFileByDigest These type of APIs should not be introduced. Difficult to track objects and all
@@ -670,7 +681,8 @@ func (f *fileManager) PostFileUpload(
 	fileInfo types.FileInfo,
 	principalID int64,
 ) error {
-	blobID, created, err := f.dbSaveFile(ctx, filePath, regID, rootParentID, fileInfo, principalID)
+	// No commit callback needed as this is a post-upload DB save operation
+	blobID, created, err := f.dbSaveFile(ctx, filePath, regID, rootParentID, fileInfo, principalID, nil)
 	if err != nil {
 		return err
 	}
