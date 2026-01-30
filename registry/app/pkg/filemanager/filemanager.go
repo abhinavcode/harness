@@ -93,7 +93,10 @@ func (f *fileManager) UploadFile(
 		RegistryID:   regID,
 		RootParentID: rootParentID,
 	}
-	blobContext := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
+	blobContext, err := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
+	if err != nil {
+		return types.FileInfo{}, fmt.Errorf("failed to get blob context: %w", err)
+	}
 	fileInfo, commitCallback, err := f.uploadAndMove(ctx, blobContext, rootIdentifier, file, fileReader, blobLocator)
 	if err != nil {
 		return fileInfo, err
@@ -118,7 +121,7 @@ func (f *fileManager) UploadFile(
 func (f *fileManager) getBlobsContext(
 	c context.Context, registryIdentifier,
 	rootIdentifier, blobID, sha256 string, info types.BlobLocator,
-) *Context {
+) (*Context, error) {
 	ctx := &Context{Context: c}
 
 	// For reads and Lazy Replication
@@ -126,13 +129,18 @@ func (f *fileManager) getBlobsContext(
 		if result := f.bucketService.GetBlobStore(c, registryIdentifier, rootIdentifier, blobID,
 			sha256); result != nil {
 			ctx.genericBlobStore = result.GenericStore
-			return ctx
+			return ctx, nil
 		}
 	}
 
 	// For default flows
-	ctx.genericBlobStore = f.storageService.GenericBlobsStore(c, rootIdentifier, info)
-	return ctx
+	blobsStore := f.storageService.GenericBlobsStore(c, rootIdentifier, info)
+	if blobsStore != nil {
+		ctx.genericBlobStore = blobsStore
+		return ctx, nil
+	}
+
+	return nil, fmt.Errorf("failed to get blob store for root identifier: %s", rootIdentifier)
 }
 
 func (f *fileManager) dbSaveFile(
@@ -371,7 +379,10 @@ func (f *fileManager) DownloadFileByPath(
 		RootParentID:  blob.RootParentID,
 		RegistryID:    registryID,
 	}
-	blobContext := f.getBlobsContext(ctx, registryIdentifier, rootIdentifier, blob.ID, blob.Sha256, blobLocator)
+	blobContext, err := f.getBlobsContext(ctx, registryIdentifier, rootIdentifier, blob.ID, blob.Sha256, blobLocator)
+	if err != nil {
+		return nil, 0, "", fmt.Errorf("failed to get blob context: %w", err)
+	}
 
 	if allowRedirect {
 		fileReader, redirectURL, err = blobContext.genericBlobStore.GetGeneric(ctx, blob.Size, node.Name,
@@ -566,7 +577,10 @@ func (f *fileManager) UploadFileNoDBUpdate(
 		RootParentID: rootParentID,
 		RegistryID:   regID,
 	}
-	blobContext := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
+	blobContext, err := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
+	if err != nil {
+		return types.FileInfo{}, fmt.Errorf("failed to get blob context: %w", err)
+	}
 	fileInfo, commitCallback, err := f.uploadAndMove(ctx, blobContext, rootIdentifier, file, fileReader, blobLocator)
 	if err != nil {
 		return fileInfo, err
@@ -593,7 +607,10 @@ func (f *fileManager) HeadByDigest(
 		RootParentID: rootParentID,
 		RegistryID:   registryID,
 	}
-	blobContext := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
+	blobContext, err := f.getBlobsContext(ctx, rootIdentifier, "", "", "", blobLocator)
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to get blob context: %w", err)
+	}
 	size, err := blobContext.genericBlobStore.StatByDigest(ctx, rootIdentifier, fileInfo.Sha256)
 	if err != nil {
 		return false, 0, err
@@ -663,7 +680,10 @@ func (f *fileManager) DownloadFileByDigest(
 		RootParentID: rootParentID,
 		RegistryID:   registryID,
 	}
-	blobContext := f.getBlobsContext(ctx, "", rootIdentifier, "", "", blobLocator)
+	blobContext, err := f.getBlobsContext(ctx, "", rootIdentifier, "", "", blobLocator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get blob context: %w", err)
+	}
 	reader, err := blobContext.genericBlobStore.GetV2NoRedirect(ctx, rootIdentifier, fileInfo.Sha256, fileInfo.Size)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file with digest: %s %w", fileInfo.Sha256, err)
