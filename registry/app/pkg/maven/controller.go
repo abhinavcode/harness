@@ -271,22 +271,27 @@ func (c *Controller) ProxyWrapper(
 
 	var response Response
 	requestRepoKey := info.RegIdentifier
-	if repos, err := c.GetOrderedRepos(ctx, requestRepoKey, *info.BaseInfo); err == nil {
-		for _, registry := range repos {
-			log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
-			artifact, ok := c.GetArtifactRegistry(ctx, registry).(Registry)
-			if !ok {
-				log.Ctx(ctx).Warn().Msgf("artifact %s is not a registry", registry.Name)
-				continue
+	repos, err := c.GetOrderedRepos(ctx, requestRepoKey, info.Registry)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msgf(
+			"GetOrderedRepos failed: registry=%s, parentID=%d",
+			requestRepoKey, info.BaseInfo.ParentID)
+		return response
+	}
+	for _, registry := range repos {
+		log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
+		artifact, ok := c.GetArtifactRegistry(ctx, registry).(Registry)
+		if !ok {
+			log.Ctx(ctx).Warn().Msgf("artifact %s is not a registry", registry.Name)
+			continue
+		}
+		if artifact != nil {
+			response = f(registry, artifact)
+			if pkg.IsEmpty(response.GetErrors()) {
+				return response
 			}
-			if artifact != nil {
-				response = f(registry, artifact)
-				if pkg.IsEmpty(response.GetErrors()) {
-					return response
-				}
-				log.Ctx(ctx).Warn().Msgf("Repository: %s, Type: %s, errors: %v", registry.Name, registry.Type,
-					response.GetErrors())
-			}
+			log.Ctx(ctx).Warn().Msgf("Repository: %s, Type: %s, errors: %v", registry.Name, registry.Type,
+				response.GetErrors())
 		}
 	}
 	return response
@@ -295,22 +300,20 @@ func (c *Controller) ProxyWrapper(
 func (c *Controller) GetOrderedRepos(
 	ctx context.Context,
 	repoKey string,
-	artInfo pkg.BaseInfo,
+	registry registrytypes.Registry,
 ) ([]registrytypes.Registry, error) {
-	var result []registrytypes.Registry
-	if registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, artInfo.ParentID, repoKey); err == nil {
-		result = append(result, *registry)
-		proxies := registry.UpstreamProxies
-		if len(proxies) > 0 {
-			upstreamRepos, err := c.DBStore.RegistryDao.GetByIDIn(ctx, proxies)
-			if err != nil {
-				return result, err
-			}
+	result := []registrytypes.Registry{registry}
 
-			result = append(result, *upstreamRepos...)
+	proxies := registry.UpstreamProxies
+	if len(proxies) > 0 {
+		log.Ctx(ctx).Debug().Msgf("Fetching %d upstream proxies for registry %s: %v",
+			len(proxies), repoKey, proxies)
+		upstreamRepos, err := c.DBStore.RegistryDao.GetByIDIn(ctx, proxies)
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msgf("GetByIDIn failed for upstream proxies: %v", proxies)
+			return result, err
 		}
-	} else {
-		return result, err
+		result = append(result, *upstreamRepos...)
 	}
 
 	return result, nil
