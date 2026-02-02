@@ -664,7 +664,7 @@ func createRegistrationIndexPageItem(baseURL string, info nuget.ArtifactInfo, ar
 
 // normalizeVersionRange transforms simple version strings to NuGet range notation.
 // Per NuGet semantics, a version without brackets means "minimum version" (inclusive).
-// Example: "1.0.0" becomes "[1.0.0, )"
+// Example: "1.0.0" becomes "[1.0.0, )".
 func normalizeVersionRange(version string) string {
 	if version == "" {
 		return ""
