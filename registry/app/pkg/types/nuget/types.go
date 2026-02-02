@@ -365,7 +365,7 @@ type CatalogEntry struct {
 	//nolint: tagliatelle
 	ProjectURL string `json:"projectURL"`
 	//nolint: tagliatelle
-	DependencyGroups []*PackageDependencyGroup `json:"dependencyGroups,omitempty"`
+	DependencyGroups []*PackageDependencyGroup `json:"dependencyGroups"`
 }
 
 // https://docs.microsoft.com/en-us/nuget/api/registration-base-url-resource#package-dependency-group

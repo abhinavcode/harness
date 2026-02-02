@@ -664,7 +664,7 @@ func createRegistrationIndexPageItem(baseURL string, info nuget.ArtifactInfo, ar
 
 func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.PackageDependencyGroup {
 	if metadata.PackageMetadata.Dependencies == nil {
-		return nil
+		return []*nuget.PackageDependencyGroup{}
 	}
 	dependencyGroups := make([]*nuget.PackageDependencyGroup, 0,
 		len(metadata.PackageMetadata.Dependencies.Groups))
@@ -679,12 +679,11 @@ func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.Pack
 				Range: dep.Version,
 			})
 		}
-		if len(deps) > 0 {
-			dependencyGroups = append(dependencyGroups, &nuget.PackageDependencyGroup{
-				TargetFramework: group.TargetFramework,
-				Dependencies:    deps,
-			})
-		}
+
+		dependencyGroups = append(dependencyGroups, &nuget.PackageDependencyGroup{
+			TargetFramework: group.TargetFramework,
+			Dependencies:    deps,
+		})
 	}
 	return dependencyGroups
 }
