@@ -84,7 +84,7 @@ type upstreamProxyDB struct {
 	RegistryID               int64                `db:"registry_id"`
 	RepoKey                  string               `db:"repo_key"`
 	ParentID                 string               `db:"parent_id"`
-	Description              string               `db:"description"`
+	Description              sql.NullString       `db:"description"`
 	Labels                   sql.NullString       `db:"labels"`
 	PackageType              artifact.PackageType `db:"package_type"`
 	AllowedPattern           sql.NullString       `db:"allowed_pattern"`
@@ -522,7 +522,7 @@ func (r UpstreamproxyDao) mapToUpstreamProxy(
 		RegistryID:               dst.RegistryID,
 		RepoKey:                  dst.RepoKey,
 		ParentID:                 dst.ParentID,
-		Description:              dst.Description,
+		Description:              dst.Description.String,
 		Labels:                   util.StringToArr(dst.Labels.String),
 		PackageType:              dst.PackageType,
 		AllowedPattern:           util.StringToArr(dst.AllowedPattern.String),
