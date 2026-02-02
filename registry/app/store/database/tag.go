@@ -97,8 +97,6 @@ type artifactMetadataDB struct {
 	ArtifactType      *artifact.ArtifactType `db:"artifact_type"`
 	Tags              *string                `db:"tags"`
 	ArtifactDeletedAt *int64                 `db:"artifact_deleted_at"`
-	ImageDeletedAt    *int64                 `db:"image_deleted_at"`
-	RegistryDeletedAt *int64                 `db:"registry_deleted_at"`
 	RegistryType      *artifact.RegistryType `db:"registry_type"`
 }
 
@@ -114,9 +112,7 @@ type tagMetadataDB struct {
 	MediaType         string               `db:"mt_media_type"`
 	Digest            []byte               `db:"manifest_digest"`
 	DownloadCount     int64                `db:"download_count"`
-	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"` // For cascade logic
-	ImageDeletedAt    *int64               `db:"image_deleted_at"`    // For cascade logic
-	RegistryDeletedAt *int64               `db:"registry_deleted_at"` // For cascade logic
+	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"`
 	ArtifactUUID      sql.NullString       `db:"artifact_uuid"`
 }
 
@@ -132,9 +128,7 @@ type ociVersionMetadataDB struct {
 	Digest            []byte               `db:"manifest_digest"`
 	DownloadCount     int64                `db:"download_count"`
 	Tags              *string              `db:"tags"`
-	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"` // For cascade logic
-	ImageDeletedAt    *int64               `db:"image_deleted_at"`    // For cascade logic
-	RegistryDeletedAt *int64               `db:"registry_deleted_at"` // For cascade logic
+	ArtifactDeletedAt *int64               `db:"artifact_deleted_at"`
 	ArtifactUUID      sql.NullString       `db:"artifact_uuid"`
 }
 
@@ -419,8 +413,7 @@ func (t tagDao) GetAllArtifactsByParentID(
 	finalQuery := fmt.Sprintf(`
     SELECT repo_name, name, package_type, version, modified_at,
            labels, download_count, is_quarantined, quarantine_reason, artifact_type,
-           artifact_deleted_at, image_deleted_at, registry_deleted_at,
-		   registry_uuid, uuid, registry_type
+           artifact_deleted_at, registry_uuid, uuid, registry_type
     FROM (%s UNION ALL %s) AS combined
 `, q1SQL, q2SQL)
 
@@ -470,8 +463,6 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 		'' as quarantine_reason,
         i.image_type as artifact_type,
         NULL as artifact_deleted_at,
-        i.image_deleted_at as image_deleted_at,
-        r.registry_deleted_at as registry_deleted_at,
         r.registry_type as registry_type`,
 	).
 		From("tags t").
@@ -621,8 +612,6 @@ func (t tagDao) getCoreArtifactsQuery(
 		i.image_labels as labels,
 		i.image_type as artifact_type,
 		ar.artifact_deleted_at as artifact_deleted_at,
-		i.image_deleted_at as image_deleted_at,
-		r.registry_deleted_at as registry_deleted_at,
         r.registry_type as registry_type`,
 	).
 		From("artifacts ar").
@@ -845,8 +834,6 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
         qp.quarantined_path_reason as quarantine_reason,
         i.image_type as artifact_type,
         ar.artifact_deleted_at as artifact_deleted_at,
-        i.image_deleted_at as image_deleted_at,
-        r.registry_deleted_at as registry_deleted_at,
         r.registry_type as registry_type`+suffix,
 	).
 		From("artifacts ar").
@@ -1006,15 +993,9 @@ func (t tagDao) CountAllArtifactsByParentID(
 	// Apply soft delete filtering
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		q = q.Where("ar.artifact_deleted_at IS NULL").
-			Where("i.image_deleted_at IS NULL").
-			Where("r.registry_deleted_at IS NULL")
+		q = q.Where("ar.artifact_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		q = q.Where(
-			"(ar.artifact_deleted_at IS NOT NULL OR " +
-				"i.image_deleted_at IS NOT NULL OR " +
-				"r.registry_deleted_at IS NOT NULL)",
-		)
+		q = q.Where("ar.artifact_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
@@ -1093,15 +1074,9 @@ func (t tagDao) CountAllArtifactsByParentIDUntagged(
 	// Apply soft delete filtering
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		query = query.Where("ar.artifact_deleted_at IS NULL").
-			Where("i.image_deleted_at IS NULL").
-			Where("r.registry_deleted_at IS NULL")
+		query = query.Where("ar.artifact_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		query = query.Where(
-			"(ar.artifact_deleted_at IS NOT NULL OR " +
-				"i.image_deleted_at IS NOT NULL OR " +
-				"r.registry_deleted_at IS NOT NULL)",
-		)
+		query = query.Where("ar.artifact_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering
 	}
@@ -1318,8 +1293,7 @@ func (t tagDao) GetTagMetadata(
 	q := databaseg.Builder.Select(
 		"registry_package_type as package_type, tag_name as name, "+
 			"tag_updated_at as modified_at, manifest_total_size as size, "+
-			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at, "+
-			"a.artifact_uuid as artifact_uuid",
+			"NULL as artifact_deleted_at, a.artifact_uuid as artifact_uuid",
 	).
 		From("tags t").
 		Join("registries r ON t.tag_registry_id = r.registry_id").
@@ -1369,8 +1343,7 @@ func (t tagDao) GetOCIVersionMetadata(
 	q := databaseg.Builder.Select(
 		"registry_package_type as package_type, manifest_digest, "+
 			"manifest_created_at as modified_at, manifest_total_size as size, "+
-			"NULL as artifact_deleted_at, i.image_deleted_at, r.registry_deleted_at, "+
-			"a.artifact_uuid as artifact_uuid",
+			"NULL as artifact_deleted_at, a.artifact_uuid as artifact_uuid",
 	).
 		From("manifests").
 		Join("registries r ON manifest_registry_id = r.registry_id").
@@ -2049,32 +2022,9 @@ func (t tagDao) mapToArtifactMetadata(
 		}
 	}
 
-	// Compute DeletedAt with cascade logic
-	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
 	var deletedAt *time.Time
-
-	// Collect all non-null deleted_at timestamps
-	var timestamps []*int64
 	if dst.ArtifactDeletedAt != nil {
-		timestamps = append(timestamps, dst.ArtifactDeletedAt)
-	}
-	if dst.ImageDeletedAt != nil {
-		timestamps = append(timestamps, dst.ImageDeletedAt)
-	}
-	if dst.RegistryDeletedAt != nil {
-		timestamps = append(timestamps, dst.RegistryDeletedAt)
-	}
-
-	// If any entity is deleted, find earliest timestamp
-	if len(timestamps) > 0 {
-		// Find the earliest (minimum) timestamp
-		earliestTimestamp := timestamps[0]
-		for _, ts := range timestamps[1:] {
-			if *ts < *earliestTimestamp {
-				earliestTimestamp = ts
-			}
-		}
-		t := time.UnixMilli(*earliestTimestamp)
+		t := time.UnixMilli(*dst.ArtifactDeletedAt)
 		deletedAt = &t
 	}
 
@@ -2160,19 +2110,20 @@ func (t tagDao) mapToTagMetadata(
 	dst *tagMetadataDB,
 ) (*types.OciVersionMetadata, error) {
 	tagMetadata := &types.OciVersionMetadata{
-		Name:              dst.Name,
-		Size:              dst.Size,
-		PackageType:       dst.PackageType,
-		DigestCount:       dst.DigestCount,
-		ModifiedAt:        time.UnixMilli(dst.ModifiedAt),
-		SchemaVersion:     dst.SchemaVersion,
-		NonConformant:     dst.NonConformant,
-		MediaType:         dst.MediaType,
-		Payload:           dst.Payload,
-		DownloadCount:     dst.DownloadCount,
-		ArtifactDeletedAt: dst.ArtifactDeletedAt,
-		ImageDeletedAt:    dst.ImageDeletedAt,
-		RegistryDeletedAt: dst.RegistryDeletedAt,
+		Name:          dst.Name,
+		Size:          dst.Size,
+		PackageType:   dst.PackageType,
+		DigestCount:   dst.DigestCount,
+		ModifiedAt:    time.UnixMilli(dst.ModifiedAt),
+		SchemaVersion: dst.SchemaVersion,
+		NonConformant: dst.NonConformant,
+		MediaType:     dst.MediaType,
+		Payload:       dst.Payload,
+		DownloadCount: dst.DownloadCount,
+	}
+	if dst.ArtifactDeletedAt != nil {
+		deletedAt := time.UnixMilli(*dst.ArtifactDeletedAt)
+		tagMetadata.ArtifactDeletedAt = &deletedAt
 	}
 	if dst.Digest != nil {
 		dgst := types.Digest(util.GetHexEncodedString(dst.Digest))
@@ -2190,17 +2141,18 @@ func (t tagDao) mapToOciVersion(
 	dst *ociVersionMetadataDB,
 ) (*types.OciVersionMetadata, error) {
 	ociVersion := &types.OciVersionMetadata{
-		Size:              dst.Size,
-		PackageType:       dst.PackageType,
-		DigestCount:       dst.DigestCount,
-		ModifiedAt:        time.UnixMilli(dst.ModifiedAt),
-		SchemaVersion:     dst.SchemaVersion,
-		NonConformant:     dst.NonConformant,
-		MediaType:         dst.MediaType,
-		Payload:           dst.Payload,
-		ArtifactDeletedAt: dst.ArtifactDeletedAt,
-		ImageDeletedAt:    dst.ImageDeletedAt,
-		RegistryDeletedAt: dst.RegistryDeletedAt,
+		Size:          dst.Size,
+		PackageType:   dst.PackageType,
+		DigestCount:   dst.DigestCount,
+		ModifiedAt:    time.UnixMilli(dst.ModifiedAt),
+		SchemaVersion: dst.SchemaVersion,
+		NonConformant: dst.NonConformant,
+		MediaType:     dst.MediaType,
+		Payload:       dst.Payload,
+	}
+	if dst.ArtifactDeletedAt != nil {
+		deletedAt := time.UnixMilli(*dst.ArtifactDeletedAt)
+		ociVersion.ArtifactDeletedAt = &deletedAt
 	}
 	if dst.Tags != nil {
 		ociVersion.Tags = strings.Split(*dst.Tags, ",")

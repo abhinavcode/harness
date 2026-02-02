@@ -443,7 +443,7 @@ func (l *localBase) postUploadArtifact(
 ) (int64, error) {
 	// Check if registry is soft deleted
 	if registry.DeletedAt != nil {
-		return 0, fmt.Errorf("cannot upload to soft-deleted registry: %s", registry.Name)
+		return 0, fmt.Errorf("cannot upload to deleted registry: %s", registry.Name)
 	}
 
 	var artifactID int64
@@ -457,7 +457,7 @@ func (l *localBase) postUploadArtifact(
 				return fmt.Errorf("failed to check existing image: %w", err)
 			}
 			if err == nil && existingImage.DeletedAt != nil {
-				return fmt.Errorf("cannot upload to soft-deleted image: %s", info.Image)
+				return fmt.Errorf("cannot upload to deleted image: %s", info.Image)
 			}
 
 			image := &types.Image{
@@ -478,7 +478,7 @@ func (l *localBase) postUploadArtifact(
 				return fmt.Errorf("failed to check existing artifact version: %w", err)
 			}
 			if err == nil && dbArtifact.DeletedAt != nil {
-				return fmt.Errorf("cannot upload to soft-deleted artifact version: %s", version)
+				return fmt.Errorf("cannot upload to deleted artifact version: %s", version)
 			}
 
 			// Fetch artifact without soft-deleted ones for metadata update
@@ -535,7 +535,10 @@ func (l *localBase) Download(
 	}
 
 	path := "/" + info.Image + "/" + version + "/" + fileName
-	reg, _ := l.registryFinder.FindByRootParentID(ctx, info.RootParentID, info.RegIdentifier, types.WithAllDeleted())
+	reg, err := l.registryFinder.FindByRootParentID(ctx, info.RootParentID, info.RegIdentifier)
+	if err != nil {
+		return responseHeaders, nil, "", err
+	}
 
 	fileReader, _, redirectURL, err := l.fileManager.DownloadFileByPath(ctx, path, reg.ID,
 		info.RegIdentifier, info.RootIdentifier, true)

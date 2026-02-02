@@ -247,12 +247,23 @@ func (a ArtifactDao) GetByRegistryIDAndImage(
 	return &artifacts, nil
 }
 
-func (a ArtifactDao) GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error) {
+func (a ArtifactDao) GetLatestByImageID(
+	ctx context.Context, imageID int64, opts ...types.QueryOption,
+) (*types.Artifact, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts a").
 		Where("a.artifact_image_id = ?", imageID).
-		Where("a.artifact_deleted_at IS NULL").
 		OrderBy("a.artifact_updated_at DESC").Limit(1)
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExclude:
+		q = q.Where("a.artifact_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnly:
+		q = q.Where("a.artifact_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterInclude:
+		// No filtering
+	}
 
 	query, args, err := q.ToSql()
 	if err != nil {
@@ -571,12 +582,11 @@ func (a ArtifactDao) CountLatestByName(
 		Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Join("registries r ON i.image_registry_id = r.registry_id").
 		Join(fmt.Sprintf(`(%s) latest
 	ON a.artifact_image_id = latest.artifact_image_id
 	AND a.artifact_created_at = latest.max_created_at
 `, subQuery)).
-		Where("i.image_name LIKE ? AND r.registry_id = ?", "%"+name+"%", regID)
+		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID)
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
@@ -610,14 +620,11 @@ func (a ArtifactDao) SearchByImageName(
 	q := databaseg.Builder.Select(
 		`i.image_name as name,
         a.artifact_id as artifact_id, a.artifact_version as version, a.artifact_metadata as metadata,
-        a.artifact_deleted_at as artifact_deleted_at,
-        i.image_deleted_at as image_deleted_at,
-        r.registry_deleted_at as registry_deleted_at`,
+        a.artifact_deleted_at as artifact_deleted_at`,
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_id = ?", regID)
+		Where("i.image_registry_id = ?", regID)
 	if name != "" {
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
 	}
@@ -657,8 +664,7 @@ func (a ArtifactDao) CountByImageName(
 		Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_id = ?", regID)
+		Where("i.image_registry_id = ?", regID)
 	if name != "" {
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
 	}
@@ -708,9 +714,7 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 		i.image_labels as labels, 
 		a.artifact_metadata as metadata,
 		COALESCE(t2.download_count,0) as download_count,
-		a.artifact_deleted_at as artifact_deleted_at,
-		i.image_deleted_at as image_deleted_at,
-		r.registry_deleted_at as registry_deleted_at`,
+		a.artifact_deleted_at as artifact_deleted_at`,
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -902,9 +906,7 @@ func (a ArtifactDao) GetArtifactsByRepo(
 		r.registry_package_type as package_type, a.artifact_version as latest_version, 
 		a.artifact_updated_at as modified_at, i.image_labels as labels, i.image_type as artifact_type,
 		COALESCE(t2.download_count, 0) as download_count,
-		a.artifact_deleted_at as artifact_deleted_at,
-		i.image_deleted_at as image_deleted_at,
-		r.registry_deleted_at as registry_deleted_at`,
+		a.artifact_deleted_at as artifact_deleted_at`,
 	).
 		From("artifacts a").
 		Join(rowNumSubquery+` ON a.artifact_id = a1.id`, parentID, repoKey).
@@ -1611,32 +1613,9 @@ func (a ArtifactDao) GetArtifactsByRepoAndImageBatch(
 func (a ArtifactDao) mapToArtifactMetadata(
 	dst *artifactMetadataDB,
 ) (*types.ArtifactMetadata, error) {
-	// Compute DeletedAt with cascade logic
-	// deletedAt should be set to the earliest timestamp among artifact, image, or registry
 	var deletedAt *time.Time
-
-	// Collect all non-null deleted_at timestamps
-	var timestamps []*int64
 	if dst.ArtifactDeletedAt != nil {
-		timestamps = append(timestamps, dst.ArtifactDeletedAt)
-	}
-	if dst.ImageDeletedAt != nil {
-		timestamps = append(timestamps, dst.ImageDeletedAt)
-	}
-	if dst.RegistryDeletedAt != nil {
-		timestamps = append(timestamps, dst.RegistryDeletedAt)
-	}
-
-	// If any entity is deleted, find earliest timestamp
-	if len(timestamps) > 0 {
-		// Find the earliest (minimum) timestamp
-		earliestTimestamp := timestamps[0]
-		for _, ts := range timestamps[1:] {
-			if *ts < *earliestTimestamp {
-				earliestTimestamp = ts
-			}
-		}
-		t := time.UnixMilli(*earliestTimestamp)
+		t := time.UnixMilli(*dst.ArtifactDeletedAt)
 		deletedAt = &t
 	}
 

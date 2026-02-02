@@ -498,13 +498,13 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 
 	// Check if registry is soft deleted
 	if dbRepo.DeletedAt != nil {
-		return fmt.Errorf("cannot upload manifest to soft-deleted registry: %s", dbRepo.Name)
+		return fmt.Errorf("cannot upload manifest to deleted registry: %s", dbRepo.Name)
 	}
 
 	// Check if image already exists and is soft-deleted
 	existingImage, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.WithAllDeleted())
 	if err == nil && existingImage.DeletedAt != nil {
-		return fmt.Errorf("cannot upload manifest to soft-deleted image: %s", info.Image)
+		return fmt.Errorf("cannot upload manifest to deleted image: %s", info.Image)
 	}
 
 	dbImage := &types.Image{
@@ -525,7 +525,7 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 	// Check if artifact version already exists and is soft-deleted
 	existingArtifact, err := l.artifactDao.GetByName(ctx, dbImage.ID, dgst.String(), types.WithAllDeleted())
 	if err == nil && existingArtifact.DeletedAt != nil {
-		return fmt.Errorf("cannot upload manifest to soft-deleted artifact version: %s", dgst.String())
+		return fmt.Errorf("cannot upload manifest to deleted artifact version: %s", dgst.String())
 	}
 
 	dbArtifact := &types.Artifact{
@@ -554,7 +554,13 @@ func (l *manifestService) UpsertImage(
 	image, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.WithAllDeleted())
 	if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 		return err
-	} else if image != nil {
+	}
+
+	if image != nil {
+		// Check if image is soft-deleted
+		if image.DeletedAt != nil {
+			return fmt.Errorf("cannot upsert manifest to deleted image: %s", info.Image)
+		}
 		return nil
 	}
 

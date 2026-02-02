@@ -603,7 +603,7 @@ func (r registryDao) fetchOCIBlobSizes(
 			LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
 			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
 			WHERE rb.rblob_registry_id IN (?)
-			  AND (rb.rblob_image_name IS NULL OR i.image_deleted_at IS NULL)
+			  AND (rb.rblob_image_name IS NULL OR (i.image_id IS NOT NULL AND i.image_deleted_at IS NULL))
 			GROUP BY rb.rblob_registry_id
 		`
 	case types.SoftDeleteFilterOnly:
@@ -613,7 +613,7 @@ func (r registryDao) fetchOCIBlobSizes(
 			LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
 			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
 			WHERE rb.rblob_registry_id IN (?)
-			  AND (rb.rblob_image_name IS NOT NULL AND i.image_deleted_at IS NOT NULL)
+			  AND (i.image_id IS NOT NULL AND i.image_deleted_at IS NOT NULL)
 			GROUP BY rb.rblob_registry_id
 		`
 	}
@@ -672,7 +672,7 @@ func (r registryDao) fetchGenericBlobSizes(
 			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
 			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
 			  AND n.node_registry_id IN (?)
-			  AND (i.image_id IS NULL OR (i.image_deleted_at IS NULL AND (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL)))
+			  AND (i.image_id IS NULL OR (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL))
 			GROUP BY n.node_registry_id
 		`
 	case types.SoftDeleteFilterOnly:
@@ -684,7 +684,7 @@ func (r registryDao) fetchGenericBlobSizes(
 			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
 			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
 			  AND n.node_registry_id IN (?)
-			  AND (i.image_id IS NOT NULL AND (i.image_deleted_at IS NOT NULL OR (a.artifact_id IS NOT NULL AND a.artifact_deleted_at IS NOT NULL)))
+			  AND (i.image_id IS NOT NULL AND a.artifact_id IS NOT NULL AND a.artifact_deleted_at IS NOT NULL)
 			GROUP BY n.node_registry_id
 		`
 	}
@@ -739,11 +739,8 @@ func (r registryDao) fetchDownloadCounts(
 			FROM download_stats d
 			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
 			JOIN images i ON a.artifact_image_id = i.image_id
-			JOIN registries r ON i.image_registry_id = r.registry_id
 			WHERE i.image_registry_id IN (?)
 			  AND a.artifact_deleted_at IS NULL
-			  AND i.image_deleted_at IS NULL
-			  AND r.registry_deleted_at IS NULL
 			GROUP BY i.image_registry_id
 		`
 	case types.SoftDeleteFilterOnly:
@@ -752,11 +749,8 @@ func (r registryDao) fetchDownloadCounts(
 			FROM download_stats d
 			JOIN artifacts a ON d.download_stat_artifact_id = a.artifact_id
 			JOIN images i ON a.artifact_image_id = i.image_id
-			JOIN registries r ON i.image_registry_id = r.registry_id
 			WHERE i.image_registry_id IN (?)
-			  AND (a.artifact_deleted_at IS NOT NULL 
-			   OR i.image_deleted_at IS NOT NULL 
-			   OR r.registry_deleted_at IS NOT NULL)
+			  AND a.artifact_deleted_at IS NOT NULL
 			GROUP BY i.image_registry_id
 		`
 	}

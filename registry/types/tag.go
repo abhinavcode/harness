@@ -53,7 +53,7 @@ type ArtifactMetadata struct {
 	RegistryType     *artifact.RegistryType
 	ArtifactType     *artifact.ArtifactType
 	Tags             []string
-	DeletedAt        *time.Time // Artifact's own DeletedAt (with cascade logic)
+	DeletedAt        *time.Time
 }
 
 type ImageMetadata struct {
@@ -67,7 +67,7 @@ type ImageMetadata struct {
 	LatestVersion string
 	CreatedAt     time.Time
 	ModifiedAt    time.Time
-	DeletedAt     *time.Time // Image's own DeletedAt (with cascade logic)
+	DeletedAt     *time.Time
 }
 
 type OciVersionMetadata struct {
@@ -85,9 +85,7 @@ type OciVersionMetadata struct {
 	Tags              []string
 	IsQuarantined     bool
 	QuarantineReason  string
-	ArtifactDeletedAt *int64 // Cascade from artifact
-	ImageDeletedAt    *int64 // Cascade from image
-	RegistryDeletedAt *int64 // Cascade from registry
+	ArtifactDeletedAt *time.Time
 	ArtifactUUID      string
 }
 

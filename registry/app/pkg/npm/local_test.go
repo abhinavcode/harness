@@ -83,8 +83,6 @@ func TestParseAndUploadNPMPackage_WithAttachment_UploadsData(t *testing.T) {
 	// Wire local registry with a real file manager
 	lr := newLocalForTests(&mockLocalBase{}, nil, nil, nil, nil)
 	lr.fileManager = fm
-	// Prepare blob store for verification of upload
-	blobStore := svc.GenericBlobsStore(info.RootIdentifier)
 
 	// Prepare base64 data for attachment
 	content := []byte("test tarball bytes")
@@ -121,22 +119,15 @@ func TestParseAndUploadNPMPackage_WithAttachment_UploadsData(t *testing.T) {
     }`
 
 	var meta npmmeta.PackageMetadata
-	fi, tmp, err := lr.parseAndUploadNPMPackage(ctx, info, bytes.NewReader([]byte(body)), &meta)
+	fi, err := lr.parseAndUploadNPMPackage(ctx, info, bytes.NewReader([]byte(body)), &meta)
 	assert.NoError(t, err)
 
 	// Metadata should be parsed
 	assert.Equal(t, "pkg", meta.Name)
 	assert.Equal(t, "1.0.0", meta.Versions["1.0.0"].Version)
 
-	// Upload should have occurred
-	assert.NotEqual(t, "", tmp)
+	// File info should be populated
 	assert.Greater(t, fi.Size, int64(0))
-
-	// Verify data present at temp path in storage
-	tmpPath := "/" + info.RootIdentifier + "/tmp/" + tmp
-	sz, statErr := blobStore.Stat(ctx, tmpPath)
-	assert.NoError(t, statErr)
-	assert.Equal(t, int64(len(content)), sz)
 }
 
 // Satisfy base.LocalBase interface with exact signatures.
@@ -193,9 +184,17 @@ func (m *mockLocalBase) DeleteVersion(ctx context.Context, info pkg.PackageArtif
 func (m *mockLocalBase) MoveMultipleTempFilesAndCreateArtifact(
 	context.Context,
 	*pkg.ArtifactInfo, string, metadata.Metadata,
-	*[]types.FileInfo, func(info *pkg.ArtifactInfo, fileInfo *types.FileInfo) string, string,
+	*[]types.FileInfo, string,
 ) error {
 	return nil
+}
+
+func (m *mockLocalBase) UpdateFileManagerAndCreateArtifact(
+	context.Context,
+	pkg.ArtifactInfo, string, string,
+	metadata.Metadata, types.FileInfo, bool,
+) (*commons.ResponseHeaders, string, int64, bool, error) {
+	return nil, "", 0, false, nil
 }
 
 func (m *mockLocalBase) AuditPush(
@@ -342,7 +341,7 @@ func (m *mockArtifactDAO) GetByRegistryImageAndVersion(
 	return nil, nil //nolint:nilnil
 }
 func (m *mockArtifactDAO) GetByRegistryImageVersionAndArtifactType(
-	ctx context.Context, registryID int64, image string, version string, artifactType string,
+	_ context.Context, _ int64, _ string, _ string, _ string,
 ) (*types.Artifact, error) {
 	return nil, nil //nolint:nilnil
 }
@@ -410,7 +409,7 @@ func (m *mockArtifactDAO) SoftDeleteByImageNameAndRegistryID(context.Context, in
 func (m *mockArtifactDAO) SoftDeleteByVersionAndImageName(context.Context, string, string, int64) error {
 	return nil
 }
-func (m *mockArtifactDAO) GetLatestByImageID(context.Context, int64) (*types.Artifact, error) {
+func (m *mockArtifactDAO) GetLatestByImageID(context.Context, int64, ...types.QueryOption) (*types.Artifact, error) {
 	return nil, nil //nolint:nilnil
 }
 func (m *mockArtifactDAO) GetAllArtifactsByRepo(
@@ -530,7 +529,7 @@ func newLocalForTests(
 ) *localRegistry {
 	return &localRegistry{
 		localBase:   lb,
-		fileManager: filemanager.FileManager{},
+		fileManager: nil,
 		proxyStore:  nil,
 		tx:          nil,
 		registryDao: nil,
@@ -818,10 +817,9 @@ func TestParseAndUploadNPMPackage_ParseOnly_NoAttachments(t *testing.T) {
 	buf, _ := json.Marshal(body)
 	lr := newLocalForTests(&mockLocalBase{}, nil, nil, nil, nil)
 	var meta npmmeta.PackageMetadata
-	fi, tmp, err := lr.parseAndUploadNPMPackage(ctx, info, bytes.NewReader(buf), &meta)
+	fi, err := lr.parseAndUploadNPMPackage(ctx, info, bytes.NewReader(buf), &meta)
 	assert.NoError(t, err)
 	assert.Equal(t, types.FileInfo{}, fi)
-	assert.Equal(t, "", tmp)
 	assert.Equal(t, "pkg", meta.Name)
 	assert.Equal(t, "1.0.0", meta.Versions["1.0.0"].Version)
 }
@@ -834,6 +832,6 @@ func TestProcessAttachmentsOptimized_NoData(t *testing.T) {
 	bufReader := bufio.NewReader(bytes.NewReader([]byte(jsonStr)))
 	dec := json.NewDecoder(bufReader)
 	lr := newLocalForTests(&mockLocalBase{}, nil, nil, nil, nil)
-	_, _, err := lr.processAttachmentsOptimized(ctx, info, dec, bufReader)
+	_, err := lr.processAttachmentsOptimized(ctx, info, dec, bufReader)
 	assert.Error(t, err)
 }

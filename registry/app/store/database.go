@@ -632,7 +632,7 @@ type ArtifactRepository interface {
 	// GetByUUID gets an artifact by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Artifact, error)
 
-	GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error)
+	GetLatestByImageID(ctx context.Context, imageID int64, opts ...types.QueryOption) (*types.Artifact, error)
 
 	// get latest artifacts from all images under repo
 	GetLatestArtifactsByRepo(
