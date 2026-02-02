@@ -36,14 +36,16 @@ function TextMetric(props: TextMetricProps) {
         font={{ variation: FontVariation.BODY }}
         color={Color.GREY_700}
         icon={props.labelIconProps?.name}
-        iconProps={props.labelIconProps}>
+        iconProps={props.labelIconProps}
+        lineClamp={1}>
         {props.label}
       </Text>
       <Text
         font={{ variation: FontVariation.BODY }}
         color={Color.GREY_800}
         icon={props.valueIconProps?.name}
-        iconProps={props.valueIconProps}>
+        iconProps={props.valueIconProps}
+        lineClamp={1}>
         {props.value}
       </Text>
     </Layout.Vertical>
@@ -61,7 +63,8 @@ function LinkMetric(props: LinkMetricProps) {
         font={{ variation: FontVariation.BODY }}
         color={Color.GREY_700}
         icon={props.labelIconProps?.name}
-        iconProps={props.labelIconProps}>
+        iconProps={props.labelIconProps}
+        lineClamp={1}>
         {props.label}
       </Text>
       <Link to={props.linkTo}>
@@ -69,7 +72,8 @@ function LinkMetric(props: LinkMetricProps) {
           font={{ variation: FontVariation.BODY }}
           color={Color.PRIMARY_7}
           icon={props.valueIconProps?.name}
-          iconProps={props.valueIconProps}>
+          iconProps={props.valueIconProps}
+          lineClamp={1}>
           {props.value}
         </Text>
       </Link>
@@ -81,6 +85,7 @@ interface StatusMetricProps {
   label: string
   labelIconProps?: IconProps
   status: ArtifactScan['scanStatus']
+  scanId: string
 }
 
 function ScanStatusMetric(props: StatusMetricProps) {
@@ -93,7 +98,7 @@ function ScanStatusMetric(props: StatusMetricProps) {
         iconProps={props.labelIconProps}>
         {props.label}
       </Text>
-      <ScanBadge status={props.status} />
+      <ScanBadge scanId={props.scanId} status={props.status} />
     </Layout.Vertical>
   )
 }

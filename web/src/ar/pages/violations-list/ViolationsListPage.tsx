@@ -29,15 +29,18 @@ import {
   Page
 } from '@harnessio/uicore'
 
-import { useAppStore, useParentHooks } from '@ar/hooks'
 import { DEFAULT_PAGE_INDEX } from '@ar/constants'
 import { useStrings } from '@ar/frameworks/strings'
+import { EntityScope } from '@ar/common/types'
+import { useAppStore, useParentHooks } from '@ar/hooks'
+import useGetPageScope from '@ar/hooks/useGetPageScope'
 import PackageTypeSelector from '@ar/components/PackageTypeSelector/PackageTypeSelector'
 
 import ViolationsListTable from './ViolationsListTable'
 import TableCard from './components/TableCard/TableCard'
 import RepositorySelector from '../artifact-list/components/RepositorySelector/RepositorySelector'
 import { useViolationsListQueryParamOptions, type ViolationsListPageQueryParams } from './utils'
+import ScopeSelector from '../repository-list/components/RepositoryScopeSelector/RepositoryScopeSelector'
 
 import css from './ViolationsListPage.module.scss'
 
@@ -49,8 +52,9 @@ export default function ViolationsListPage() {
   const { updateQueryParams, replaceQueryParams } = useUpdateQueryParams<Partial<ViolationsListPageQueryParams>>()
   const queryParams = useQueryParams<ViolationsListPageQueryParams>(useViolationsListQueryParamOptions())
 
+  const pageScope = useGetPageScope()
   const searchRef = useRef({} as ExpandingSearchInputHandle)
-  const { searchTerm, repositoryIds, packageTypes, page, size, sort, status } = queryParams
+  const { searchTerm, repositoryIds, packageTypes, page, size, sort, status, scope: scopeParam } = queryParams
 
   const {
     data,
@@ -67,7 +71,11 @@ export default function ViolationsListPage() {
       page,
       size,
       search_term: searchTerm,
-      scan_status: status
+      scan_status: status,
+      scope: scopeParam
+    },
+    stringifyQueryParamsOptions: {
+      arrayFormat: 'repeat'
     }
   })
 
@@ -83,6 +91,18 @@ export default function ViolationsListPage() {
       <Page.SubHeader className={css.subHeader}>
         <div className={css.subHeaderItems}>
           <Expander />
+          {pageScope !== EntityScope.PROJECT && (
+            <ScopeSelector
+              scope={pageScope}
+              value={scopeParam}
+              onChange={val => {
+                updateQueryParams({
+                  scope: val,
+                  page: DEFAULT_PAGE_INDEX
+                })
+              }}
+            />
+          )}
           <RepositorySelector
             value={repositoryIds}
             valueKey="uuid"
@@ -108,6 +128,35 @@ export default function ViolationsListPage() {
           />
         </div>
       </Page.SubHeader>
+      {responseData && (
+        <Layout.Horizontal className={classNames(css.cardsContainer)} spacing="large">
+          <TableCard
+            title={getString('violationsList.cards.totalViolations')}
+            value={responseData.meta.totalCount?.toLocaleString() || '0'}
+            subText={getString('violationsList.cards.dependencies')}
+            onClick={() => updateQueryParams({ status: undefined, page: DEFAULT_PAGE_INDEX })}
+            active={!status}
+          />
+          <TableCard
+            title={getString('violationsList.cards.blockedViolations')}
+            titleIcon="warning-sign"
+            iconProps={{ size: 12, color: Color.RED_600 }}
+            value={responseData.meta.blockedCount?.toLocaleString() || '0'}
+            subText={getString('violationsList.cards.dependencies')}
+            onClick={() => updateQueryParams({ status: 'BLOCKED', page: DEFAULT_PAGE_INDEX })}
+            active={status === 'BLOCKED'}
+          />
+          <TableCard
+            title={getString('violationsList.cards.warningViolations')}
+            titleIcon="warning-icon"
+            iconProps={{ size: 12, color: Color.ORANGE_700 }}
+            value={responseData.meta.warnCount?.toLocaleString() || '0'}
+            subText={getString('violationsList.cards.dependencies')}
+            onClick={() => updateQueryParams({ status: 'WARN', page: DEFAULT_PAGE_INDEX })}
+            active={status === 'WARN'}
+          />
+        </Layout.Horizontal>
+      )}
       <Page.Body
         className={classNames(css.pageBody)}
         loading={loading}
@@ -123,33 +172,6 @@ export default function ViolationsListPage() {
         }}>
         {responseData && (
           <Layout.Vertical spacing="large">
-            <Layout.Horizontal spacing="large">
-              <TableCard
-                title={getString('violationsList.cards.totalViolations')}
-                value={responseData.meta.totalCount?.toLocaleString() || '0'}
-                subText={getString('violationsList.cards.dependencies')}
-                onClick={() => updateQueryParams({ status: undefined, page: DEFAULT_PAGE_INDEX })}
-                active={!status}
-              />
-              <TableCard
-                title={getString('violationsList.cards.blockedViolations')}
-                titleIcon="warning-sign"
-                iconProps={{ size: 12, color: Color.RED_600 }}
-                value={responseData.meta.blockedCount?.toLocaleString() || '0'}
-                subText={getString('violationsList.cards.dependencies')}
-                onClick={() => updateQueryParams({ status: 'BLOCKED', page: DEFAULT_PAGE_INDEX })}
-                active={status === 'BLOCKED'}
-              />
-              <TableCard
-                title={getString('violationsList.cards.warningViolations')}
-                titleIcon="warning-icon"
-                iconProps={{ size: 12, color: Color.ORANGE_700 }}
-                value={responseData.meta.warnCount?.toLocaleString() || '0'}
-                subText={getString('violationsList.cards.dependencies')}
-                onClick={() => updateQueryParams({ status: 'WARN', page: DEFAULT_PAGE_INDEX })}
-                active={status === 'WARN'}
-              />
-            </Layout.Horizontal>
             <ViolationsListTable
               data={responseData}
               gotoPage={pageNumber => updateQueryParams({ page: pageNumber })}

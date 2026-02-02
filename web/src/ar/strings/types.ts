@@ -57,6 +57,7 @@ export interface StringsMap {
   'artifactList.table.columns.name': string
   'artifactList.table.columns.pullCommand': string
   'artifactList.table.columns.repository': string
+  'artifactList.table.columns.scanStatus': string
   'artifactList.table.columns.size': string
   'artifactList.table.columns.sto': string
   'artifactList.table.columns.tags': string
@@ -398,8 +399,11 @@ export interface StringsMap {
   'versionList.actions.archiveVersion': string
   'versionList.actions.deleteVersion': string
   'versionList.actions.quarantine': string
+  'versionList.actions.reEvaluate': string
   'versionList.actions.removeQuarantine': string
   'versionList.actions.restoreVersion': string
+  'versionList.messages.reEvaluateFailed': string
+  'versionList.messages.reEvaluateSuccess': string
   'versionList.page': string
   'versionList.table.columns.activelyDeployed': string
   'versionList.table.columns.archivedAt': string
@@ -409,11 +413,13 @@ export interface StringsMap {
   'versionList.table.columns.fileCount': string
   'versionList.table.columns.publishedByAt': string
   'versionList.table.columns.pullCommand': string
+  'versionList.table.columns.scanStatus': string
   'versionList.table.columns.size': string
   'versionList.table.columns.tags': string
   'versionList.table.columns.version': string
   'versionList.table.noArchivedVersionsTitle': string
   'versionList.table.noVersionsTitle': string
+  'versionList.table.notScanned': string
   'violationsList.cards.blockedViolations': string
   'violationsList.cards.dependencies': string
   'violationsList.cards.totalViolations': string
@@ -427,7 +433,6 @@ export interface StringsMap {
   'violationsList.table.columns.status': string
   'violationsList.violationDetailsModal.actions.reEvaluate': string
   'violationsList.violationDetailsModal.actions.requestException': string
-  'violationsList.violationDetailsModal.basicInformationSection.category': string
   'violationsList.violationDetailsModal.basicInformationSection.packageName': string
   'violationsList.violationDetailsModal.basicInformationSection.policySetViolated': string
   'violationsList.violationDetailsModal.basicInformationSection.status': string
@@ -441,6 +446,14 @@ export interface StringsMap {
   'violationsList.violationDetailsModal.fixInformationSection.fixedVersion': string
   'violationsList.violationDetailsModal.fixInformationSection.title': string
   'violationsList.violationDetailsModal.title': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.category': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.licenseViolation.allowedLicenses': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.licenseViolation.blockedLicense': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.packageAgeViolation.packageAgeThreshold': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.packageAgeViolation.publishedOn': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.securityViolation.cveId': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.securityViolation.cvssScore': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.securityViolation.cvssThreshold': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.title': string
   'webhookDetails.tabs.configuration': string
   'webhookDetails.tabs.executions': string
@@ -619,6 +632,7 @@ export interface StringsMap {
   'status.archived': string
   'status.available': string
   'status.blocked': string
+  'status.passed': string
   'status.warning': string
   stepNotFound: string
   success: string
