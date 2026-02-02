@@ -662,6 +662,21 @@ func createRegistrationIndexPageItem(baseURL string, info nuget.ArtifactInfo, ar
 	return res, nil
 }
 
+// normalizeVersionRange transforms simple version strings to NuGet range notation.
+// Per NuGet semantics, a version without brackets means "minimum version" (inclusive).
+// Example: "1.0.0" becomes "[1.0.0, )"
+func normalizeVersionRange(version string) string {
+	if version == "" {
+		return ""
+	}
+	// If already has brackets or parentheses, it's already a range
+	if strings.HasPrefix(version, "[") || strings.HasPrefix(version, "(") {
+		return version
+	}
+	// Transform to minimum version range: [version, )
+	return "[" + version + ", )"
+}
+
 func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.PackageDependencyGroup {
 	if metadata.PackageMetadata.Dependencies == nil {
 		return nil
@@ -671,22 +686,24 @@ func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.Pack
 
 	// Handle grouped dependencies (e.g., <group targetFramework="..."><dependency.../></group>)
 	for _, group := range metadata.PackageMetadata.Dependencies.Groups {
-		deps := make([]*nuget.PackageDependency, 0, len(group.Dependencies))
-		for _, dep := range group.Dependencies {
-			if dep.ID == "" || dep.Version == "" {
-				continue
+		var deps []*nuget.PackageDependency
+		if len(group.Dependencies) > 0 {
+			deps = make([]*nuget.PackageDependency, 0, len(group.Dependencies))
+			for _, dep := range group.Dependencies {
+				if dep.ID == "" || dep.Version == "" {
+					continue
+				}
+				deps = append(deps, &nuget.PackageDependency{
+					ID:    dep.ID,
+					Range: normalizeVersionRange(dep.Version),
+				})
 			}
-			deps = append(deps, &nuget.PackageDependency{
-				ID:    dep.ID,
-				Range: dep.Version,
-			})
 		}
-		if len(deps) > 0 {
-			dependencyGroups = append(dependencyGroups, &nuget.PackageDependencyGroup{
-				TargetFramework: group.TargetFramework,
-				Dependencies:    deps,
-			})
-		}
+		// Always include the group, even if it has no dependencies (deps will be nil)
+		dependencyGroups = append(dependencyGroups, &nuget.PackageDependencyGroup{
+			TargetFramework: group.TargetFramework,
+			Dependencies:    deps,
+		})
 	}
 
 	// Handle direct dependencies (e.g., <dependencies><dependency.../></dependencies>)
@@ -699,7 +716,7 @@ func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.Pack
 			}
 			deps = append(deps, &nuget.PackageDependency{
 				ID:    dep.ID,
-				Range: dep.Version,
+				Range: normalizeVersionRange(dep.Version),
 			})
 		}
 		if len(deps) > 0 {
