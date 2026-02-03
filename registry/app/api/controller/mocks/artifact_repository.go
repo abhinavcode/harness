@@ -376,9 +376,9 @@ func (_m *ArtifactRepository) DuplicateArtifact(ctx context.Context, sourceArtif
 	return r0, r1
 }
 
-// GetAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, opts
-func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, limit int, offset int, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, opts)
+// GetAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts
+func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllArtifactsByParentID")
@@ -386,11 +386,11 @@ func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, par
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, int, int, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, int, int, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
@@ -496,9 +496,9 @@ func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64,
 	return r0, r1
 }
 
-// GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, opts
-func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, latestVersion bool, limit int, offset int, sortByField string, sortByOrder string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, opts)
+// GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts
+func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetArtifactsByRepo")
@@ -506,19 +506,19 @@ func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID i
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, repoKey, search, labels, latestVersion, limit, offset, sortByField, sortByOrder, artifactType, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption) error); ok {
+		r1 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}

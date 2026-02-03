@@ -65,11 +65,13 @@ func (c *controller) SearchPackage(
 		ctx,
 		info.ParentID,
 		&registryList,
+		requestInfo.SortField,
+		requestInfo.SortOrder,
+		requestInfo.Limit,
+		requestInfo.Offset,
 		requestInfo.SearchTerm,
 		true,
 		[]string{},
-		requestInfo.Limit,
-		requestInfo.Offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get artifacts %s: %w", info.RegIdentifier, err)

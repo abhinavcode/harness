@@ -52,6 +52,9 @@ const (
 	name                string          = "name"
 	postgresStringAgg   string          = "string_agg"
 	sqliteGroupConcat   string          = "group_concat"
+	// SQL join clause for joining tags with images by registry and image name.
+	joinTagsWithImages string = " JOIN images i ON i.image_registry_id = t.tag_registry_id" +
+		" AND i.image_name = t.tag_image_name"
 )
 
 type tagDao struct {
@@ -484,26 +487,22 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 		)
 
 	if latestVersion {
-		var rowNumSubquery string
+		baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
+			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
+			JOIN registries r ON t.tag_registry_id = r.registry_id`
+		var joinClause string
+		whereClause := " WHERE r.registry_parent_id = ?"
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterInclude:
-			rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-				ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-				JOIN registries r ON t.tag_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ?) AS a`
 		case types.SoftDeleteFilterExclude:
-			rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-				ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-				JOIN registries r ON t.tag_registry_id = r.registry_id
-				JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-				WHERE r.registry_parent_id = ? AND i.image_deleted_at IS NULL) AS a`
+			joinClause = joinTagsWithImages
+			whereClause += " AND i.image_deleted_at IS NULL"
 		case types.SoftDeleteFilterOnly:
-			rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-				ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-				JOIN registries r ON t.tag_registry_id = r.registry_id
-				JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-				WHERE r.registry_parent_id = ? AND i.image_deleted_at IS NOT NULL) AS a`
+			joinClause = joinTagsWithImages
+			whereClause += " AND i.image_deleted_at IS NOT NULL"
+		case types.SoftDeleteFilterInclude:
+			// No filtering
 		}
+		rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 		q2 = q2.Join(rowNumSubquery+` ON t.tag_id = a.id`, parentID).Where("a.rank = 1")
 	}
 
@@ -649,7 +648,7 @@ func (t tagDao) getCoreArtifactsQuery(
 	}
 
 	return query.OrderBy(fmt.Sprintf("%s %s", sortField, sortByOrder)).
-		Limit(uint64(limit)).  // nolint:gosec
+		Limit(uint64(limit)). // nolint:gosec
 		Offset(uint64(offset)) // nolint:gosec
 }
 
@@ -856,27 +855,20 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 		)
 
 	if latestVersion {
-		var rowNumSubquery string
+		baseSubquery := `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
+			ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
+			JOIN images i ON i.image_id = ar.artifact_image_id 
+			JOIN registries r ON i.image_registry_id = r.registry_id 
+			WHERE r.registry_parent_id = ?`
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterInclude:
-			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
-				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
-				JOIN images i ON i.image_id = ar.artifact_image_id 
-				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ?) AS a`
 		case types.SoftDeleteFilterExclude:
-			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
-				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
-				JOIN images i ON i.image_id = ar.artifact_image_id 
-				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL) AS a`
+			baseSubquery += " AND ar.artifact_deleted_at IS NULL"
 		case types.SoftDeleteFilterOnly:
-			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
-				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
-				JOIN images i ON i.image_id = ar.artifact_image_id 
-				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NOT NULL) AS a`
+			baseSubquery += " AND ar.artifact_deleted_at IS NOT NULL"
+		case types.SoftDeleteFilterInclude:
+			// No filtering
 		}
+		rowNumSubquery := baseSubquery + `) AS a`
 		q1 = q1.Join(rowNumSubquery+` ON ar.artifact_id = a.id`, parentID).Where("a.rank = 1")
 	}
 
@@ -894,10 +886,8 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		// Only non-soft-deleted entities
 		q1 = q1.Where("ar.artifact_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		// Only soft-deleted entities
 		q1 = q1.Where("ar.artifact_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
 		// No filtering - return everything
@@ -923,26 +913,22 @@ func (t tagDao) CountAllOCIArtifactsByParentID(
 		)
 
 	if latestVersion {
-		var rowNumSubquery string
+		baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
+			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
+			JOIN registries r ON t.tag_registry_id = r.registry_id`
+		var joinClause string
+		whereClause := " WHERE r.registry_parent_id = ?"
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterInclude:
-			rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-				ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-				JOIN registries r ON t.tag_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ?) AS a`
 		case types.SoftDeleteFilterExclude:
-			rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-				ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-				JOIN registries r ON t.tag_registry_id = r.registry_id
-				JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-				WHERE r.registry_parent_id = ? AND i.image_deleted_at IS NULL) AS a`
+			joinClause = joinTagsWithImages
+			whereClause += " AND i.image_deleted_at IS NULL"
 		case types.SoftDeleteFilterOnly:
-			rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-				ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-				JOIN registries r ON t.tag_registry_id = r.registry_id
-				JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-				WHERE r.registry_parent_id = ? AND i.image_deleted_at IS NOT NULL) AS a`
+			joinClause = joinTagsWithImages
+			whereClause += " AND i.image_deleted_at IS NOT NULL"
+		case types.SoftDeleteFilterInclude:
+			// No filtering
 		}
+		rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 		q = q.Join(rowNumSubquery+` ON t.tag_id = a.id`, parentID).Where("a.rank = 1")
 	}
 	if len(*registryIDs) > 0 {
@@ -955,6 +941,15 @@ func (t tagDao) CountAllOCIArtifactsByParentID(
 
 	if len(packageTypes) > 0 {
 		q = q.Where(sq.Eq{"registry_package_type": packageTypes})
+	}
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExclude:
+		q = q.Where("ar.image_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnly:
+		q = q.Where("ar.image_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterInclude:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -1001,27 +996,20 @@ func (t tagDao) CountAllArtifactsByParentID(
 	}
 
 	if latestVersion {
-		var rowNumSubquery string
+		baseSubquery := `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
+			ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
+			JOIN images i ON i.image_id = ar.artifact_image_id 
+			JOIN registries r ON i.image_registry_id = r.registry_id 
+			WHERE r.registry_parent_id = ?`
 		switch softDeleteFilter {
-		case types.SoftDeleteFilterInclude:
-			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
-				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
-				JOIN images i ON i.image_id = ar.artifact_image_id 
-				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ?) AS a`
 		case types.SoftDeleteFilterExclude:
-			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
-				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
-				JOIN images i ON i.image_id = ar.artifact_image_id 
-				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL) AS a`
+			baseSubquery += " AND ar.artifact_deleted_at IS NULL"
 		case types.SoftDeleteFilterOnly:
-			rowNumSubquery = `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
-				ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
-				JOIN images i ON i.image_id = ar.artifact_image_id 
-				JOIN registries r ON i.image_registry_id = r.registry_id 
-				WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NOT NULL) AS a`
+			baseSubquery += " AND ar.artifact_deleted_at IS NOT NULL"
+		case types.SoftDeleteFilterInclude:
+			// No filtering
 		}
+		rowNumSubquery := baseSubquery + `) AS a`
 		q = q.Join(rowNumSubquery+` ON ar.artifact_id = a.id`, parentID).Where("a.rank = 1")
 	}
 
@@ -1298,7 +1286,7 @@ func (t tagDao) GetTagMetadata(
 		From("tags t").
 		Join("registries r ON t.tag_registry_id = r.registry_id").
 		Join("manifests ON manifest_id = t.tag_manifest_id").
-		Join("images i ON i.image_registry_id = r.registry_id AND i.image_name = t.tag_image_name").
+		LeftJoin("images i ON i.image_registry_id = r.registry_id AND i.image_name = t.tag_image_name").
 		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND manifest_digest = "+decodeFunction).
 		Where(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
@@ -1347,7 +1335,7 @@ func (t tagDao) GetOCIVersionMetadata(
 	).
 		From("manifests").
 		Join("registries r ON manifest_registry_id = r.registry_id").
-		Join("images i ON i.image_registry_id = r.registry_id AND i.image_name = manifest_image_name").
+		LeftJoin("images i ON i.image_registry_id = r.registry_id AND i.image_name = manifest_image_name").
 		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND manifest_digest = "+decodeFunction).
 		Where(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
@@ -1397,26 +1385,22 @@ func (t tagDao) GetAllArtifactsByRepo(
 	labels []string, opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	var rowNumSubquery string
+	baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
+		ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
+		JOIN registries r ON t.tag_registry_id = r.registry_id`
+	var joinClause string
+	whereClause := " WHERE r.registry_parent_id = ? AND r.registry_name = ?"
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterInclude:
-		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-			JOIN registries r ON t.tag_registry_id = r.registry_id  
-			WHERE r.registry_parent_id = ? AND r.registry_name = ?) AS a`
 	case types.SoftDeleteFilterExclude:
-		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-			JOIN registries r ON t.tag_registry_id = r.registry_id
-			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND i.image_deleted_at IS NULL) AS a`
+		joinClause = joinTagsWithImages
+		whereClause += " AND i.image_deleted_at IS NULL"
 	case types.SoftDeleteFilterOnly:
-		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-			JOIN registries r ON t.tag_registry_id = r.registry_id
-			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND i.image_deleted_at IS NOT NULL) AS a`
+		joinClause = joinTagsWithImages
+		whereClause += " AND i.image_deleted_at IS NOT NULL"
+	case types.SoftDeleteFilterInclude:
+		// No filtering
 	}
+	rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, t.tag_image_name as name, 
@@ -1455,6 +1439,15 @@ func (t tagDao) GetAllArtifactsByRepo(
 		q = q.Where("'^_' || ar.image_labels || '^_' LIKE ?", labelsVal)
 	}
 
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExclude:
+		q = q.Where("ar.image_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnly:
+		q = q.Where("ar.image_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterInclude:
+		// No filtering
+	}
+
 	sortField := "t.tag_" + sortByField
 	if sortByField == downloadCount {
 		sortField = downloadCount
@@ -1481,26 +1474,22 @@ func (t tagDao) CountAllArtifactsByRepo(
 	search string, labels []string, opts ...types.QueryOption,
 ) (int64, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	var rowNumSubquery string
+	baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
+		ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
+		JOIN registries r ON t.tag_registry_id = r.registry_id`
+	var joinClause string
+	whereClause := " WHERE r.registry_parent_id = ? AND r.registry_name = ?"
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterInclude:
-		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-			JOIN registries r ON t.tag_registry_id = r.registry_id 
-			WHERE r.registry_parent_id = ? AND r.registry_name = ?) AS a`
 	case types.SoftDeleteFilterExclude:
-		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-			JOIN registries r ON t.tag_registry_id = r.registry_id
-			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND i.image_deleted_at IS NULL) AS a`
+		joinClause = joinTagsWithImages
+		whereClause += " AND i.image_deleted_at IS NULL"
 	case types.SoftDeleteFilterOnly:
-		rowNumSubquery = `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
-			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
-			JOIN registries r ON t.tag_registry_id = r.registry_id
-			JOIN images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? AND i.image_deleted_at IS NOT NULL) AS a`
+		joinClause = joinTagsWithImages
+		whereClause += " AND i.image_deleted_at IS NOT NULL"
+	case types.SoftDeleteFilterInclude:
+		// No filtering
 	}
+	rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("tags t").
@@ -1521,6 +1510,15 @@ func (t tagDao) CountAllArtifactsByRepo(
 		labelsVal := util.GetEmptySQLString(util.ArrToString(labels))
 		labelsVal.String = labelSeparatorStart + labelsVal.String + labelSeparatorEnd
 		q = q.Where("'^_' || ar.image_labels || '^_' LIKE ?", labelsVal)
+	}
+
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExclude:
+		q = q.Where("ar.image_deleted_at IS NULL")
+	case types.SoftDeleteFilterOnly:
+		q = q.Where("ar.image_deleted_at IS NOT NULL")
+	case types.SoftDeleteFilterInclude:
+		// No filtering
 	}
 
 	sql, args, err := q.ToSql()

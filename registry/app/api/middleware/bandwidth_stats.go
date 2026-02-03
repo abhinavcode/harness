@@ -207,14 +207,13 @@ func TrackBandwidthStatForMavenArtifacts(h *maven.Handler) func(http.Handler) ht
 func dbBandwidthStatForGenericArtifact(
 	ctx context.Context,
 	c *generic2.Controller,
-	info pkg.GenericArtifactInfo,
+	info pkg.GenericArtifactInfo, //nolint:staticcheck // TODO: refactor to use generic.ArtifactInfo
 	bandwidthType types.BandwidthType,
 ) errcode.Error {
 	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -224,7 +223,6 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		registry.ID,
 		info.Image,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -234,7 +232,6 @@ func dbBandwidthStatForGenericArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -274,7 +271,6 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -284,7 +280,6 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		registry.ID,
 		imageName,
-		types.WithAllDeleted(),
 	)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
@@ -297,7 +292,6 @@ func dbBandwidthStatForMavenArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -343,7 +337,7 @@ func dbBandwidthStat(
 		return err
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image, types.WithAllDeleted())
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getImageFromUpstreamProxy(ctx, c, info)
 	}
@@ -393,7 +387,6 @@ func getMavenArtifactFromUpstreamProxy(
 			ctx,
 			registry.ID,
 			info.GroupID+":"+info.ArtifactID,
-			types.WithAllDeleted(),
 		)
 		if err == nil && image != nil {
 			return image, nil

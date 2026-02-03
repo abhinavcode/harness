@@ -446,7 +446,7 @@ func (m *mockArtifactDAO) CountByImageName(context.Context, int64, string, ...ty
 }
 
 func (m *mockArtifactDAO) GetAllArtifactsByParentID(
-	context.Context, int64, *[]string, string, bool, []string, int, int, ...types.QueryOption,
+	context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	return &[]types.ArtifactMetadata{}, nil
 }
@@ -459,7 +459,7 @@ func (m *mockArtifactDAO) CountAllArtifactsByParentID(
 
 func (m *mockArtifactDAO) GetArtifactsByRepo(
 	//nolint:lll
-	context.Context, int64, string, string, []string, bool, int, int, string, string, *artifact.ArtifactType, ...types.QueryOption,
+	context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	return &[]types.ArtifactMetadata{}, nil
 }

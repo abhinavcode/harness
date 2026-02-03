@@ -17,7 +17,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
@@ -30,7 +29,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	pkgerrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
 
@@ -136,27 +135,23 @@ func (d DownloadStatDao) CreateByRegistryIDImageAndArtifactName(
 	return nil
 }
 func (d DownloadStatDao) GetTotalDownloadsForImage(ctx context.Context, imageID int64) (int64, error) {
-	q := databaseg.Builder.Select(`count(ds.download_stat_id)`).
+	q := databaseg.Builder.Select(`count(*)`).
 		From("artifacts art").Where("art.artifact_image_id = ?", imageID).
-		LeftJoin("download_stats ds ON ds.download_stat_artifact_id = art.artifact_id")
+		Join("download_stats ds ON ds.download_stat_artifact_id = art.artifact_id")
 
-	query, args, err := q.ToSql()
+	sql, args, err := q.ToSql()
 	if err != nil {
-		return 0, pkgerrors.Wrap(err, "Failed to convert query to sql")
+		return 0, errors.Wrap(err, "Failed to convert query to sql")
 	}
 	// Log the final sql query
-	finalQuery := util.FormatQuery(query, args)
+	finalQuery := util.FormatQuery(sql, args)
 	log.Ctx(ctx).Debug().Str("sql", finalQuery).Msg("Executing GetTotalDownloadsForImage query")
 	// Execute query
 	db := dbtx.GetAccessor(ctx, d.db)
 
 	var count int64
-	err = db.QueryRowContext(ctx, query, args...).Scan(&count)
+	err = db.QueryRowContext(ctx, sql, args...).Scan(&count)
 	if err != nil {
-		// If no rows found (no artifacts or no downloads), return 0 instead of error
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
-		}
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
 	}
 	return count, nil
@@ -168,7 +163,7 @@ func (d DownloadStatDao) GetTotalDownloadsForArtifactID(ctx context.Context, art
 
 	sql, args, err := q.ToSql()
 	if err != nil {
-		return 0, pkgerrors.Wrap(err, "Failed to convert query to sql")
+		return 0, errors.Wrap(err, "Failed to convert query to sql")
 	}
 	// Log the final sql query
 	finalQuery := util.FormatQuery(sql, args)
@@ -198,7 +193,7 @@ func (d DownloadStatDao) GetTotalDownloadsForManifests(
 
 	sql, args, err := q.ToSql()
 	if err != nil {
-		return nil, pkgerrors.Wrap(err, "Failed to convert query to sql")
+		return nil, errors.Wrap(err, "Failed to convert query to sql")
 	}
 	// Log the final sql query
 	finalQuery := util.FormatQuery(sql, args)

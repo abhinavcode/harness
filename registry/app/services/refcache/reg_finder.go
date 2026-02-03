@@ -143,7 +143,7 @@ func (r registryFinder) Delete(ctx context.Context, parentID int64, name string)
 // SoftDelete soft deletes a registry and evicts it from cache.
 func (r registryFinder) SoftDelete(ctx context.Context, parentID int64, name string) (err error) {
 	// Get registry before soft delete to evict cache
-	registry, err := r.inner.GetByParentIDAndName(ctx, parentID, name, types.WithExcludeDeleted())
+	registry, err := r.inner.GetByParentIDAndName(ctx, parentID, name)
 	if err != nil {
 		return fmt.Errorf("error finding registry by parent-ref: %w", err)
 	}

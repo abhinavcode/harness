@@ -204,13 +204,12 @@ func TrackDownloadStatForMavenArtifact(h *maven.Handler) func(http.Handler) http
 func dbDownloadStatForGenericArtifact(
 	ctx context.Context,
 	c *generic2.Controller,
-	info pkg.GenericArtifactInfo,
+	info pkg.GenericArtifactInfo, //nolint:staticcheck // TODO: refactor to use generic.ArtifactInfo
 ) errcode.Error {
 	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -220,7 +219,6 @@ func dbDownloadStatForGenericArtifact(
 		ctx,
 		registry.ID,
 		info.Image,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -230,7 +228,6 @@ func dbDownloadStatForGenericArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -256,7 +253,6 @@ func dbDownloadStatForMavenArtifact(
 		ctx,
 		info.ParentID,
 		info.RegIdentifier,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
@@ -266,7 +262,6 @@ func dbDownloadStatForMavenArtifact(
 		ctx,
 		registry.ID,
 		imageName,
-		types.WithAllDeleted(),
 	)
 	if errors.Is(err, store.ErrResourceNotFound) {
 		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
@@ -279,7 +274,6 @@ func dbDownloadStatForMavenArtifact(
 		ctx,
 		image.ID,
 		info.Version,
-		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)

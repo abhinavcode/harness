@@ -354,7 +354,7 @@ func (l *localBase) updateFilesMetadata(
 ) error {
 	var files []metadata.File
 	if dbArtifact != nil {
-		err := json.Unmarshal(dbArtifact.Metadata, &inputMetadata)
+		err := json.Unmarshal(dbArtifact.Metadata, inputMetadata)
 		if err != nil {
 			log.Ctx(ctx).Error().Msgf("Failed to get metadata for artifact: [%s] with registry: [%s] and"+
 				" error: %v", info.Image, info.RegIdentifier, err)

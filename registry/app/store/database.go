@@ -570,13 +570,9 @@ type ArtifactRepository interface {
 	Count(ctx context.Context, opts ...types.QueryOption) (int64, error)
 	GetAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
-		registryIDs *[]string,
-		search string,
-		latestVersion bool,
-		packageTypes []string,
-		limit int,
-		offset int,
-		opts ...types.QueryOption,
+		registryIDs *[]string, sortByField string,
+		sortByOrder string, limit int, offset int, search string,
+		latestVersion bool, packageTypes []string, opts ...types.QueryOption,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountAllArtifactsByParentID(
@@ -589,9 +585,8 @@ type ArtifactRepository interface {
 	) (int64, error)
 
 	GetArtifactsByRepo(
-		ctx context.Context, parentID int64,
-		repoKey, search string, labels []string, latestVersion bool,
-		limit int, offset int, sortByField string, sortByOrder string,
+		ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string,
+		limit int, offset int, search string, labels []string,
 		artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 	) (*[]types.ArtifactMetadata, error)
 

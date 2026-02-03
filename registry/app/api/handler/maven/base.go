@@ -41,7 +41,6 @@ import (
 	mavenutils "github.com/harness/gitness/registry/app/pkg/maven/utils"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/request"
-	"github.com/harness/gitness/registry/types"
 
 	"github.com/rs/zerolog/log"
 )
@@ -99,7 +98,7 @@ func (h *Handler) GetArtifactInfo(r *http.Request, remoteSupport bool) (pkg.Mave
 		return pkg.MavenArtifactInfo{}, errcode.ErrCodeRootNotFound.WithDetail(err)
 	}
 
-	registry, err := h.RegistryFinder.FindByRootParentID(ctx, rootSpace.ID, registryIdentifier, types.WithAllDeleted())
+	registry, err := h.RegistryFinder.FindByRootParentID(ctx, rootSpace.ID, registryIdentifier)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf(
 			"registry %s not found for root: %s. Reason: %s",
