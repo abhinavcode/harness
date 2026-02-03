@@ -417,7 +417,7 @@ func processViolations(
 	}
 
 	if criticalViolation {
-		outErrorMsg = "Blocked by protection rules. "
+		outErrorMsg = "blocked by protection rules"
 	}
 
 	criticalViolation = false
@@ -428,35 +428,38 @@ func processViolations(
 		if settingsViolations.SecretsFound {
 			output.Messages = append(
 				output.Messages,
-				repoSettingsBlockPrefix+"secrets detected.",
+				repoSettingsBlockPrefix+"Secrets detected.",
 			)
 			criticalViolation = true
 		}
 		if settingsViolations.FileSizeLimitExceeded {
 			output.Messages = append(
 				output.Messages,
-				repoSettingsBlockPrefix+"file size limit exceeded.",
+				repoSettingsBlockPrefix+"File size limit exceeded.",
 			)
 			criticalViolation = true
 		}
 		if settingsViolations.CommitterMismatchFound {
 			output.Messages = append(
 				output.Messages,
-				repoSettingsBlockPrefix+"committer user mismatch.",
+				repoSettingsBlockPrefix+"Committer user mismatch.",
 			)
 			criticalViolation = true
 		}
 		if settingsViolations.UnknownLFSObjectsFound {
 			output.Messages = append(
 				output.Messages,
-				repoSettingsBlockPrefix+"unknown Git LFS objects.",
+				repoSettingsBlockPrefix+"Unknown Git LFS objects.",
 			)
 			criticalViolation = true
 		}
 	}
 
 	if criticalViolation {
-		outErrorMsg += "Blocked by repository settings. "
+		if outErrorMsg != "" {
+			outErrorMsg += ", "
+		}
+		outErrorMsg += "blocked by repository settings"
 	}
 
 	if outErrorMsg != "" {
