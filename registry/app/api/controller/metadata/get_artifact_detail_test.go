@@ -29,9 +29,9 @@ import (
 	"github.com/harness/gitness/registry/app/api/controller/mocks"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/types"
-	"github.com/harness/gitness/udp"
 	coretypes "github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
+	"github.com/harness/gitness/udp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

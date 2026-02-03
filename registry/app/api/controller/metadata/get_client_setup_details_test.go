@@ -30,9 +30,9 @@ import (
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/types"
-	"github.com/harness/gitness/udp"
 	coretypes "github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
+	"github.com/harness/gitness/udp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

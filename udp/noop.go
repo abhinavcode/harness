@@ -33,3 +33,8 @@ func (Noop) InsertRegistryEvent(
 ) {
 	// No implementation
 }
+
+// ProvideNoop provides a no-op UDP service implementation.
+func ProvideNoop() Service {
+	return &Noop{}
+}
