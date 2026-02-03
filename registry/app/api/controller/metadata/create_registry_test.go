@@ -253,6 +253,7 @@ func TestCreateRegistry(t *testing.T) {
 					nil, // driver.
 					mockSpaceFinder,
 					mockTransactor,
+					nil, // db.
 					mockURLProvider,
 					mockAuthorizer,
 					mockAuditService,
@@ -333,14 +334,15 @@ func TestCreateRegistry(t *testing.T) {
 					nil, // upstreamProxyStore.
 					nil, // tagStore.
 					nil, // manifestStore.
-					nil, // cleanupPolicyStore
+					nil,
 					nil, // imageStore.
 					nil, // driver.
-					nil, // spaceFinder
+					nil,
 					mockTransactor,
-					nil, // urlProvider.
-					nil, // authorizer.
-					nil, // auditService.
+					nil, // db.
+					nil,
+					nil,
+					nil,
 					nil, // artifactStore.
 					nil, // webhooksRepository.
 					nil, // webhooksExecutionRepository.

@@ -554,7 +554,7 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 			eventReporter := createEventReporter()
 
 			controller := metadata.NewAPIController(
-				nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+				nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 				mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "",
 				nil, nil, nil, nil, nil, nil, nil, nil,
 				func(_ context.Context) bool {
@@ -602,7 +602,7 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 	eventReporter := createEventReporter()
 
 	controller := metadata.NewAPIController(
-		nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+		nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 		mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "",
 		nil, nil, nil, nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
@@ -709,7 +709,7 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 
 	return metadata.NewAPIController(
 		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, nil, nil,
-		mockSpaceFinder, nil, mockURLProvider, mockAuthorizer, nil, nil, nil, nil,
+		mockSpaceFinder, nil, nil, mockURLProvider, mockAuthorizer, nil, nil, nil, nil,
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "Authorization: Bearer", nil, nil, nil,
 		nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
@@ -772,7 +772,7 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 
 	return metadata.NewAPIController(
 		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, nil, nil,
-		mockSpaceFinder, nil, nil, mockAuthorizer, nil, nil, nil, nil,
+		mockSpaceFinder, nil, nil, nil, mockAuthorizer, nil, nil, nil, nil,
 		mockRegistryMetadataHelper, nil, eventReporter, nil, "", nil, nil, nil,
 		nil, nil, nil, nil, nil,
 		func(_ context.Context) bool { return false },
@@ -898,7 +898,7 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 			eventReporter := createEventReporter()
 
 			controller := metadata.NewAPIController(
-				nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+				nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 				mockURLProvider, nil, nil, nil, nil, nil, nil, nil, eventReporter, nil, "Authorization: Bearer",
 				nil, nil, nil, nil, nil, nil, nil, nil,
 				func(_ context.Context) bool { return false },
