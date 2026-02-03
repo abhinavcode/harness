@@ -662,21 +662,6 @@ func createRegistrationIndexPageItem(baseURL string, info nuget.ArtifactInfo, ar
 	return res, nil
 }
 
-// normalizeVersionRange transforms simple version strings to NuGet range notation.
-// Per NuGet semantics, a version without brackets means "minimum version" (inclusive).
-// Example: "1.0.0" becomes "[1.0.0, )".
-func normalizeVersionRange(version string) string {
-	if version == "" {
-		return ""
-	}
-	// If already has brackets or parentheses, it's already a range
-	if strings.HasPrefix(version, "[") || strings.HasPrefix(version, "(") {
-		return version
-	}
-	// Transform to minimum version range: [version, )
-	return "[" + version + ", )"
-}
-
 func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.PackageDependencyGroup {
 	if metadata.PackageMetadata.Dependencies == nil {
 		return nil
@@ -695,7 +680,7 @@ func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.Pack
 				}
 				deps = append(deps, &nuget.PackageDependency{
 					ID:    dep.ID,
-					Range: normalizeVersionRange(dep.Version),
+					Range: dep.Version,
 				})
 			}
 		}
@@ -716,7 +701,7 @@ func createDependencyGroups(metadata *nugetmetadata.NugetMetadata) []*nuget.Pack
 			}
 			deps = append(deps, &nuget.PackageDependency{
 				ID:    dep.ID,
-				Range: normalizeVersionRange(dep.Version),
+				Range: dep.Version,
 			})
 		}
 		if len(deps) > 0 {
