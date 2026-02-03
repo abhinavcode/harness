@@ -29,6 +29,7 @@ import (
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
+	"github.com/harness/gitness/udp"
 
 	"github.com/rs/zerolog/log"
 )
@@ -281,6 +282,17 @@ func (c *APIController) createUpstreamProxyWithAudit(
 		)
 	}
 
+	// Insert UDP event alongside audit
+	c.UDPService.InsertRegistryEvent(
+		ctx,
+		udp.ActionRegistryCreated,
+		udp.ResourceTypeRegistryUpstreamProxy,
+		registry.Name,
+		registry.Name,
+		parentRef,
+		principal,
+	)
+
 	return id, err
 }
 
@@ -331,6 +343,17 @@ func (c *APIController) createRegistry(
 		if auditErr != nil {
 			log.Ctx(ctx).Warn().Msgf("failed to insert audit log for create registry operation: %s", auditErr)
 		}
+
+		// Insert UDP event alongside audit
+		c.UDPService.InsertRegistryEvent(
+			ctx,
+			udp.ActionRegistryCreated,
+			udp.ResourceTypeRegistryVirtual,
+			registry.Name,
+			registry.Name,
+			parentRef,
+			*principal,
+		)
 	}
 
 	return id, err

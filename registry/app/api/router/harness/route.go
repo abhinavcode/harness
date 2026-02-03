@@ -27,6 +27,7 @@ import (
 	corestore "github.com/harness/gitness/app/store"
 	urlprovider "github.com/harness/gitness/app/url"
 	"github.com/harness/gitness/audit"
+	"github.com/harness/gitness/udp"
 	"github.com/harness/gitness/registry/app/api/controller/metadata"
 	"github.com/harness/gitness/registry/app/api/interfaces"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
@@ -73,10 +74,12 @@ func NewAPIHandler(
 	baseURL string,
 	spaceFinder interfaces.SpaceFinder,
 	tx dbtx.Transactor,
+	db dbtx.Accessor,
 	authenticator authn.Authenticator,
 	urlProvider urlprovider.Provider,
 	authorizer authz.Authorizer,
 	auditService audit.Service,
+	udpService udp.Service,
 	artifactStore store.ArtifactRepository,
 	webhooksRepository store.WebhooksRepository,
 	webhooksExecutionRepository store.WebhooksExecutionRepository,
@@ -114,9 +117,11 @@ func NewAPIHandler(
 		driver,
 		spaceFinder,
 		tx,
+		db,
 		urlProvider,
 		authorizer,
 		auditService,
+		udpService,
 		artifactStore,
 		webhooksRepository,
 		webhooksExecutionRepository,

@@ -23,6 +23,7 @@ import (
 	corestore "github.com/harness/gitness/app/store"
 	urlprovider "github.com/harness/gitness/app/url"
 	"github.com/harness/gitness/audit"
+	"github.com/harness/gitness/udp"
 	"github.com/harness/gitness/registry/app/api/handler/cargo"
 	"github.com/harness/gitness/registry/app/api/handler/generic"
 	"github.com/harness/gitness/registry/app/api/handler/gopackage"
@@ -77,10 +78,12 @@ func APIHandlerProvider(
 	driver storagedriver.StorageDriver,
 	spaceFinder refcache.SpaceFinder,
 	tx dbtx.Transactor,
+	db dbtx.Accessor,
 	authenticator authn.Authenticator,
 	urlProvider urlprovider.Provider,
 	authorizer authz.Authorizer,
 	auditService audit.Service,
+	udpService udp.Service,
 	artifactStore store.ArtifactRepository,
 	webhooksRepository store.WebhooksRepository,
 	webhooksExecutionRepository store.WebhooksExecutionRepository,
@@ -112,10 +115,12 @@ func APIHandlerProvider(
 		config.APIURL,
 		spaceFinder,
 		tx,
+		db,
 		authenticator,
 		urlProvider,
 		authorizer,
 		auditService,
+		udpService,
 		artifactStore,
 		webhooksRepository,
 		webhooksExecutionRepository,
