@@ -283,7 +283,7 @@ func (c *APIController) createUpstreamProxyWithAudit(
 	}
 
 	// Insert UDP event alongside audit
-	c.UDPService.InsertRegistryEvent(
+	c.UDPService.InsertEvent(
 		ctx,
 		udp.ActionRegistryCreated,
 		udp.ResourceTypeRegistryUpstreamProxy,
@@ -345,7 +345,7 @@ func (c *APIController) createRegistry(
 		}
 
 		// Insert UDP event alongside audit
-		c.UDPService.InsertRegistryEvent(
+		c.UDPService.InsertEvent(
 			ctx,
 			udp.ActionRegistryCreated,
 			udp.ResourceTypeRegistryVirtual,

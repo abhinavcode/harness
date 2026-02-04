@@ -20,21 +20,22 @@ import (
 	"github.com/harness/gitness/types"
 )
 
-// Action constants
+// Action constants.
 const (
 	ActionRegistryCreated = "REGISTRY_CREATED"
 	ActionRegistryUpdated = "REGISTRY_UPDATED"
 	ActionRegistryDeleted = "REGISTRY_DELETED"
 )
 
-// Resource type constants
+// Resource type constants.
 const (
 	ResourceTypeRegistryUpstreamProxy = "registry_upstream_proxy"
 	ResourceTypeRegistryVirtual       = "registry_virtual"
 )
 
 type Service interface {
-	InsertRegistryEvent(
+	// InsertEvent logs UDP events for any resource type (registry, artifact, etc.).
+	InsertEvent(
 		ctx context.Context,
 		action string,
 		resourceType string,

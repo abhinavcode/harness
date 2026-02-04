@@ -22,7 +22,7 @@ import (
 
 type Noop struct{}
 
-func (Noop) InsertRegistryEvent(
+func (Noop) InsertEvent(
 	context.Context,
 	string,
 	string,
