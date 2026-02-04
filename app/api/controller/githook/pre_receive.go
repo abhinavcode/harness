@@ -253,6 +253,7 @@ func (c *Controller) processPushProtection(
 			IsRepoOwner:        isRepoOwner,
 			RepoID:             repo.ID,
 			RepoIdentifier:     repo.Identifier,
+			AllowBypass:        in.BypassRules,
 		},
 	)
 	if err != nil {
@@ -272,6 +273,7 @@ func (c *Controller) processPushProtection(
 		FileSizeLimit:           checks.RulesFileSizeLimit,
 		PrincipalCommitterMatch: checks.RulesPrincipalCommitterMatch,
 		SecretScanningEnabled:   checks.RulesSecretScanningEnabled,
+		AllowBypass:             in.BypassRules,
 	}
 
 	settingsViolations := new(settingsViolations)

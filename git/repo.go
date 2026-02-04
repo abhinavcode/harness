@@ -764,7 +764,7 @@ func (s *Service) SyncRefs(
 		return &SyncRefsOutput{}, nil
 	}
 
-	err = sharedrepo.Run(ctx, refUpdater, s.sharedRepoRoot, repoPath, func(s *sharedrepo.SharedRepo) error {
+	err = sharedrepo.Run(ctx, refUpdater, s.sharedRepoRoot, repoPath, false, func(s *sharedrepo.SharedRepo) error {
 		objects := slices.Collect(maps.Values(refRemoteMap))
 
 		if err := s.FetchObjects(ctx, source, objects); err != nil {

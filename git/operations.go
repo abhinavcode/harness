@@ -75,6 +75,8 @@ type CommitFilesParams struct {
 	// AuthorDate overwrites the git author date used for committing the files
 	// (optional, default: committer date)
 	AuthorDate *time.Time
+
+	BypassRules bool
 }
 
 func (p *CommitFilesParams) Validate() error {
@@ -157,7 +159,7 @@ func (s *Service) CommitFiles(ctx context.Context, params *CommitFilesParams) (C
 	}
 
 	// run the actions in a shared repo
-	err = sharedrepo.Run(ctx, refUpdater, s.sharedRepoRoot, repoPath, func(r *sharedrepo.SharedRepo) error {
+	err = sharedrepo.Run(ctx, refUpdater, s.sharedRepoRoot, repoPath, params.BypassRules, func(r *sharedrepo.SharedRepo) error {
 		var parentCommits []sha.SHA
 		var oldTreeSHA sha.SHA
 

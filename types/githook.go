@@ -29,6 +29,7 @@ type GithookInputBase struct {
 type GithookPreReceiveInput struct {
 	GithookInputBase
 	hook.PreReceiveInput
+	BypassRules bool
 }
 
 // GithookUpdateInput is the input for the update githook api call.
