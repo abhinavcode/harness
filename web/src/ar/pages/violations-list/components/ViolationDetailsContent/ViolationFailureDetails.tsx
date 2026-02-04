@@ -104,7 +104,7 @@ function PackageAgeViolationPolicyFailureDetailItem({ data }: { data: PackageAge
         label={getString(
           'violationsList.violationDetailsModal.violatedPoliciesSection.packageAgeViolation.publishedOn'
         )}
-        value={getReadableDateTime(Number(publishedOn), DEFAULT_DATE_TIME_FORMAT)}
+        value={publishedOn ? getReadableDateTime(Number(publishedOn), DEFAULT_DATE_TIME_FORMAT) : getString('na')}
       />
     </Container>
   )
