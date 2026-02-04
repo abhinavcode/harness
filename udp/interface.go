@@ -34,14 +34,14 @@ const (
 )
 
 type Service interface {
-	// InsertEvent logs UDP events for any resource type (registry, artifact, etc.).
 	InsertEvent(
 		ctx context.Context,
 		action string,
 		resourceType string,
 		resourceIdentifier string,
-		resourceName string,
 		parentRef string,
 		principal types.Principal,
+		newObject interface{},
+		oldObject interface{},
 	)
 }

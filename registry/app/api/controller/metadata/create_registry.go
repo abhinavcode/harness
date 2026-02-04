@@ -246,35 +246,36 @@ func (c *APIController) createUpstreamProxyWithAudit(
 	if err != nil {
 		return id, err
 	}
+
+	registryObject := audit.RegistryUpstreamProxyConfigObjectEnhanced{
+		UUID:            registry.UUID,
+		Name:            registry.Name,
+		ParentID:        registry.ParentID,
+		RootParentID:    registry.RootParentID,
+		Description:     registry.Description,
+		Type:            string(registry.Type),
+		PackageType:     string(registry.PackageType),
+		UpstreamProxies: registry.UpstreamProxies,
+		AllowedPattern:  registry.AllowedPattern,
+		BlockedPattern:  registry.BlockedPattern,
+		Labels:          registry.Labels,
+		Source:          upstreamProxy.Source,
+		URL:             upstreamProxy.URL,
+		AuthType:        upstreamProxy.AuthType,
+		CreatedAt:       upstreamProxy.CreatedAt,
+		UpdatedAt:       upstreamProxy.UpdatedAt,
+		CreatedBy:       upstreamProxy.CreatedBy,
+		UpdatedBy:       upstreamProxy.UpdatedBy,
+		IsPublic:        registry.IsPublic,
+	}
+
 	auditErr := c.AuditService.Log(
 		ctx,
 		principal,
 		audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, registry.Name),
 		audit.ActionCreated,
 		parentRef,
-		audit.WithNewObject(
-			audit.RegistryUpstreamProxyConfigObjectEnhanced{
-				UUID:            registry.UUID,
-				Name:            registry.Name,
-				ParentID:        registry.ParentID,
-				RootParentID:    registry.RootParentID,
-				Description:     registry.Description,
-				Type:            string(registry.Type),
-				PackageType:     string(registry.PackageType),
-				UpstreamProxies: registry.UpstreamProxies,
-				AllowedPattern:  registry.AllowedPattern,
-				BlockedPattern:  registry.BlockedPattern,
-				Labels:          registry.Labels,
-				Source:          upstreamProxy.Source,
-				URL:             upstreamProxy.URL,
-				AuthType:        upstreamProxy.AuthType,
-				CreatedAt:       upstreamProxy.CreatedAt,
-				UpdatedAt:       upstreamProxy.UpdatedAt,
-				CreatedBy:       upstreamProxy.CreatedBy,
-				UpdatedBy:       upstreamProxy.UpdatedBy,
-				IsPublic:        registry.IsPublic,
-			},
-		),
+		audit.WithNewObject(registryObject),
 	)
 	if auditErr != nil {
 		log.Ctx(ctx).Warn().Msgf(
@@ -282,15 +283,15 @@ func (c *APIController) createUpstreamProxyWithAudit(
 		)
 	}
 
-	// Insert UDP event alongside audit
 	c.UDPService.InsertEvent(
 		ctx,
 		udp.ActionRegistryCreated,
 		udp.ResourceTypeRegistryUpstreamProxy,
 		registry.Name,
-		registry.Name,
 		parentRef,
 		principal,
+		registryObject,
+		nil,
 	)
 
 	return id, err
@@ -344,15 +345,17 @@ func (c *APIController) createRegistry(
 			log.Ctx(ctx).Warn().Msgf("failed to insert audit log for create registry operation: %s", auditErr)
 		}
 
-		// Insert UDP event alongside audit
 		c.UDPService.InsertEvent(
 			ctx,
 			udp.ActionRegistryCreated,
 			udp.ResourceTypeRegistryVirtual,
 			registry.Name,
-			registry.Name,
 			parentRef,
 			*principal,
+			audit.RegistryObject{
+				Registry: *registry,
+			},
+			nil,
 		)
 	}
 
