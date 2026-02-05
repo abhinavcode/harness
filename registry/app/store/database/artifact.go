@@ -573,20 +573,12 @@ func (a ArtifactDao) CountLatestByName(
 	ctx context.Context, regID int64, name string, opts ...types.QueryOption,
 ) (int64, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	subQuery := `
-	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
-	FROM artifacts
-	GROUP BY artifact_image_id`
 
-	// Main count query
+	// Count distinct images that have artifacts matching the name pattern
 	q := databaseg.Builder.
-		Select("COUNT(*)").
+		Select("COUNT(DISTINCT i.image_id)").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Join(fmt.Sprintf(`(%s) latest
-	ON a.artifact_image_id = latest.artifact_image_id
-	AND a.artifact_created_at = latest.max_created_at
-`, subQuery)).
 		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID)
 
 	switch softDeleteFilter {
@@ -701,6 +693,27 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	latestVersion bool, packageTypes []string, opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+
+	// Build soft delete filter clause
+	var softDeleteClause string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExclude:
+		softDeleteClause = " AND a.artifact_deleted_at IS NULL"
+	case types.SoftDeleteFilterOnly:
+		softDeleteClause = " AND a.artifact_deleted_at IS NOT NULL"
+	case types.SoftDeleteFilterInclude:
+		softDeleteClause = ""
+	}
+
+	// Build download count subquery - per artifact, with soft delete filter
+	downloadCountSubquery := fmt.Sprintf(`( SELECT a.artifact_id, COUNT(d.download_stat_id) as download_count 
+		FROM artifacts a 
+		JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id 
+		JOIN images i ON i.image_id = a.artifact_image_id 
+		JOIN registries r ON r.registry_id = i.image_registry_id 
+		WHERE r.registry_parent_id = ? %s 
+		GROUP BY a.artifact_id ) as t2`, softDeleteClause)
+
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, 
 		i.image_name as name, 
@@ -716,27 +729,15 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 		Join("images i ON a.artifact_image_id = i.image_id").
 		Join("registries r ON r.registry_id = i.image_registry_id").
 		Where("r.registry_parent_id = ?", parentID).
-		LeftJoin(
-			`( SELECT i.image_id, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
-			( SELECT a.artifact_image_id, COUNT(d.download_stat_id) as download_count 
-			FROM artifacts a JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id 
-			GROUP BY a.artifact_image_id ) as t1 
-			JOIN images i ON i.image_id = t1.artifact_image_id 
-			JOIN registries r ON r.registry_id = i.image_registry_id 
-			WHERE r.registry_parent_id = ? GROUP BY i.image_id) as t2 
-			ON i.image_id = t2.image_id`, parentID,
-		)
+		LeftJoin(downloadCountSubquery+` ON a.artifact_id = t2.artifact_id`, parentID)
 
 	if latestVersion {
-		q = q.Join(
-			`(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
+		rankSubquery := fmt.Sprintf(`(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 			ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
 			JOIN images i ON t.artifact_image_id = i.image_id
 			JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE r.registry_parent_id = ? ) AS a1 
-			ON a.artifact_id = a1.id`, parentID, // nolint:goconst
-		).
-			Where("a1.rank = 1")
+			WHERE r.registry_parent_id = ? %s) AS a1`, softDeleteClause)
+		q = q.Join(rankSubquery+` ON a.artifact_id = a1.id`, parentID).Where("a1.rank = 1")
 	}
 
 	if len(*registryIDs) > 0 {
@@ -852,6 +853,35 @@ func (a ArtifactDao) GetArtifactsByRepo(
 	limit int, offset int, search string, labels []string,
 	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+
+	// Build soft delete filter clause
+	var softDeleteClause string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExclude:
+		softDeleteClause = " AND a.artifact_deleted_at IS NULL"
+	case types.SoftDeleteFilterOnly:
+		softDeleteClause = " AND a.artifact_deleted_at IS NOT NULL"
+	case types.SoftDeleteFilterInclude:
+		softDeleteClause = ""
+	}
+
+	// Build rank subquery with soft delete filter
+	rankSubquery := fmt.Sprintf(`(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id 
+		ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
+		JOIN images i ON i.image_id = a.artifact_image_id  
+		JOIN registries r ON i.image_registry_id = r.registry_id  
+		WHERE r.registry_parent_id = ? AND r.registry_name = ? %s) AS a1`, softDeleteClause)
+
+	// Build download count subquery - per artifact, with soft delete filter
+	downloadCountSubquery := fmt.Sprintf(`( SELECT a.artifact_id, COUNT(d.download_stat_id) as download_count 
+		FROM artifacts a 
+		JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id 
+		JOIN images i ON i.image_id = a.artifact_image_id 
+		JOIN registries r ON r.registry_id = i.image_registry_id 
+		WHERE r.registry_parent_id = ? AND r.registry_name = ? %s 
+		GROUP BY a.artifact_id ) as t2`, softDeleteClause)
+
 	q := databaseg.Builder.Select(
 		`r.registry_name as repo_name, i.image_name as name, i.image_uuid as uuid,
 		r.registry_uuid as registry_uuid,
@@ -860,27 +890,10 @@ func (a ArtifactDao) GetArtifactsByRepo(
 		COALESCE(t2.download_count, 0) as download_count`,
 	).
 		From("artifacts a").
-		Join(
-			`(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id 
-			ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
-			JOIN images i ON i.image_id = a.artifact_image_id  
-			JOIN registries r ON i.image_registry_id = r.registry_id  
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? ) AS a1 
-			ON a.artifact_id = a1.id`, parentID, repoKey, // nolint:goconst
-		).
+		Join(rankSubquery+` ON a.artifact_id = a1.id`, parentID, repoKey).
 		Join("images i ON i.image_id = a.artifact_image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
-		LeftJoin(
-			`( SELECT i.image_id, SUM(COALESCE(t1.download_count, 0)) as download_count FROM 
-			( SELECT a.artifact_image_id, COUNT(d.download_stat_id) as download_count 
-			FROM artifacts a 
-			JOIN download_stats d ON d.download_stat_artifact_id = a.artifact_id GROUP BY 
-			a.artifact_image_id ) as t1 
-			JOIN images i ON i.image_id = t1.artifact_image_id 
-			JOIN registries r ON r.registry_id = i.image_registry_id 
-			WHERE r.registry_parent_id = ? AND r.registry_name = ? GROUP BY i.image_id) as t2 
-			ON i.image_id = t2.image_id`, parentID, repoKey,
-		).
+		LeftJoin(downloadCountSubquery+` ON a.artifact_id = t2.artifact_id`, parentID, repoKey).
 		Where("a1.rank = 1 ")
 
 	if search != "" {
@@ -898,7 +911,6 @@ func (a ArtifactDao) GetArtifactsByRepo(
 	}
 
 	// Apply soft delete filter
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL")
@@ -937,27 +949,22 @@ func (a ArtifactDao) CountArtifactsByRepo(
 	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
 ) (int64, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	baseSubquery := `(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id
-		ORDER BY a.artifact_updated_at DESC) AS rank FROM artifacts a 
-		JOIN images i ON i.image_id = a.artifact_image_id  
-		JOIN registries r ON i.image_registry_id = r.registry_id  
-		WHERE r.registry_parent_id = ? AND r.registry_name = ?`
-	var whereClause string
+
+	q := databaseg.Builder.Select("COUNT(*)").
+		From("artifacts a").
+		Join("images i ON i.image_id = a.artifact_image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repoKey)
+
+	// Apply soft delete filtering on artifacts only
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		whereClause = " AND a.artifact_deleted_at IS NULL"
+		q = q.Where("a.artifact_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		whereClause = " AND a.artifact_deleted_at IS NOT NULL"
+		q = q.Where("a.artifact_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
-		whereClause = ""
+		// No filtering - include all
 	}
-	rowNumSubquery := baseSubquery + whereClause + `) AS a1`
-
-	q := databaseg.Builder.Select("COUNT(DISTINCT i.image_id)").
-		From("artifacts a").
-		Join(rowNumSubquery+` ON a.artifact_id = a1.id`, parentID, repoKey).
-		Join("images i ON i.image_id = a.artifact_image_id").
-		Join("registries r ON i.image_registry_id = r.registry_id")
 
 	if artifactType != nil {
 		q = q.Where("i.image_type = ?", *artifactType)
@@ -972,15 +979,6 @@ func (a ArtifactDao) CountArtifactsByRepo(
 		labelsVal := util.GetEmptySQLString(util.ArrToString(labels))
 		labelsVal.String = labelSeparatorStart + labelsVal.String + labelSeparatorEnd
 		q = q.Where("'^_' || i.image_labels || '^_' LIKE ?", labelsVal)
-	}
-
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
-		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -1004,111 +1002,67 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 	opts ...types.QueryOption,
 ) (*types.ArtifactMetadata, error) {
 	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	// Build download count subquery with soft delete filtering
-	baseDownloadQuery := `
-		SELECT 
-			i.image_name, 
-			i.image_registry_id,
-			SUM(COALESCE(dc.download_count, 0)) AS download_count
-		FROM 
-			images i
-		LEFT JOIN (
-			SELECT 
-				a.artifact_image_id, 
-				COUNT(d.download_stat_id) AS download_count
-			FROM 
-				artifacts a
-			JOIN 
-				download_stats d ON d.download_stat_artifact_id = a.artifact_id`
-	var whereClause string
+	db := dbtx.GetAccessor(ctx, a.db)
+
+	// Step 1: Find the latest artifact ID
+	latestArtifactQuery := databaseg.Builder.Select("a.artifact_id").
+		From("artifacts a").
+		Join("images i ON i.image_id = a.artifact_image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("r.registry_parent_id = ? AND r.registry_name = ? AND i.image_name = ?", parentID, repoKey, imageName)
+
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
-		whereClause = " WHERE a.artifact_deleted_at IS NULL"
+		latestArtifactQuery = latestArtifactQuery.Where("a.artifact_deleted_at IS NULL")
 	case types.SoftDeleteFilterOnly:
-		whereClause = " WHERE a.artifact_deleted_at IS NOT NULL"
+		latestArtifactQuery = latestArtifactQuery.Where("a.artifact_deleted_at IS NOT NULL")
 	case types.SoftDeleteFilterInclude:
-		whereClause = ""
+		// No filtering
 	}
-	downloadCountSubquery := baseDownloadQuery + whereClause + `
-			GROUP BY 
-				a.artifact_image_id
-		) AS dc ON i.image_id = dc.artifact_image_id
-		GROUP BY 
-			i.image_name, i.image_registry_id
-	`
-	var q sq.SelectBuilder
-	if a.db.DriverName() == SQLITE3 {
-		q = databaseg.Builder.Select(
-			`r.registry_name AS repo_name, r.registry_package_type AS package_type,
-     i.image_name AS name, a.artifact_version AS latest_version,
-     a.artifact_created_at AS created_at, a.artifact_updated_at AS modified_at,
-     i.image_labels AS labels, COALESCE(dc_subquery.download_count, 0) AS download_count`,
-		).
-			From("artifacts a").
-			Join("images i ON i.image_id = a.artifact_image_id").
-			Join("registries r ON i.image_registry_id = r.registry_id"). // nolint:goconst
-			LeftJoin(fmt.Sprintf("(%s) AS dc_subquery ON dc_subquery.image_name = i.image_name "+
-				"AND dc_subquery.image_registry_id = r.registry_id", downloadCountSubquery)).
-			Where(
-				"r.registry_parent_id = ? AND r.registry_name = ? AND i.image_name = ?",
-				parentID, repoKey, imageName,
-			)
-		// For metadata queries, only check artifact deletion (not parents)
-		// Download counts in subquery already apply full cascade filtering
-		switch softDeleteFilter {
-		case types.SoftDeleteFilterExclude:
-			q = q.Where("a.artifact_deleted_at IS NULL")
-		case types.SoftDeleteFilterOnly:
-			q = q.Where("a.artifact_deleted_at IS NOT NULL")
-		case types.SoftDeleteFilterInclude:
-			// No filtering
+
+	latestArtifactQuery = latestArtifactQuery.OrderBy("a.artifact_updated_at DESC").Limit(1)
+
+	sql1, args1, err := latestArtifactQuery.ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to convert latest artifact query to sql")
+	}
+
+	var latestArtifactID int64
+	if err = db.GetContext(ctx, &latestArtifactID, sql1, args1...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No artifact exists - return nil without error
+			return nil, nil
 		}
-		q = q.OrderBy("a.artifact_updated_at DESC").Limit(1)
-	} else {
-		q = databaseg.Builder.Select(
-			`r.registry_name AS repo_name,
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get latest artifact ID")
+	}
+
+	// Step 2: Fetch full metadata with download count for this specific artifact
+	metadataQuery := databaseg.Builder.Select(
+		`r.registry_name AS repo_name,
          r.registry_package_type AS package_type,
          i.image_name AS name,
          a.artifact_version AS latest_version,
          a.artifact_created_at AS created_at,
          a.artifact_updated_at AS modified_at,
          i.image_labels AS labels,
-         COALESCE(t2.download_count, 0) AS download_count`,
-		).
-			From("artifacts a").
-			Join("images i ON i.image_id = a.artifact_image_id").
-			Join("registries r ON i.image_registry_id = r.registry_id"). // nolint:goconst
-			LeftJoin(fmt.Sprintf("LATERAL (%s) AS t2 ON i.image_name = t2.image_name", downloadCountSubquery)).
-			Where(
-				"r.registry_parent_id = ? AND r.registry_name = ? AND i.image_name = ?",
-				parentID, repoKey, imageName,
-			)
-		// For metadata queries, only check artifact deletion (not parents)
-		// Download counts in subquery already apply full cascade filtering
-		switch softDeleteFilter {
-		case types.SoftDeleteFilterExclude:
-			q = q.Where("a.artifact_deleted_at IS NULL")
-		case types.SoftDeleteFilterOnly:
-			q = q.Where("a.artifact_deleted_at IS NOT NULL")
-		case types.SoftDeleteFilterInclude:
-			// No filtering
-		}
-		q = q.OrderBy("a.artifact_updated_at DESC").Limit(1)
+         (SELECT COUNT(*) FROM download_stats WHERE download_stat_artifact_id = a.artifact_id) AS download_count`,
+	).
+		From("artifacts a").
+		Join("images i ON i.image_id = a.artifact_image_id").
+		Join("registries r ON i.image_registry_id = r.registry_id").
+		Where("a.artifact_id = ?", latestArtifactID)
+
+	sql2, args2, err := metadataQuery.ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to convert metadata query to sql")
 	}
 
-	sql, args, err := q.ToSql()
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to convert query to sql")
-	}
-	// Log the final sql query
-	finalQuery := util.FormatQuery(sql, args)
-	log.Ctx(ctx).Debug().Str("sql", finalQuery).Msg("Executing GetLatestTagMetadata query")
-	// Execute query
-	db := dbtx.GetAccessor(ctx, a.db)
+	finalQuery := util.FormatQuery(sql2, args2)
+	log.Ctx(ctx).Debug().Str("sql", finalQuery).Msg("Executing GetLatestArtifactMetadata query")
 
 	dst := new(artifactMetadataDB)
-	if err = db.GetContext(ctx, dst, sql, args...); err != nil {
-		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get tag detail")
+	if err = db.GetContext(ctx, dst, sql2, args2...); err != nil {
+		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get artifact metadata")
 	}
 
 	return a.mapToArtifactMetadata(dst)
@@ -1178,8 +1132,6 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 		q = q.Where("artifact_version LIKE ?", sqlPartialMatch(search))
 	}
 
-	// When listing versions of a specific image, only check artifact deletion (not parent image)
-	// This allows viewing versions even if the parent image is deleted
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL")
@@ -1291,8 +1243,6 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 		stmt = stmt.Where("artifact_version LIKE ?", sqlPartialMatch(search))
 	}
 
-	// When counting versions of a specific image, only check artifact deletion (not parents)
-	// Must match GetAllVersionsByRepoAndImage filtering logic
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
 		stmt = stmt.Where("a.artifact_deleted_at IS NULL")
@@ -1342,8 +1292,6 @@ func (a ArtifactDao) GetArtifactMetadata(
 		q = q.Where("i.image_type = ?", *artifactType)
 	}
 
-	// For metadata queries on specific versions, only check the artifact itself (not parents)
-	// This allows retrieving metadata even if parent image/registry is soft-deleted
 	switch softDeleteFilter {
 	case types.SoftDeleteFilterExclude:
 		q = q.Where("a.artifact_deleted_at IS NULL")

@@ -77,6 +77,7 @@ func (c *APIController) GetDockerArtifactDetails(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		if errors.Is(err, store2.ErrResourceNotFound) {
@@ -99,7 +100,7 @@ func (c *APIController) GetDockerArtifactDetails(
 	}
 	art, err := c.ArtifactStore.GetArtifactMetadata(
 		ctx, registry.ParentID, registry.Name, image, dgst.String(),
-		nil,
+		nil, types.WithAllDeleted(),
 	)
 	if err != nil {
 		return getArtifactDetailsErrResponse(ctx, err)
