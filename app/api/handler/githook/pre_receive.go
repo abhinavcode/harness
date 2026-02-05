@@ -34,7 +34,9 @@ func HandlePreReceive(
 		ctx := r.Context()
 		session, _ := request.AuthSessionFrom(ctx)
 
-		in := types.GithookPreReceiveInput{}
+		in := types.GithookPreReceiveInput{
+			BypassRules: true,
+		}
 		err := json.NewDecoder(r.Body).Decode(&in)
 		if err != nil {
 			render.BadRequestf(ctx, w, "Invalid Request Body: %s.", err)

@@ -96,7 +96,7 @@ func (u *RefUpdater) Do(ctx context.Context, refs []ReferenceUpdate) error {
 		return fmt.Errorf("init failed: %w", err)
 	}
 
-	if err := u.Pre(ctx); err != nil {
+	if err := u.Pre(ctx, false); err != nil {
 		return fmt.Errorf("pre failed: %w", err)
 	}
 
@@ -176,7 +176,7 @@ func (u *RefUpdater) Init(ctx context.Context, refs []ReferenceUpdate) error {
 }
 
 // Pre runs the pre-receive git hook.
-func (u *RefUpdater) Pre(ctx context.Context, alternateDirs ...string) error {
+func (u *RefUpdater) Pre(ctx context.Context, bypassRules bool, alternateDirs ...string) error {
 	if u.state != statePre {
 		return fmt.Errorf("invalid operation order: pre-receive hook requires state=%s, current state=%s",
 			statePre, u.state)
@@ -192,6 +192,7 @@ func (u *RefUpdater) Pre(ctx context.Context, alternateDirs ...string) error {
 		Environment: Environment{
 			AlternateObjectDirs: alternateDirs,
 		},
+		BypassRules: bypassRules,
 	})
 	if err != nil {
 		return fmt.Errorf("pre-receive call failed with: %w", err)

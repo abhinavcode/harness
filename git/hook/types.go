@@ -48,6 +48,9 @@ type PreReceiveInput struct {
 
 	// RefUpdates contains all references that are being updated as part of the git operation.
 	RefUpdates []ReferenceUpdate `json:"ref_updates"`
+
+	// BypassRules indicates whether push rules evaluated in git hook should be bypassed.
+	BypassRules bool `json:"bypass_rules,omitempty"`
 }
 
 // UpdateInput represents the input of the update git hook.

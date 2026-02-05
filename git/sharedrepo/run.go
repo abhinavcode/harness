@@ -29,6 +29,7 @@ func Run(
 	ctx context.Context,
 	refUpdater *hook.RefUpdater,
 	tmpDir, repoPath string,
+	bypassRules bool,
 	fn func(s *SharedRepo) error,
 	alternates ...string,
 ) error {
@@ -54,7 +55,7 @@ func Run(
 
 	alternate := s.Directory() + "/objects"
 
-	if err := refUpdater.Pre(ctx, alternate); err != nil {
+	if err := refUpdater.Pre(ctx, bypassRules, alternate); err != nil {
 		return fmt.Errorf("pre-receive hook failed: %w", err)
 	}
 

@@ -79,6 +79,7 @@ func (c *ControllerClient) PreReceive(
 		types.GithookPreReceiveInput{
 			GithookInputBase: c.baseInput,
 			PreReceiveInput:  in,
+			BypassRules:      in.BypassRules,
 		},
 	)
 	if err != nil {

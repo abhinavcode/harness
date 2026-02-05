@@ -47,7 +47,7 @@ func (p *Push) PushVerify(
 	bypassable := p.Bypass.matches(ctx, in.Actor, in.IsRepoOwner, in.ResolveUserGroupID)
 	for i := range violations {
 		violations[i].Bypassable = bypassable
-		violations[i].Bypassed = bypassable
+		violations[i].Bypassed = bypassable && in.AllowBypass
 	}
 
 	return out, violations, nil
@@ -89,7 +89,7 @@ func (p *Push) Violations(
 
 	bypassable := p.Bypass.matches(ctx, in.Actor, in.IsRepoOwner, in.ResolveUserGroupID)
 	violations.Bypassable = bypassable
-	violations.Bypassed = bypassable
+	violations.Bypassed = bypassable && in.AllowBypass
 
 	return PushViolationsOutput{
 		Violations: []types.RuleViolations{violations},
