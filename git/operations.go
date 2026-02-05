@@ -159,89 +159,95 @@ func (s *Service) CommitFiles(ctx context.Context, params *CommitFilesParams) (C
 	}
 
 	// run the actions in a shared repo
-	err = sharedrepo.Run(ctx, refUpdater, s.sharedRepoRoot, repoPath, params.BypassRules, func(r *sharedrepo.SharedRepo) error {
-		var parentCommits []sha.SHA
-		var oldTreeSHA sha.SHA
+	err = sharedrepo.Run(
+		ctx,
+		refUpdater,
+		s.sharedRepoRoot,
+		repoPath,
+		params.BypassRules,
+		func(r *sharedrepo.SharedRepo) error {
+			var parentCommits []sha.SHA
+			var oldTreeSHA sha.SHA
 
-		if isEmpty {
-			oldTreeSHA = sha.EmptyTree
-			changedFiles, err = s.prepareTreeEmptyRepo(ctx, r, params.Actions)
-			if err != nil {
-				return fmt.Errorf("failed to prepare empty tree: %w", err)
+			if isEmpty {
+				oldTreeSHA = sha.EmptyTree
+				changedFiles, err = s.prepareTreeEmptyRepo(ctx, r, params.Actions)
+				if err != nil {
+					return fmt.Errorf("failed to prepare empty tree: %w", err)
+				}
+			} else {
+				parentCommits = append(parentCommits, commit.SHA)
+
+				// get tree sha
+				rootNode, err := s.git.GetTreeNode(ctx, repoPath, commit.SHA.String(), "")
+				if err != nil {
+					return fmt.Errorf("CommitFiles: failed to get original node: %w", err)
+				}
+				oldTreeSHA = rootNode.SHA
+
+				err = r.SetIndex(ctx, commit.SHA)
+				if err != nil {
+					return fmt.Errorf("failed to set index in shared repository: %w", err)
+				}
+
+				changedFiles, err = s.prepareTree(ctx, r, commit.SHA, params.Actions)
+				if err != nil {
+					return fmt.Errorf("failed to prepare tree: %w", err)
+				}
 			}
-		} else {
-			parentCommits = append(parentCommits, commit.SHA)
 
-			// get tree sha
-			rootNode, err := s.git.GetTreeNode(ctx, repoPath, commit.SHA.String(), "")
+			treeSHA, err := r.WriteTree(ctx)
 			if err != nil {
-				return fmt.Errorf("CommitFiles: failed to get original node: %w", err)
-			}
-			oldTreeSHA = rootNode.SHA
-
-			err = r.SetIndex(ctx, commit.SHA)
-			if err != nil {
-				return fmt.Errorf("failed to set index in shared repository: %w", err)
+				return fmt.Errorf("failed to write tree object: %w", err)
 			}
 
-			changedFiles, err = s.prepareTree(ctx, r, commit.SHA, params.Actions)
-			if err != nil {
-				return fmt.Errorf("failed to prepare tree: %w", err)
+			if oldTreeSHA.Equal(treeSHA) {
+				return errors.InvalidArgument("No effective changes.")
 			}
-		}
 
-		treeSHA, err := r.WriteTree(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to write tree object: %w", err)
-		}
+			authorSig := &api.Signature{
+				Identity: api.Identity{
+					Name:  author.Name,
+					Email: author.Email,
+				},
+				When: authorDate,
+			}
 
-		if oldTreeSHA.Equal(treeSHA) {
-			return errors.InvalidArgument("No effective changes.")
-		}
+			committerSig := &api.Signature{
+				Identity: api.Identity{
+					Name:  committer.Name,
+					Email: committer.Email,
+				},
+				When: committerDate,
+			}
 
-		authorSig := &api.Signature{
-			Identity: api.Identity{
-				Name:  author.Name,
-				Email: author.Email,
-			},
-			When: authorDate,
-		}
+			var message string
+			if params.Title != "" {
+				// Title is deprecated and should not be sent, but if it's sent assume we need to generate the full message.
+				message = parser.CleanUpWhitespace(CommitMessage(params.Title, params.Message))
+			} else {
+				message = parser.CleanUpWhitespace(params.Message)
+			}
 
-		committerSig := &api.Signature{
-			Identity: api.Identity{
-				Name:  committer.Name,
-				Email: committer.Email,
-			},
-			When: committerDate,
-		}
+			commitSHA, err := r.CommitTree(ctx, authorSig, committerSig, treeSHA, message, false, parentCommits...)
+			if err != nil {
+				return fmt.Errorf("failed to commit the tree: %w", err)
+			}
 
-		var message string
-		if params.Title != "" {
-			// Title is deprecated and should not be sent, but if it's sent assume we need to generate the full message.
-			message = parser.CleanUpWhitespace(CommitMessage(params.Title, params.Message))
-		} else {
-			message = parser.CleanUpWhitespace(params.Message)
-		}
+			refNewSHA = commitSHA
 
-		commitSHA, err := r.CommitTree(ctx, authorSig, committerSig, treeSHA, message, false, parentCommits...)
-		if err != nil {
-			return fmt.Errorf("failed to commit the tree: %w", err)
-		}
+			ref := hook.ReferenceUpdate{
+				Ref: branchRef,
+				Old: refOldSHA,
+				New: refNewSHA,
+			}
 
-		refNewSHA = commitSHA
+			if err := refUpdater.Init(ctx, []hook.ReferenceUpdate{ref}); err != nil {
+				return fmt.Errorf("failed to init ref updater old=%s new=%s: %w", refOldSHA, refNewSHA, err)
+			}
 
-		ref := hook.ReferenceUpdate{
-			Ref: branchRef,
-			Old: refOldSHA,
-			New: refNewSHA,
-		}
-
-		if err := refUpdater.Init(ctx, []hook.ReferenceUpdate{ref}); err != nil {
-			return fmt.Errorf("failed to init ref updater old=%s new=%s: %w", refOldSHA, refNewSHA, err)
-		}
-
-		return nil
-	})
+			return nil
+		})
 	if err != nil {
 		return CommitFilesResponse{}, fmt.Errorf("CommitFiles: failed to create commit in shared repository: %w", err)
 	}
