@@ -28,6 +28,7 @@ import (
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
+	"github.com/harness/gitness/udp"
 
 	"github.com/rs/zerolog/log"
 )
@@ -183,26 +184,59 @@ func (c *APIController) deleteRegistryWithAudit(
 	}
 
 	typeRegistry := audit.ResourceTypeRegistry
+	resourceType := udp.ResourceTypeRegistryVirtual
 	if registry.Type == artifact.RegistryTypeUPSTREAM {
 		typeRegistry = audit.ResourceTypeRegistryUpstreamProxy
+		resourceType = udp.ResourceTypeRegistryUpstreamProxy
 	}
+
+	// Create audit object without ID field
+	registryAuditObj := audit.RegistryAuditObject{
+		UUID:            registry.UUID,
+		Name:            registry.Name,
+		ParentID:        registry.ParentID,
+		RootParentID:    registry.RootParentID,
+		Description:     registry.Description,
+		Type:            registry.Type,
+		PackageType:     registry.PackageType,
+		UpstreamProxies: registry.UpstreamProxies,
+		AllowedPattern:  registry.AllowedPattern,
+		BlockedPattern:  registry.BlockedPattern,
+		Labels:          registry.Labels,
+		Config:          registry.Config,
+		CreatedAt:       registry.CreatedAt,
+		UpdatedAt:       registry.UpdatedAt,
+		CreatedBy:       registry.CreatedBy,
+		UpdatedBy:       registry.UpdatedBy,
+		IsPublic:        registry.IsPublic,
+	}
+
 	auditErr := c.AuditService.Log(
 		ctx,
 		principal,
 		audit.NewResource(typeRegistry, registry.Name),
 		audit.ActionDeleted,
 		parentRef,
-		audit.WithOldObject(
-			audit.RegistryObject{
-				Registry: *registry,
-			},
-		),
+		audit.WithOldObject(registryAuditObj),
 		audit.WithData("registry name", registry.Name),
 	)
 
 	if auditErr != nil {
 		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for delete registry operation: %s", auditErr)
 	}
+
+	// Insert UDP event
+	c.UDPService.InsertEvent(
+		ctx,
+		udp.ActionRegistryDeleted,
+		resourceType,
+		registry.Name,
+		parentRef,
+		principal,
+		nil,
+		registryAuditObj,
+	)
+
 	return err
 }
 
