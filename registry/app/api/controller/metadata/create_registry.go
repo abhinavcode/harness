@@ -329,17 +329,34 @@ func (c *APIController) createRegistry(
 	}
 
 	if !skipAudit && principal != nil {
+		// Create audit object without ID field
+		registryAuditObj := audit.RegistryAuditObject{
+			UUID:            registry.UUID,
+			Name:            registry.Name,
+			ParentID:        registry.ParentID,
+			RootParentID:    registry.RootParentID,
+			Description:     registry.Description,
+			Type:            registry.Type,
+			PackageType:     registry.PackageType,
+			UpstreamProxies: registry.UpstreamProxies,
+			AllowedPattern:  registry.AllowedPattern,
+			BlockedPattern:  registry.BlockedPattern,
+			Labels:          registry.Labels,
+			Config:          registry.Config,
+			CreatedAt:       registry.CreatedAt,
+			UpdatedAt:       registry.UpdatedAt,
+			CreatedBy:       registry.CreatedBy,
+			UpdatedBy:       registry.UpdatedBy,
+			IsPublic:        registry.IsPublic,
+		}
+
 		auditErr := c.AuditService.Log(
 			ctx,
 			*principal,
 			audit.NewResource(audit.ResourceTypeRegistry, registry.Name),
 			audit.ActionCreated,
 			parentRef,
-			audit.WithNewObject(
-				audit.RegistryObject{
-					Registry: *registry,
-				},
-			),
+			audit.WithNewObject(registryAuditObj),
 		)
 		if auditErr != nil {
 			log.Ctx(ctx).Warn().Msgf("failed to insert audit log for create registry operation: %s", auditErr)
@@ -352,9 +369,7 @@ func (c *APIController) createRegistry(
 			registry.Name,
 			parentRef,
 			*principal,
-			audit.RegistryObject{
-				Registry: *registry,
-			},
+			registryAuditObj,
 			nil,
 		)
 	}
