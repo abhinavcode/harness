@@ -60,6 +60,7 @@ type Controller struct {
 	SpaceFinder               refcache.SpaceFinder
 	quarantineFinder          quarantine.Finder
 	dependencyFirewallChecker interfaces.DependencyFirewallChecker
+	ArtifactStatsPublisher    pkg.ArtifactStatsPublisher
 }
 
 type DBStore struct {
@@ -81,6 +82,7 @@ func NewController(
 	spaceFinder refcache.SpaceFinder,
 	quarantineFinder quarantine.Finder,
 	dependencyFirewallChecker interfaces.DependencyFirewallChecker,
+	artifactStatsPublisher pkg.ArtifactStatsPublisher,
 ) *Controller {
 	c := &Controller{
 		local:                     local,
@@ -90,6 +92,7 @@ func NewController(
 		SpaceFinder:               spaceFinder,
 		quarantineFinder:          quarantineFinder,
 		dependencyFirewallChecker: dependencyFirewallChecker,
+		ArtifactStatsPublisher:    artifactStatsPublisher,
 	}
 
 	TypeRegistry[LocalRegistryType] = local
