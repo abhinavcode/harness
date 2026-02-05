@@ -28,7 +28,6 @@ import (
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
-	"github.com/harness/gitness/udp"
 
 	"github.com/rs/zerolog/log"
 )
@@ -183,39 +182,19 @@ func (c *APIController) deleteRegistryWithAudit(
 		return err
 	}
 
-	typeRegistry := audit.ResourceTypeRegistry
-	resourceType := udp.ResourceTypeRegistryVirtual
+	resourceType := audit.ResourceTypeRegistry
 	if registry.Type == artifact.RegistryTypeUPSTREAM {
-		typeRegistry = audit.ResourceTypeRegistryUpstreamProxy
-		resourceType = udp.ResourceTypeRegistryUpstreamProxy
+		resourceType = audit.ResourceTypeRegistryUpstreamProxy
 	}
 
-	registryAuditObj := getRegistryAuditObject(registry)
-
-	auditErr := c.AuditService.Log(
+	c.RegistryAuditService.Log(
 		ctx,
-		principal,
-		audit.NewResource(typeRegistry, registry.Name),
 		audit.ActionDeleted,
-		parentRef,
-		audit.WithOldObject(registryAuditObj),
-		audit.WithData("registry name", registry.Name),
-	)
-
-	if auditErr != nil {
-		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for delete registry operation: %s", auditErr)
-	}
-
-	// Insert UDP event
-	c.UDPService.InsertEvent(
-		ctx,
-		udp.ActionRegistryDeleted,
-		resourceType,
-		registry.Name,
-		parentRef,
-		principal,
+		registry,
 		nil,
-		registryAuditObj,
+		principal,
+		parentRef,
+		resourceType,
 	)
 
 	return err

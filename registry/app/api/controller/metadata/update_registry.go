@@ -31,7 +31,6 @@ import (
 	"github.com/harness/gitness/registry/types"
 	types2 "github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
-	"github.com/harness/gitness/udp"
 
 	"github.com/rs/zerolog/log"
 )
@@ -268,74 +267,15 @@ func (c *APIController) auditUpstreamProxyUpdate(
 		return err
 	}
 
-	// Create enhanced objects without ID fields
-	oldObject := audit.RegistryUpstreamProxyConfigObjectEnhanced{
-		UUID:            oldRegistry.UUID,
-		Name:            oldRegistry.Name,
-		ParentID:        oldRegistry.ParentID,
-		RootParentID:    oldRegistry.RootParentID,
-		Description:     oldRegistry.Description,
-		Type:            string(oldRegistry.Type),
-		PackageType:     string(oldRegistry.PackageType),
-		UpstreamProxies: oldRegistry.UpstreamProxies,
-		AllowedPattern:  oldRegistry.AllowedPattern,
-		BlockedPattern:  oldRegistry.BlockedPattern,
-		Labels:          oldRegistry.Labels,
-		Source:          oldUpstreamProxy.Source,
-		URL:             oldUpstreamProxy.RepoURL,
-		AuthType:        oldUpstreamProxy.RepoAuthType,
-		CreatedAt:       oldUpstreamProxy.CreatedAt,
-		UpdatedAt:       oldUpstreamProxy.UpdatedAt,
-		CreatedBy:       oldUpstreamProxy.CreatedBy,
-		UpdatedBy:       oldUpstreamProxy.UpdatedBy,
-		IsPublic:        oldRegistry.IsPublic,
-	}
-
-	newObject := audit.RegistryUpstreamProxyConfigObjectEnhanced{
-		UUID:            newRegistry.UUID,
-		Name:            newRegistry.Name,
-		ParentID:        newRegistry.ParentID,
-		RootParentID:    newRegistry.RootParentID,
-		Description:     newRegistry.Description,
-		Type:            string(newRegistry.Type),
-		PackageType:     string(newRegistry.PackageType),
-		UpstreamProxies: newRegistry.UpstreamProxies,
-		AllowedPattern:  newRegistry.AllowedPattern,
-		BlockedPattern:  newRegistry.BlockedPattern,
-		Labels:          newRegistry.Labels,
-		Source:          updatedUpstreamProxy.Source,
-		URL:             updatedUpstreamProxy.RepoURL,
-		AuthType:        updatedUpstreamProxy.RepoAuthType,
-		CreatedAt:       updatedUpstreamProxy.CreatedAt,
-		UpdatedAt:       updatedUpstreamProxy.UpdatedAt,
-		CreatedBy:       updatedUpstreamProxy.CreatedBy,
-		UpdatedBy:       updatedUpstreamProxy.UpdatedBy,
-		IsPublic:        newRegistry.IsPublic,
-	}
-
-	auditErr := c.AuditService.Log(
+	c.RegistryAuditService.LogWithUpstreamProxy(
 		ctx,
-		principal,
-		audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, newRegistry.Name),
 		audit.ActionUpdated,
-		parentRef,
-		audit.WithOldObject(oldObject),
-		audit.WithNewObject(newObject),
-	)
-	if auditErr != nil {
-		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for update upstream proxy: %s", auditErr)
-	}
-
-	// Insert UDP event
-	c.UDPService.InsertEvent(
-		ctx,
-		udp.ActionRegistryUpdated,
-		udp.ResourceTypeRegistryUpstreamProxy,
-		newRegistry.Name,
-		parentRef,
+		oldRegistry,
+		newRegistry,
+		oldUpstreamProxy,
+		updatedUpstreamProxy,
 		principal,
-		newObject,
-		oldObject,
+		parentRef,
 	)
 
 	return nil
@@ -361,32 +301,14 @@ func (c *APIController) auditVirtualRegistryUpdate(
 		log.Ctx(ctx).Warn().Err(getErr).Msg("failed to fetch registry UUID after update")
 	}
 
-	oldAuditObj := getRegistryAuditObject(oldRegistry)
-	newAuditObj := getRegistryAuditObject(newRegistry)
-
-	auditErr := c.AuditService.Log(
+	c.RegistryAuditService.Log(
 		ctx,
-		principal,
-		audit.NewResource(audit.ResourceTypeRegistry, newRegistry.Name),
 		audit.ActionUpdated,
-		parentRef,
-		audit.WithOldObject(oldAuditObj),
-		audit.WithNewObject(newAuditObj),
-	)
-	if auditErr != nil {
-		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for update registry: %s", auditErr)
-	}
-
-	// Insert UDP event
-	c.UDPService.InsertEvent(
-		ctx,
-		udp.ActionRegistryUpdated,
-		udp.ResourceTypeRegistryVirtual,
-		newRegistry.Name,
-		parentRef,
+		oldRegistry,
+		newRegistry,
 		principal,
-		newAuditObj,
-		oldAuditObj,
+		parentRef,
+		audit.ResourceTypeRegistry,
 	)
 
 	return nil

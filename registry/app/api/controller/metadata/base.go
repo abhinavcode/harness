@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/harness/gitness/audit"
 	api "github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	storagedriver "github.com/harness/gitness/registry/app/driver"
 	"github.com/harness/gitness/registry/app/pkg/commons"
@@ -491,25 +490,3 @@ func (c *APIController) GetArtifactFilesRequestInfo(
 	}, nil
 }
 
-// getRegistryAuditObject creates an audit object from a registry, excluding the ID field.
-func getRegistryAuditObject(registry *types.Registry) audit.RegistryAuditObject {
-	return audit.RegistryAuditObject{
-		UUID:            registry.UUID,
-		Name:            registry.Name,
-		ParentID:        registry.ParentID,
-		RootParentID:    registry.RootParentID,
-		Description:     registry.Description,
-		Type:            registry.Type,
-		PackageType:     registry.PackageType,
-		UpstreamProxies: registry.UpstreamProxies,
-		AllowedPattern:  registry.AllowedPattern,
-		BlockedPattern:  registry.BlockedPattern,
-		Labels:          registry.Labels,
-		Config:          registry.Config,
-		CreatedAt:       registry.CreatedAt,
-		UpdatedAt:       registry.UpdatedAt,
-		CreatedBy:       registry.CreatedBy,
-		UpdatedBy:       registry.UpdatedBy,
-		IsPublic:        registry.IsPublic,
-	}
-}
