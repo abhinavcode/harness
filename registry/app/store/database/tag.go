@@ -601,7 +601,7 @@ func (t tagDao) getCoreArtifactsQuery(
 	}
 
 	return query.OrderBy(fmt.Sprintf("%s %s", sortField, sortByOrder)).
-		Limit(uint64(limit)).  // nolint:gosec
+		Limit(uint64(limit)). // nolint:gosec
 		Offset(uint64(offset)) // nolint:gosec
 }
 
@@ -1168,7 +1168,9 @@ func (t tagDao) GetTagMetadata(
 		Join("registries ON tag_registry_id = registry_id").
 		Join("manifests ON manifest_id = tag_manifest_id").
 		LeftJoin("images i ON i.image_registry_id = registry_id AND i.image_name = tag_image_name").
-		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND manifest_digest = "+decodeFunction).
+		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND "+
+			"registry_package_type IN ('DOCKER', 'HELM') AND "+
+			"manifest_digest = "+decodeFunction).
 		Where(
 			"registry_parent_id = ? AND registry_name = ?"+
 				" AND tag_image_name = ? AND tag_name = ?", parentID, repoKey, imageName, name,
@@ -1217,7 +1219,9 @@ func (t tagDao) GetOCIVersionMetadata(
 		From("manifests").
 		Join("registries ON manifest_registry_id = registry_id").
 		LeftJoin("images i ON i.image_registry_id = registry_id AND i.image_name = manifest_image_name").
-		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND manifest_digest = "+decodeFunction).
+		LeftJoin("artifacts a ON a.artifact_image_id = i.image_id AND "+
+			"registry_package_type IN ('DOCKER', 'HELM') AND "+
+			"manifest_digest = "+decodeFunction).
 		Where(
 			"registry_parent_id = ? AND registry_name = ?"+
 				" AND manifest_image_name = ? AND manifest_digest = ?", parentID, repoKey, imageName, digestBytes,
