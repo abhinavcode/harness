@@ -82,6 +82,7 @@ import (
 	"github.com/harness/gitness/app/services/cleanup"
 	"github.com/harness/gitness/app/services/codecomments"
 	"github.com/harness/gitness/app/services/codeowners"
+	"github.com/harness/gitness/app/services/dotrange"
 	"github.com/harness/gitness/app/services/exporter"
 	"github.com/harness/gitness/app/services/gitspace"
 	"github.com/harness/gitness/app/services/gitspacedeleteevent"
@@ -180,6 +181,7 @@ import (
 	"github.com/harness/gitness/store/database/dbtx"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/check"
+	"github.com/harness/gitness/udp"
 
 	_ "github.com/lib/pq"
 
@@ -226,7 +228,11 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	evictor2 := cache2.ProvideEvictorRegistryCore(pubSub)
 	registryIDCache := cache2.ProvideRegistryIDCache(ctx, registryRepository, evictor2)
 	registryRootRefCache := cache2.ProvideRegRootRefCache(ctx, registryRepository, evictor2)
-	registryFinder := refcache2.ProvideRegistryFinder(registryRepository, registryIDCache, registryRootRefCache, evictor2, spaceFinder)
+	upstreamProxyConfigRepository := database2.ProvideUpstreamDao(db, registryRepository, spaceFinder)
+	evictor3 := cache2.ProvideEvictorUpstreamProxy(pubSub)
+	upstreamProxyRegistryIDCache := cache2.ProvideUpstreamProxyRegistryIDCache(ctx, upstreamProxyConfigRepository, evictor3)
+	upstreamProxyFinder := refcache2.ProvideUpstreamProxyFinder(upstreamProxyConfigRepository, upstreamProxyRegistryIDCache, evictor3)
+	registryFinder := refcache2.ProvideRegistryFinder(registryRepository, registryIDCache, registryRootRefCache, evictor2, spaceFinder, upstreamProxyFinder)
 	publicaccessService := publicaccess.ProvidePublicAccess(config, publicAccessStore, spaceFinder, repoFinder, registryFinder)
 	authorizer := authz.ProvideAuthorizer(permissionCache, spaceFinder, publicaccessService)
 	principalUIDTransformation := store.ProvidePrincipalUIDTransformation()
@@ -354,8 +360,9 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	signatureVerifyService := publickey.ProvideSignatureVerifyService(principalStore, keyfetcherService, gitSignatureResultStore)
 	autoLinkStore := database.ProvideAutolinkStore(db)
 	autolinkService := autolink.ProvideAutoLink(transactor, spaceStore, repoStore, autoLinkStore)
+	dotrangeService := dotrange.ProvideService(gitInterface, repoFinder, provider, authorizer)
 	repoLangStore := database.ProvideRepoLangStore(db)
-	repoController := repo.ProvideController(config, transactor, provider, authorizer, repoStore, linkedRepoStore, spaceStore, pipelineStore, principalStore, executionStore, ruleStore, checkStore, pullReqStore, settingsService, principalInfoCache, protectionManager, gitInterface, spaceFinder, repoFinder, jobRepository, jobReferenceSync, jobRepositoryLink, codeownersService, eventsReporter, indexer, resourceLimiter, lockerLocker, auditService, mutexManager, repoIdentifier, repoCheck, publicaccessService, labelService, instrumentService, userGroupStore, usergroupService, rulesService, streamer, lfsController, favoriteStore, signatureVerifyService, autolinkService, connectorService, repoLangStore)
+	repoController := repo.ProvideController(config, transactor, provider, authorizer, repoStore, linkedRepoStore, spaceStore, pipelineStore, principalStore, executionStore, ruleStore, checkStore, pullReqStore, settingsService, principalInfoCache, protectionManager, gitInterface, spaceFinder, repoFinder, jobRepository, jobReferenceSync, jobRepositoryLink, codeownersService, eventsReporter, indexer, resourceLimiter, lockerLocker, auditService, mutexManager, repoIdentifier, repoCheck, publicaccessService, labelService, instrumentService, userGroupStore, usergroupService, rulesService, streamer, lfsController, favoriteStore, signatureVerifyService, autolinkService, dotrangeService, connectorService, repoLangStore)
 	reposettingsController := reposettings.ProvideController(authorizer, repoFinder, spaceFinder, settingsService, auditService)
 	stageStore := database.ProvideStageStore(db)
 	schedulerScheduler, err := scheduler.ProvideScheduler(stageStore, mutexManager)
@@ -510,7 +517,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	}
 	pullReq := migrate.ProvidePullReqImporter(provider, gitInterface, principalStore, spaceStore, repoStore, pullReqStore, pullReqActivityStore, labelStore, labelValueStore, pullReqLabelAssignmentStore, pullReqReviewerStore, pullReqReviewStore, repoFinder, transactor, mutexManager)
 	branchStore := database.ProvideBranchStore(db)
-	pullreqController := pullreq2.ProvideController(transactor, provider, authorizer, auditService, pullReqStore, pullReqActivityStore, codeCommentView, pullReqReviewStore, pullReqReviewerStore, repoStore, principalStore, userGroupStore, userGroupReviewerStore, principalInfoCache, pullReqFileViewStore, membershipStore, checkStore, autoMergeStore, gitInterface, repoFinder, reporter8, migrator, pullreqService, listService, mergeService, protectionManager, streamer, codeownersService, lockerLocker, pullReq, labelService, instrumentService, usergroupService, branchStore, usergroupResolver)
+	pullreqController := pullreq2.ProvideController(transactor, provider, authorizer, auditService, pullReqStore, pullReqActivityStore, codeCommentView, pullReqReviewStore, pullReqReviewerStore, repoStore, principalStore, userGroupStore, userGroupReviewerStore, principalInfoCache, pullReqFileViewStore, membershipStore, checkStore, autoMergeStore, gitInterface, repoFinder, reporter8, migrator, pullreqService, listService, mergeService, protectionManager, streamer, dotrangeService, codeownersService, lockerLocker, pullReq, labelService, instrumentService, usergroupService, branchStore, usergroupResolver)
 	webhookConfig := server.ProvideWebhookConfig(config)
 	webhookStore := database.ProvideWebhookStore(db)
 	webhookExecutionStore := database.ProvideWebhookExecutionStore(db)
@@ -593,25 +600,26 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 		return nil, err
 	}
 	localRegistry := docker.LocalRegistryProvider(app, manifestService, blobRepository, registryRepository, registryFinder, manifestRepository, registryBlobRepository, mediaTypesRepository, tagRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, gcService, transactor, quarantineArtifactRepository, replicationReporter, bucketService)
-	upstreamProxyConfigRepository := database2.ProvideUpstreamDao(db, registryRepository, spaceFinder)
 	proxyController := docker.ProvideProxyController(localRegistry, manifestService, secretService, spaceFinder)
 	remoteRegistry := docker.RemoteRegistryProvider(localRegistry, app, upstreamProxyConfigRepository, spaceFinder, secretService, proxyController)
 	quarantineService := quarantine.ProvideService(quarantineArtifactRepository, manifestRepository)
-	evictor3 := quarantine.ProvideEvictorQuarantine(pubSub)
-	cache3 := quarantine.ProvideQuarantineCache(ctx, quarantineService, evictor3)
-	finder := quarantine.ProvideFinder(quarantineService, cache3, evictor3)
+	evictor4 := quarantine.ProvideEvictorQuarantine(pubSub)
+	cache3 := quarantine.ProvideQuarantineCache(ctx, quarantineService, evictor4)
+	finder := quarantine.ProvideFinder(quarantineService, cache3, evictor4)
 	coreController := pkg.CoreControllerProvider(registryRepository, finder)
 	dbStore := docker.DBStoreProvider(blobRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, manifestRepository, quarantineArtifactRepository)
 	dockerController := docker.ControllerProvider(localRegistry, remoteRegistry, coreController, spaceStore, authorizer, dbStore, spaceFinder)
-	evictor4 := publicaccess2.ProvideEvictorPublicAccess(pubSub)
-	publicaccessCache := publicaccess2.ProvidePublicAccessCache(ctx, publicaccessService, evictor4)
-	cacheService := publicaccess2.ProvideRegistryPublicAccess(publicaccessService, publicaccessCache, evictor4)
+	evictor5 := publicaccess2.ProvideEvictorPublicAccess(pubSub)
+	publicaccessCache := publicaccess2.ProvidePublicAccessCache(ctx, publicaccessService, evictor5)
+	cacheService := publicaccess2.ProvideRegistryPublicAccess(publicaccessService, publicaccessCache, evictor5)
 	handler := api2.NewHandlerProvider(dockerController, spaceFinder, spaceStore, tokenStore, controller, authenticator, provider, authorizer, config, registryFinder, cacheService)
 	registryOCIHandler := router.OCIHandlerProvider(handler)
 	genericBlobRepository := database2.ProvideGenericBlobDao(db)
 	nodesRepository := database2.ProvideNodeDao(db)
 	fileManager := filemanager.Provider(registryRepository, genericBlobRepository, nodesRepository, transactor, config, storageService, bucketService, replicationReporter)
 	cleanupPolicyRepository := database2.ProvideCleanupPolicyDao(db, transactor)
+	accessor := dbtx.ProvideAccessor(accessorTx)
+	udpService := udp.ProvideNoop()
 	webhooksRepository := database2.ProvideWebhookDao(db)
 	webhooksExecutionRepository := database2.ProvideWebhookExecutionDao(db)
 	readerFactory3, err := artifact.ProvideReaderFactory(eventsSystem)
@@ -632,7 +640,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	registryHelper := cargo.LocalRegistryHelperProvider(fileManager, artifactRepository, spaceFinder)
 	interfacesRegistryHelper := helpers.ProvideRegistryHelper(artifactRepository, fileManager, imageRepository, artifactReporter, asyncprocessingReporter, transactor, provider, config)
 	packageWrapper := helpers.ProvidePackageWrapperProvider(interfacesRegistryHelper, registryFinder, registryHelper)
-	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, storageDriver, spaceFinder, transactor, authenticator, provider, authorizer, auditService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, registryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder)
+	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, storageDriver, spaceFinder, transactor, accessor, authenticator, provider, authorizer, auditService, udpService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, registryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder)
 	packageTagRepository := database2.ProvidePackageTagDao(db)
 	localBase := base.LocalBaseProvider(registryRepository, registryFinder, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService)
 	mavenDBStore := maven.DBStoreProvider(registryRepository, imageRepository, artifactRepository, spaceStore, bandwidthStatRepository, downloadStatRepository, nodesRepository, upstreamProxyConfigRepository)
