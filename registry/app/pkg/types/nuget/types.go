@@ -359,25 +359,22 @@ type CatalogEntry struct {
 	ID                string `json:"id"`
 	Version           string `json:"version"`
 	Description       string `json:"description"`
-	//nolint: tagliatelle
-	ReleaseNotes string `json:"releaseNotes,omitempty"`
-	Authors      string `json:"authors"`
+	Authors           string `json:"authors"`
 	//nolint: tagliatelle
 	RequireLicenseAcceptance bool `json:"requireLicenseAcceptance"`
 	//nolint: tagliatelle
-	ProjectURL string `json:"projectURL,omitempty"`
+	ProjectURL string `json:"projectUrl,omitempty"`
 	//nolint: tagliatelle
 	DependencyGroups []*PackageDependencyGroup `json:"dependencyGroups,omitempty"`
-	Owners           string                    `json:"owners,omitempty"`
-	License          string                    `json:"license,omitempty"`
 	//nolint: tagliatelle
-	LicenseURL string      `json:"licenseUrl,omitempty"`
-	Tags       string      `json:"tags,omitempty"`
-	Title      string      `json:"title,omitempty"`
-	Copyright  string      `json:"copyright,omitempty"`
-	Published  time.Time   `json:"published"`
-	Readme     string      `json:"readme,omitempty"`
-	Repository *Repository `json:"repository,omitempty"`
+	LicenseExpression string `json:"licenseExpression,omitempty"`
+	//nolint: tagliatelle
+	LicenseURL string `json:"licenseUrl,omitempty"`
+	Tags       string `json:"tags,omitempty"`
+	Title      string `json:"title,omitempty"`
+	Published  string `json:"published,omitempty"`
+	//nolint: tagliatelle
+	ReadmeURL string `json:"readmeUrl,omitempty"`
 }
 
 // https://docs.microsoft.com/en-us/nuget/api/registration-base-url-resource#package-dependency-group
@@ -391,11 +388,4 @@ type PackageDependencyGroup struct {
 type PackageDependency struct {
 	ID    string `json:"id"`
 	Range string `json:"range"`
-}
-
-type Repository struct {
-	Type   string `json:"type,omitempty"`
-	URL    string `json:"url,omitempty"`
-	Commit string `json:"commit,omitempty"`
-	Branch string `json:"branch,omitempty"`
 }

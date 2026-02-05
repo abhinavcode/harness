@@ -649,19 +649,9 @@ func createRegistrationIndexPageItem(baseURL string, info nuget.ArtifactInfo, ar
 		return nil, fmt.Errorf("error unmarshalling nuget metadata: %w", err)
 	}
 
-	var repository *nuget.Repository
-	if metadata.PackageMetadata.Repository != nil {
-		repository = &nuget.Repository{
-			Type:   metadata.PackageMetadata.Repository.Type,
-			URL:    metadata.PackageMetadata.Repository.URL,
-			Commit: metadata.PackageMetadata.Repository.Commit,
-			Branch: metadata.PackageMetadata.Repository.Branch,
-		}
-	}
-
-	licenseValue := ""
+	licenseExpression := ""
 	if metadata.PackageMetadata.License != nil && metadata.PackageMetadata.License.Text != "" {
-		licenseValue = metadata.PackageMetadata.License.Text
+		licenseExpression = metadata.PackageMetadata.License.Text
 	}
 
 	res := &nuget.RegistrationIndexPageItem{
@@ -673,20 +663,16 @@ func createRegistrationIndexPageItem(baseURL string, info nuget.ArtifactInfo, ar
 			ID:                       info.Image,
 			Version:                  artifact.Version,
 			Description:              metadata.PackageMetadata.Description,
-			ReleaseNotes:             metadata.PackageMetadata.ReleaseNotes,
 			Authors:                  metadata.PackageMetadata.Authors,
 			ProjectURL:               metadata.PackageMetadata.ProjectURL,
 			RequireLicenseAcceptance: metadata.PackageMetadata.RequireLicenseAcceptance,
 			DependencyGroups:         createDependencyGroups(metadata),
-			Owners:                   metadata.PackageMetadata.Owners,
-			License:                  licenseValue,
+			LicenseExpression:        licenseExpression,
 			LicenseURL:               metadata.PackageMetadata.LicenseURL,
 			Tags:                     metadata.PackageMetadata.Tags,
 			Title:                    metadata.PackageMetadata.Title,
-			Copyright:                metadata.PackageMetadata.Copyright,
-			Published:                artifact.CreatedAt,
-			Readme:                   metadata.PackageMetadata.Readme,
-			Repository:               repository,
+			Published:                artifact.CreatedAt.Format(time.RFC3339),
+			ReadmeURL:                metadata.PackageMetadata.Readme,
 		},
 	}
 	return res, nil
