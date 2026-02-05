@@ -192,6 +192,7 @@ func (s *RegistryAuditService) LogWithUpstreamProxy(
 
 // convertAuditActionToUDP converts audit.Action to UDP action format.
 func convertAuditActionToUDP(action audit.Action) string {
+	//nolint:exhaustive // Only handle registry-specific actions
 	switch action {
 	case audit.ActionCreated:
 		return udp.ActionRegistryCreated
@@ -206,6 +207,7 @@ func convertAuditActionToUDP(action audit.Action) string {
 
 // convertAuditResourceTypeToUDP converts audit.ResourceType to UDP resource type format.
 func convertAuditResourceTypeToUDP(resourceType audit.ResourceType) string {
+	//nolint:exhaustive // Only handle registry-specific resource types
 	switch resourceType {
 	case audit.ResourceTypeRegistry:
 		return udp.ResourceTypeRegistryVirtual
