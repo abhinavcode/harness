@@ -33,25 +33,25 @@ type RegistryObject struct {
 	registrytypes.Registry
 }
 
-// RegistryAuditObject is used specifically for audit logs to exclude ID field
+// RegistryAuditObject is used specifically for audit logs to exclude ID field.
 type RegistryAuditObject struct {
-	UUID            string                         `yaml:"uuid"`
-	Name            string                         `yaml:"name"`
-	ParentID        int64                          `yaml:"parentid"`
-	RootParentID    int64                          `yaml:"rootparentid"`
-	Description     string                         `yaml:"description"`
-	Type            artifact.RegistryType          `yaml:"type"`
-	PackageType     artifact.PackageType           `yaml:"packagetype"`
-	UpstreamProxies []int64                        `yaml:"upstreamproxies"`
-	AllowedPattern  []string                       `yaml:"allowedpattern"`
-	BlockedPattern  []string                       `yaml:"blockedpattern"`
-	Labels          []string                       `yaml:"labels"`
-	Config          *registrytypes.RegistryConfig  `yaml:"config"`
-	CreatedAt       time.Time                      `yaml:"createdat"`
-	UpdatedAt       time.Time                      `yaml:"updatedat"`
-	CreatedBy       int64                          `yaml:"createdby"`
-	UpdatedBy       int64                          `yaml:"updatedby"`
-	IsPublic        bool                           `yaml:"ispublic"`
+	UUID            string                        `yaml:"uuid"`
+	Name            string                        `yaml:"name"`
+	ParentID        int64                         `yaml:"parentid"`
+	RootParentID    int64                         `yaml:"rootparentid"`
+	Description     string                        `yaml:"description"`
+	Type            artifact.RegistryType         `yaml:"type"`
+	PackageType     artifact.PackageType          `yaml:"packagetype"`
+	UpstreamProxies []int64                       `yaml:"upstreamproxies"`
+	AllowedPattern  []string                      `yaml:"allowedpattern"`
+	BlockedPattern  []string                      `yaml:"blockedpattern"`
+	Labels          []string                      `yaml:"labels"`
+	Config          *registrytypes.RegistryConfig `yaml:"config"`
+	CreatedAt       time.Time                     `yaml:"createdat"`
+	UpdatedAt       time.Time                     `yaml:"updatedat"`
+	CreatedBy       int64                         `yaml:"createdby"`
+	UpdatedBy       int64                         `yaml:"updatedby"`
+	IsPublic        bool                          `yaml:"ispublic"`
 }
 
 type PullRequestObject struct {

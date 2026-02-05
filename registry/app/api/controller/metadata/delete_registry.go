@@ -190,26 +190,7 @@ func (c *APIController) deleteRegistryWithAudit(
 		resourceType = udp.ResourceTypeRegistryUpstreamProxy
 	}
 
-	// Create audit object without ID field
-	registryAuditObj := audit.RegistryAuditObject{
-		UUID:            registry.UUID,
-		Name:            registry.Name,
-		ParentID:        registry.ParentID,
-		RootParentID:    registry.RootParentID,
-		Description:     registry.Description,
-		Type:            registry.Type,
-		PackageType:     registry.PackageType,
-		UpstreamProxies: registry.UpstreamProxies,
-		AllowedPattern:  registry.AllowedPattern,
-		BlockedPattern:  registry.BlockedPattern,
-		Labels:          registry.Labels,
-		Config:          registry.Config,
-		CreatedAt:       registry.CreatedAt,
-		UpdatedAt:       registry.UpdatedAt,
-		CreatedBy:       registry.CreatedBy,
-		UpdatedBy:       registry.UpdatedBy,
-		IsPublic:        registry.IsPublic,
-	}
+	registryAuditObj := getRegistryAuditObject(registry)
 
 	auditErr := c.AuditService.Log(
 		ctx,

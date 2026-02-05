@@ -361,46 +361,8 @@ func (c *APIController) auditVirtualRegistryUpdate(
 		log.Ctx(ctx).Warn().Err(getErr).Msg("failed to fetch registry UUID after update")
 	}
 
-	// Create audit objects without ID field
-	oldAuditObj := audit.RegistryAuditObject{
-		UUID:            oldRegistry.UUID,
-		Name:            oldRegistry.Name,
-		ParentID:        oldRegistry.ParentID,
-		RootParentID:    oldRegistry.RootParentID,
-		Description:     oldRegistry.Description,
-		Type:            oldRegistry.Type,
-		PackageType:     oldRegistry.PackageType,
-		UpstreamProxies: oldRegistry.UpstreamProxies,
-		AllowedPattern:  oldRegistry.AllowedPattern,
-		BlockedPattern:  oldRegistry.BlockedPattern,
-		Labels:          oldRegistry.Labels,
-		Config:          oldRegistry.Config,
-		CreatedAt:       oldRegistry.CreatedAt,
-		UpdatedAt:       oldRegistry.UpdatedAt,
-		CreatedBy:       oldRegistry.CreatedBy,
-		UpdatedBy:       oldRegistry.UpdatedBy,
-		IsPublic:        oldRegistry.IsPublic,
-	}
-
-	newAuditObj := audit.RegistryAuditObject{
-		UUID:            newRegistry.UUID,
-		Name:            newRegistry.Name,
-		ParentID:        newRegistry.ParentID,
-		RootParentID:    newRegistry.RootParentID,
-		Description:     newRegistry.Description,
-		Type:            newRegistry.Type,
-		PackageType:     newRegistry.PackageType,
-		UpstreamProxies: newRegistry.UpstreamProxies,
-		AllowedPattern:  newRegistry.AllowedPattern,
-		BlockedPattern:  newRegistry.BlockedPattern,
-		Labels:          newRegistry.Labels,
-		Config:          newRegistry.Config,
-		CreatedAt:       newRegistry.CreatedAt,
-		UpdatedAt:       newRegistry.UpdatedAt,
-		CreatedBy:       newRegistry.CreatedBy,
-		UpdatedBy:       newRegistry.UpdatedBy,
-		IsPublic:        newRegistry.IsPublic,
-	}
+	oldAuditObj := getRegistryAuditObject(oldRegistry)
+	newAuditObj := getRegistryAuditObject(newRegistry)
 
 	auditErr := c.AuditService.Log(
 		ctx,
