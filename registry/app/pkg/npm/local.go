@@ -37,8 +37,8 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/types/npm"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
-	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store/database/dbtx"
+	"github.com/harness/gitness/types"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -61,7 +61,11 @@ type localRegistry struct {
 }
 
 func (c *localRegistry) HeadPackageMetadata(ctx context.Context, info npm.ArtifactInfo) (bool, error) {
-	return c.localBase.CheckIfVersionExists(ctx, info)
+	artifact, err := c.localBase.CheckIfVersionExists(ctx, info)
+	if err != nil {
+		return false, err
+	}
+	return artifact != nil, nil
 }
 
 func (c *localRegistry) DownloadPackageFile(

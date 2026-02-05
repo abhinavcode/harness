@@ -511,8 +511,6 @@ func (i ImageDao) mapToInternalImage(ctx context.Context, in *types.Image) *imag
 	}
 }
 
-// mapImageDB maps imageDB directly without cascade logic.
-// With explicit cascade soft delete, each image has its definitive deleted_at timestamp.
 func (i ImageDao) mapImageDB(_ context.Context, dst *imageDB) (*types.Image, error) {
 	var deletedAt *time.Time
 	if dst.DeletedAt != nil {

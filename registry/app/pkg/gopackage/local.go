@@ -40,6 +40,7 @@ import (
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/services/webhook"
+	registrytypes "github.com/harness/gitness/registry/types"
 	gitnessstore "github.com/harness/gitness/store"
 	"github.com/harness/gitness/store/database/dbtx"
 )
@@ -102,12 +103,11 @@ func (c *localRegistry) UploadPackage(
 	ctx context.Context, info gopackagetype.ArtifactInfo,
 	modfile io.ReadCloser, zipfile io.ReadCloser,
 ) (*commons.ResponseHeaders, error) {
-	// Check if version exists
-	checkIfVersionExists, err := c.localBase.CheckIfVersionExists(ctx, info)
+	existingArtifact, err := c.localBase.CheckIfVersionExists(ctx, info, registrytypes.WithAllDeleted())
 	if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 		return nil, fmt.Errorf("failed to check if version exists: %w", err)
 	}
-	if checkIfVersionExists {
+	if existingArtifact != nil {
 		return nil, fmt.Errorf("version %s already exists", info.Version)
 	}
 

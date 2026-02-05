@@ -311,12 +311,12 @@ func (c *localRegistry) UploadPackage(
 	info.Version = normalisedVersion
 	info.Metadata = metadata
 	if fileBundleType == SymbolsFile {
-		versionExists, err3 := c.localBase.CheckIfVersionExists(ctx, info)
+		artifact, err3 := c.localBase.CheckIfVersionExists(ctx, info)
 		if err3 != nil {
 			return headers, "", fmt.Errorf(
 				"failed to check package version existence for id: %s , version: %s "+
 					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
-		} else if !versionExists {
+		} else if artifact == nil {
 			return headers, "", fmt.Errorf(
 				"can't push symbol package as package doesn't exists for id: %s , version: %s "+
 					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)

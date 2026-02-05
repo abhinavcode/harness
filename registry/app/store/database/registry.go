@@ -526,32 +526,23 @@ func (r registryDao) fetchArtifactCounts(
 		return make(map[int64]int64), nil
 	}
 
-	var query string
+	// Build soft delete filter clause
+	var softDeleteClause string
 	switch softDeleteFilter {
-	case types.SoftDeleteFilterInclude:
-		query = `
-			SELECT image_registry_id, COUNT(images.image_id) AS count
-			FROM images
-			WHERE image_registry_id IN (?)
-			GROUP BY image_registry_id
-		`
 	case types.SoftDeleteFilterExclude:
-		query = `
-			SELECT image_registry_id, COUNT(image_id) AS count
-			FROM images
-			WHERE image_registry_id IN (?)
-			  AND image_deleted_at IS NULL
-			GROUP BY image_registry_id
-		`
+		softDeleteClause = " AND image_deleted_at IS NULL"
 	case types.SoftDeleteFilterOnly:
-		query = `
-			SELECT image_registry_id, COUNT(image_id) AS count
-			FROM images
-			WHERE image_registry_id IN (?)
-			  AND image_deleted_at IS NOT NULL
-			GROUP BY image_registry_id
-		`
+		softDeleteClause = " AND image_deleted_at IS NOT NULL"
+	case types.SoftDeleteFilterInclude:
+		softDeleteClause = ""
 	}
+
+	query := fmt.Sprintf(`
+		SELECT image_registry_id, COUNT(image_id) AS count
+		FROM images
+		WHERE image_registry_id IN (?) %s
+		GROUP BY image_registry_id
+	`, softDeleteClause)
 
 	db := dbtx.GetAccessor(ctx, r.db)
 	sql, args, err := sqlx.In(query, registryIDs)
@@ -577,7 +568,7 @@ func (r registryDao) fetchArtifactCounts(
 	return counts, nil
 }
 
-// fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs with soft delete filtering.
+// fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs.
 func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
@@ -644,10 +635,12 @@ func (r registryDao) fetchGenericBlobSizes(
 			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
 			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
 			  AND n.node_registry_id IN (?)`
+
 		var filterCondition string
-		if softDeleteFilter == types.SoftDeleteFilterExclude {
+		switch softDeleteFilter {
+		case types.SoftDeleteFilterExclude:
 			filterCondition = " AND (i.image_id IS NULL OR (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL))"
-		} else { // SoftDeleteFilterOnly
+		case types.SoftDeleteFilterOnly:
 			filterCondition = " AND (i.image_id IS NOT NULL AND a.artifact_id IS NOT NULL AND a.artifact_deleted_at IS NOT NULL)"
 		}
 		query = baseQuery + filterCondition + `
@@ -679,7 +672,7 @@ func (r registryDao) fetchGenericBlobSizes(
 	return sizes, nil
 }
 
-// fetchDownloadCounts fetches download counts for given registry IDs with soft delete filtering.
+// fetchDownloadCounts fetches download counts for given registry IDs.
 func (r registryDao) fetchDownloadCounts(ctx context.Context, registryIDs []int64) (map[int64]int64, error) {
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
