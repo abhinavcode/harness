@@ -489,4 +489,3 @@ func (c *APIController) GetArtifactFilesRequestInfo(
 		searchTerm:              searchTerm,
 	}, nil
 }
-

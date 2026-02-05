@@ -111,6 +111,7 @@ func NewAPIHandler(
 		nil,
 		upstreamproxyDao,
 		tagDao,
+		metadata.NewNoOpRegistryAuditService(),
 		manifestDao,
 		cleanupPolicyDao,
 		imageDao,

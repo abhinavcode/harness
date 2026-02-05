@@ -62,7 +62,7 @@ type APIController struct {
 	Authorizer                   authz.Authorizer
 	AuditService                 audit.Service
 	UDPService                   udp.Service
-	RegistryAuditService         *RegistryAuditService
+	RegistryAuditService         RegistryAuditService
 	ArtifactStore                store.ArtifactRepository
 	WebhooksRepository           store.WebhooksRepository
 	WebhooksExecutionRepository  store.WebhooksExecutionRepository
@@ -91,6 +91,7 @@ func NewAPIController(
 	genericBlobStore store.GenericBlobRepository,
 	upstreamProxyStore store.UpstreamProxyConfigRepository,
 	tagStore store.TagRepository,
+	registryAuditService RegistryAuditService,
 	manifestStore store.ManifestRepository,
 	cleanupPolicyStore store.CleanupPolicyRepository,
 	imageStore store.ImageRepository,
@@ -140,7 +141,7 @@ func NewAPIController(
 		Authorizer:                   authorizer,
 		AuditService:                 auditService,
 		UDPService:                   udpService,
-		RegistryAuditService:         NewRegistryAuditService(auditService, udpService),
+		RegistryAuditService:         registryAuditService,
 		ArtifactStore:                artifactStore,
 		WebhooksRepository:           webhooksRepository,
 		WebhooksExecutionRepository:  webhooksExecutionRepository,

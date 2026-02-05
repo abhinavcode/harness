@@ -192,6 +192,8 @@ func (c *APIController) deleteRegistryWithAudit(
 		audit.ActionDeleted,
 		registry,
 		nil,
+		nil,
+		nil,
 		principal,
 		parentRef,
 		resourceType,

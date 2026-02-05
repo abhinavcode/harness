@@ -259,7 +259,7 @@ func (c *APIController) createUpstreamProxyWithAudit(
 		UpdatedBy:    upstreamProxy.UpdatedBy,
 	}
 
-	c.RegistryAuditService.LogWithUpstreamProxy(
+	c.RegistryAuditService.Log(
 		ctx,
 		audit.ActionCreated,
 		nil,
@@ -268,6 +268,7 @@ func (c *APIController) createUpstreamProxyWithAudit(
 		upstreamProxyForAudit,
 		principal,
 		parentRef,
+		audit.ResourceTypeRegistryUpstreamProxy,
 	)
 
 	return id, err
@@ -310,6 +311,8 @@ func (c *APIController) createRegistry(
 			audit.ActionCreated,
 			nil,
 			registry,
+			nil,
+			nil,
 			*principal,
 			parentRef,
 			audit.ResourceTypeRegistry,

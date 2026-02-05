@@ -267,7 +267,7 @@ func (c *APIController) auditUpstreamProxyUpdate(
 		return err
 	}
 
-	c.RegistryAuditService.LogWithUpstreamProxy(
+	c.RegistryAuditService.Log(
 		ctx,
 		audit.ActionUpdated,
 		oldRegistry,
@@ -276,6 +276,7 @@ func (c *APIController) auditUpstreamProxyUpdate(
 		updatedUpstreamProxy,
 		principal,
 		parentRef,
+		audit.ResourceTypeRegistryUpstreamProxy,
 	)
 
 	return nil
@@ -306,6 +307,8 @@ func (c *APIController) auditVirtualRegistryUpdate(
 		audit.ActionUpdated,
 		oldRegistry,
 		newRegistry,
+		nil,
+		nil,
 		principal,
 		parentRef,
 		audit.ResourceTypeRegistry,
