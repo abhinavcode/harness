@@ -182,27 +182,23 @@ func (c *APIController) deleteRegistryWithAudit(
 		return err
 	}
 
-	typeRegistry := audit.ResourceTypeRegistry
+	resourceType := audit.ResourceTypeRegistry
 	if registry.Type == artifact.RegistryTypeUPSTREAM {
-		typeRegistry = audit.ResourceTypeRegistryUpstreamProxy
+		resourceType = audit.ResourceTypeRegistryUpstreamProxy
 	}
-	auditErr := c.AuditService.Log(
+
+	c.RegistryAuditService.Log(
 		ctx,
-		principal,
-		audit.NewResource(typeRegistry, registry.Name),
 		audit.ActionDeleted,
+		registry,
+		nil,
+		nil,
+		nil,
+		principal,
 		parentRef,
-		audit.WithOldObject(
-			audit.RegistryObject{
-				Registry: *registry,
-			},
-		),
-		audit.WithData("registry name", registry.Name),
+		resourceType,
 	)
 
-	if auditErr != nil {
-		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for delete registry operation: %s", auditErr)
-	}
 	return err
 }
 

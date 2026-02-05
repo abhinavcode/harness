@@ -119,23 +119,31 @@ func (c *APIController) ModifyRegistry(
 	if err != nil {
 		return throwModifyRegistry500Error(err), err
 	}
+
+	// Store old upstream proxy data BEFORE update for audit
+	oldUpstreamProxy := upstreamproxyEntity
+
 	err = c.tx.WithTx(
 		ctx, func(ctx context.Context) error {
-			err = c.updateRegistryWithAudit(ctx, repoEntity, registry, session.Principal, regInfo.ParentRef)
-
+			err = c.RegFinder.Update(ctx, registry)
 			if err != nil {
 				return fmt.Errorf("failed to update registry: %w", err)
 			}
 
-			err = c.updateUpstreamProxyWithAudit(
-				ctx, upstreamproxy, session.Principal, regInfo.ParentRef, registry.Name,
-			)
-
+			err = c.UpstreamProxyStore.Update(ctx, upstreamproxy)
 			if err != nil {
 				return fmt.Errorf("failed to update upstream proxy: %w", err)
 			}
 			return nil
 		},
+	)
+	if err != nil {
+		return throwModifyRegistry500Error(err), err
+	}
+
+	// Audit and UDP event after transaction
+	err = c.auditUpstreamProxyUpdate(
+		ctx, repoEntity, registry, oldUpstreamProxy, upstreamproxy, session.Principal, regInfo.ParentRef,
 	)
 	if err != nil {
 		return throwModifyRegistry500Error(err), err
@@ -203,8 +211,15 @@ func (c *APIController) updateVirtualRegistry(
 		err = c.PackageWrapper.ReportBuildRegistryIndexEvent(ctx, registry.ID, make([]types.SourceRef, 0))
 		log.Error().Err(err).Msg("failed to report build registry index event")
 	}
-	err = c.updateRegistryWithAudit(ctx, repoEntity, registry, session.Principal, regInfo.ParentRef)
 
+	// Update registry in database
+	err = c.RegFinder.Update(ctx, registry)
+	if err != nil {
+		return throwModifyRegistry500Error(err), nil
+	}
+
+	// Audit and UDP event after update
+	err = c.auditVirtualRegistryUpdate(ctx, repoEntity, registry, session.Principal, regInfo.ParentRef)
 	if err != nil {
 		return throwModifyRegistry500Error(err), nil
 	}
@@ -236,93 +251,70 @@ func (c *APIController) updateVirtualRegistry(
 	}, nil
 }
 
-func (c *APIController) updateUpstreamProxyWithAudit(
-	ctx context.Context, upstreamProxy *types.UpstreamProxyConfig,
-	principal types2.Principal, parentRef string, registryName string,
+func (c *APIController) auditUpstreamProxyUpdate(
+	ctx context.Context,
+	oldRegistry *types.Registry,
+	newRegistry *types.Registry,
+	oldUpstreamProxy *types.UpstreamProxy,
+	newUpstreamProxy *types.UpstreamProxyConfig,
+	principal types2.Principal,
+	parentRef string,
 ) error {
-	existingUpstreamProxy, err := c.UpstreamProxyStore.Get(ctx, upstreamProxy.RegistryID)
+	// Fetch the updated upstream proxy to get latest data
+	updatedUpstreamProxy, err := c.UpstreamProxyStore.Get(ctx, newUpstreamProxy.RegistryID)
 	if err != nil {
-		log.Ctx(ctx).Warn().Msgf(
-			"failed to fig upstream proxy config for: %d",
-			upstreamProxy.RegistryID,
-		)
-	}
-
-	err = c.UpstreamProxyStore.Update(ctx, upstreamProxy)
-	if err != nil {
+		log.Ctx(ctx).Warn().Msgf("failed to get updated upstream proxy config for: %d", newUpstreamProxy.RegistryID)
 		return err
 	}
-	if existingUpstreamProxy != nil {
-		auditErr := c.AuditService.Log(
-			ctx,
-			principal,
-			audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, registryName),
-			audit.ActionUpdated,
-			parentRef,
-			audit.WithOldObject(
-				audit.RegistryUpstreamProxyConfigObject{
-					ID:         existingUpstreamProxy.ID,
-					RegistryID: existingUpstreamProxy.RegistryID,
-					Source:     existingUpstreamProxy.Source,
-					URL:        existingUpstreamProxy.RepoURL,
-					AuthType:   existingUpstreamProxy.RepoAuthType,
-					CreatedAt:  existingUpstreamProxy.CreatedAt,
-					UpdatedAt:  existingUpstreamProxy.UpdatedAt,
-					CreatedBy:  existingUpstreamProxy.CreatedBy,
-					UpdatedBy:  existingUpstreamProxy.UpdatedBy,
-				},
-			),
-			audit.WithNewObject(
-				audit.RegistryUpstreamProxyConfigObject{
-					ID:         upstreamProxy.ID,
-					RegistryID: upstreamProxy.RegistryID,
-					Source:     upstreamProxy.Source,
-					URL:        upstreamProxy.URL,
-					AuthType:   upstreamProxy.AuthType,
-					CreatedAt:  upstreamProxy.CreatedAt,
-					UpdatedAt:  upstreamProxy.UpdatedAt,
-					CreatedBy:  upstreamProxy.CreatedBy,
-					UpdatedBy:  upstreamProxy.UpdatedBy,
-				},
-			),
-		)
-		if auditErr != nil {
-			log.Ctx(ctx).Warn().Msgf(
-				"failed to insert audit log for update upstream proxy "+
-					"config operation: %s", auditErr,
-			)
-		}
-	}
-	return err
+
+	c.RegistryAuditService.Log(
+		ctx,
+		audit.ActionUpdated,
+		oldRegistry,
+		newRegistry,
+		oldUpstreamProxy,
+		updatedUpstreamProxy,
+		principal,
+		parentRef,
+		audit.ResourceTypeRegistryUpstreamProxy,
+	)
+
+	return nil
 }
 
-func (c *APIController) updateRegistryWithAudit(
-	ctx context.Context, oldRegistry *types.Registry,
-	newRegistry *types.Registry, principal types2.Principal, parentRef string,
+func (c *APIController) auditVirtualRegistryUpdate(
+	ctx context.Context,
+	oldRegistry *types.Registry,
+	newRegistry *types.Registry,
+	principal types2.Principal,
+	parentRef string,
 ) error {
 	err := c.updatePublicAccess(ctx, parentRef, newRegistry, oldRegistry)
 	if err != nil {
 		return err
 	}
 
-	err = c.RegFinder.Update(ctx, newRegistry)
-	if err != nil {
-		return err
-	}
-	auditErr := c.AuditService.Log(
-		ctx,
-		principal,
-		audit.NewResource(audit.ResourceTypeRegistry, newRegistry.Name),
-		audit.ActionUpdated,
-		parentRef,
-		audit.WithOldObject(oldRegistry),
-		audit.WithNewObject(newRegistry),
-	)
-	if auditErr != nil {
-		log.Ctx(ctx).Warn().Msgf("failed to insert audit log for update registry operation: %s", auditErr)
+	// Fetch the updated registry to get UUID
+	updatedRegistry, getErr := c.RegistryRepository.Get(ctx, newRegistry.ID)
+	if getErr == nil {
+		newRegistry.UUID = updatedRegistry.UUID
+	} else {
+		log.Ctx(ctx).Warn().Err(getErr).Msg("failed to fetch registry UUID after update")
 	}
 
-	return err
+	c.RegistryAuditService.Log(
+		ctx,
+		audit.ActionUpdated,
+		oldRegistry,
+		newRegistry,
+		nil,
+		nil,
+		principal,
+		parentRef,
+		audit.ResourceTypeRegistry,
+	)
+
+	return nil
 }
 
 func (c *APIController) updatePublicAccess(

@@ -29,7 +29,6 @@ import (
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
-	"github.com/harness/gitness/udp"
 
 	"github.com/rs/zerolog/log"
 )
@@ -247,51 +246,29 @@ func (c *APIController) createUpstreamProxyWithAudit(
 		return id, err
 	}
 
-	registryObject := audit.RegistryUpstreamProxyConfigObjectEnhanced{
-		UUID:            registry.UUID,
-		Name:            registry.Name,
-		ParentID:        registry.ParentID,
-		RootParentID:    registry.RootParentID,
-		Description:     registry.Description,
-		Type:            string(registry.Type),
-		PackageType:     string(registry.PackageType),
-		UpstreamProxies: registry.UpstreamProxies,
-		AllowedPattern:  registry.AllowedPattern,
-		BlockedPattern:  registry.BlockedPattern,
-		Labels:          registry.Labels,
-		Source:          upstreamProxy.Source,
-		URL:             upstreamProxy.URL,
-		AuthType:        upstreamProxy.AuthType,
-		CreatedAt:       upstreamProxy.CreatedAt,
-		UpdatedAt:       upstreamProxy.UpdatedAt,
-		CreatedBy:       upstreamProxy.CreatedBy,
-		UpdatedBy:       upstreamProxy.UpdatedBy,
-		IsPublic:        registry.IsPublic,
+	// Convert UpstreamProxyConfig to UpstreamProxy for audit logging
+	upstreamProxyForAudit := &registrytypes.UpstreamProxy{
+		ID:           upstreamProxy.ID,
+		RegistryID:   upstreamProxy.RegistryID,
+		Source:       upstreamProxy.Source,
+		RepoURL:      upstreamProxy.URL,
+		RepoAuthType: upstreamProxy.AuthType,
+		CreatedAt:    upstreamProxy.CreatedAt,
+		UpdatedAt:    upstreamProxy.UpdatedAt,
+		CreatedBy:    upstreamProxy.CreatedBy,
+		UpdatedBy:    upstreamProxy.UpdatedBy,
 	}
 
-	auditErr := c.AuditService.Log(
+	c.RegistryAuditService.Log(
 		ctx,
-		principal,
-		audit.NewResource(audit.ResourceTypeRegistryUpstreamProxy, registry.Name),
 		audit.ActionCreated,
-		parentRef,
-		audit.WithNewObject(registryObject),
-	)
-	if auditErr != nil {
-		log.Ctx(ctx).Warn().Msgf(
-			"failed to insert audit log for create upstream proxy config operation: %s", auditErr,
-		)
-	}
-
-	c.UDPService.InsertEvent(
-		ctx,
-		udp.ActionRegistryCreated,
-		udp.ResourceTypeRegistryUpstreamProxy,
-		registry.Name,
-		parentRef,
-		principal,
-		registryObject,
 		nil,
+		registry,
+		nil,
+		upstreamProxyForAudit,
+		principal,
+		parentRef,
+		audit.ResourceTypeRegistryUpstreamProxy,
 	)
 
 	return id, err
@@ -329,33 +306,16 @@ func (c *APIController) createRegistry(
 	}
 
 	if !skipAudit && principal != nil {
-		auditErr := c.AuditService.Log(
+		c.RegistryAuditService.Log(
 			ctx,
-			*principal,
-			audit.NewResource(audit.ResourceTypeRegistry, registry.Name),
 			audit.ActionCreated,
-			parentRef,
-			audit.WithNewObject(
-				audit.RegistryObject{
-					Registry: *registry,
-				},
-			),
-		)
-		if auditErr != nil {
-			log.Ctx(ctx).Warn().Msgf("failed to insert audit log for create registry operation: %s", auditErr)
-		}
-
-		c.UDPService.InsertEvent(
-			ctx,
-			udp.ActionRegistryCreated,
-			udp.ResourceTypeRegistryVirtual,
-			registry.Name,
-			parentRef,
-			*principal,
-			audit.RegistryObject{
-				Registry: *registry,
-			},
 			nil,
+			registry,
+			nil,
+			nil,
+			*principal,
+			parentRef,
+			audit.ResourceTypeRegistry,
 		)
 	}
 
