@@ -152,7 +152,7 @@ func (c *APIController) FetchArtifactSummary(
 			nil, ociVersion.ArtifactUUID, registry.UUID, nil
 	}
 	art, err := c.ArtifactStore.GetArtifactMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image,
-		version, artifactType)
+		artifactVersion, artifactType)
 
 	if err != nil {
 		return "", "", "", false, "", nil, "", "", err
