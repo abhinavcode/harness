@@ -601,7 +601,7 @@ func (t tagDao) getCoreArtifactsQuery(
 	}
 
 	return query.OrderBy(fmt.Sprintf("%s %s", sortField, sortByOrder)).
-		Limit(uint64(limit)).  // nolint:gosec
+		Limit(uint64(limit)). // nolint:gosec
 		Offset(uint64(offset)) // nolint:gosec
 }
 
@@ -1240,7 +1240,7 @@ func (t tagDao) GetOCIVersionMetadata(
 	}
 
 	q := databaseg.Builder.Select(
-		"r.registry_package_type as package_type, manifest_digest, "+
+		"registry_package_type as package_type, manifest_digest, "+
 			"manifest_created_at as modified_at, manifest_total_size as size, "+
 			"oa.artifact_uuid as artifact_uuid",
 	).
