@@ -92,6 +92,7 @@ import (
 	"github.com/harness/gitness/app/services/cleanup"
 	"github.com/harness/gitness/app/services/codecomments"
 	"github.com/harness/gitness/app/services/codeowners"
+	"github.com/harness/gitness/app/services/dotrange"
 	"github.com/harness/gitness/app/services/exporter"
 	gitspacedeleteeventservice "github.com/harness/gitness/app/services/gitspacedeleteevent"
 	"github.com/harness/gitness/app/services/gitspaceevent"
@@ -158,6 +159,7 @@ import (
 	"github.com/harness/gitness/store/database/dbtx"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/check"
+	"github.com/harness/gitness/udp"
 
 	"github.com/google/wire"
 )
@@ -177,6 +179,7 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		cache.WireSetSpace,
 		cache.WireSetRepo,
 		refcache.WireSet,
+		udp.ProvideNoop,
 		router.WireSet,
 		pullreqservice.WireSet,
 		services.WireSet,
@@ -327,6 +330,7 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		cliserver.ProvideBranchConfig,
 		branch.WireSet,
 		autolink.WireSet,
+		dotrange.WireSet,
 		cargoutils.WireSet,
 		gopackageutils.WireSet,
 		registrypostporcessingevents.ProvideAsyncProcessingReporter,

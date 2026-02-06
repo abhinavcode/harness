@@ -38,6 +38,7 @@ import (
 	"github.com/harness/gitness/registry/utils"
 	coretypes "github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
+	"github.com/harness/gitness/udp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -194,8 +195,7 @@ func TestCreateRegistry(t *testing.T) {
 				mockRegistryRepo.On("Get", mock.Anything, baseInfo.RegistryID).Return(registry, nil).Twice()
 				mockRegFinder.On("Get", mock.Anything, baseInfo.RegistryID).Return(registry, nil).Once()
 				mockSpaceFinder.On("FindByID", mock.Anything, mock.Anything).Return(space, nil).Once()
-				mockPublicAccessService.On("Set", mock.Anything, mock.Anything, mock.Anything,
-					mock.Anything).Return(nil).Once()
+				mockPublicAccessService.On("Set", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 				mockPublicAccessService.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(false, nil).Once()
 
 				// 6. Mock cleanup policy retrieval.
@@ -213,11 +213,10 @@ func TestCreateRegistry(t *testing.T) {
 					mockGenericBlobRepo,
 					nil, // nodesRepo - not needed for this test.
 					mockTransactor,
+					nil, // reporter - not needed for this test.
 					nil, // config - not needed for this test.
 					nil, // storageService - not needed for this test.
 					nil, // bucketService - not needed for this test.
-					nil, // replicationReporter - not needed for this test.
-					nil, // blobCreationDBHook - not needed for this test.
 				)
 
 				// Setup audit service mock.
@@ -239,45 +238,48 @@ func TestCreateRegistry(t *testing.T) {
 
 				packageFactory := factory.NewPackageFactory()
 				packageFactory.Register(pkg.NewDockerPackageType(nil))
-				packageWrapper := helpers.NewPackageWrapper(packageFactory, mockRegFinder)
+				mockPackageWrapper := helpers.NewPackageWrapper(packageFactory, mockRegFinder)
 
 				// Create controller with updated signature.
 				return metadata.NewAPIController(
-					mockRegistryRepo,           // repositoryStore
-					fileManager,                // fileManager
-					nil,                        // blobStore
-					nil,                        // genericBlobStore
-					nil,                        // upstreamProxyStore
-					nil,                        // tagStore
-					nil,                        // manifestStore
-					mockCleanupPolicyRepo,      // cleanupPolicyStore
-					nil,                        // imageStore
-					mockSpaceFinder,            // spaceFinder
-					mockTransactor,             // tx
-					mockURLProvider,            // urlProvider
-					mockAuthorizer,             // authorizer
-					mockAuditService,           // auditService
-					nil,                        // artifactStore
-					nil,                        // webhooksRepository
-					nil,                        // webhooksExecutionRepository
-					mockRegistryMetadataHelper, // registryMetadataHelper
-					nil,                        // webhookService
-					eventReporter,              // artifactEventReporter
-					nil,                        // downloadStatRepository
-					"",                         // setupDetailsAuthHeaderPrefix
-					nil,                        // registryBlobStore
-					mockRegFinder,              // regFinder
-					nil,                        // postProcessingReporter
-					nil,                        // cargoRegistryHelper
-					nil,                        // spaceController
-					nil,                        // quarantineArtifactRepository
-					nil,                        // quarantineFinder
-					nil,                        // spaceStore
-					func(_ context.Context) bool { return true }, // untaggedImagesEnabled
-					packageWrapper,          // packageWrapper
-					mockPublicAccessService, // publicAccess
-					nil,                     // storageService
-					nil,                     // app
+					mockRegistryRepo,
+					fileManager,
+					nil, // blobStore.
+					nil, // genericBlobStore.
+					nil, // upstreamProxyStore.
+					nil, // tagStore.
+					nil, // manifestStore.
+					mockCleanupPolicyRepo,
+					nil, // imageStore.
+					nil, // driver.
+					mockSpaceFinder,
+					mockTransactor,
+					nil, // db.
+					mockURLProvider,
+					mockAuthorizer,
+					mockAuditService,
+					&udp.Noop{}, // udpService.
+					nil,         // artifactStore.
+					nil,         // webhooksRepository.
+					nil,         // webhooksExecutionRepository.
+					mockRegistryMetadataHelper,
+					nil, // webhookService.
+					eventReporter,
+					nil, // downloadStatRepository.
+					"",  // setupDetailsAuthHeaderPrefix.
+					nil, // registryBlobStore.
+					mockRegFinder,
+					nil, // PostProcessingReporter - not needed for this test.
+					nil, // cargoRegistryHelper.
+					nil, // spaceController.
+					nil, // quarantineArtifactRepository.
+					nil, // quarantineFinder.
+					nil, // spaceStore.
+					func(_ context.Context) bool {
+						return true
+					},
+					mockPackageWrapper,
+					mockPublicAccessService,
 				)
 			},
 		},
@@ -303,67 +305,73 @@ func TestCreateRegistry(t *testing.T) {
 				},
 			},
 			setupMocks: func() *metadata.APIController {
-				mockRegistryMetadataHelper := new(mocks.RegistryMetadataHelper)
-				mockRegistryRepo := new(mocks.RegistryRepository)
-				mockRegFinder := new(mocks.RegistryFinder)
-				mockTransactor := new(mocks.Transactor)
-				mockGenericBlobRepo := new(mocks.GenericBlobRepository)
-				mockPublicAccessService := new(mocks.Service)
+				mockRegistryRepo := &mocks.RegistryRepository{}
+				mockGenericBlobRepo := &mocks.GenericBlobRepository{}
+				mockTransactor := &mocks.Transactor{}
+				mockSpaceFinder := &mocks.SpaceFinder{}
+				mockURLProvider := &mocks.Provider{}
+				mockAuthorizer := &mocks.Authorizer{}
+				mockAuditService := &mocks.AuditService{}
+				mockRegistryMetadataHelper := &mocks.RegistryMetadataHelper{}
+				mockRegFinder := &mocks.RegistryFinder{}
+				mockPublicAccessService := &mocks.Service{}
+				mockPackageWrapper := &mocks.MockPackageWrapper{}
 
 				// Setup error case mock.
 				mockRegistryMetadataHelper.On("GetRegistryRequestBaseInfo", mock.Anything, "invalid", "").
 					Return(nil, fmt.Errorf("space not found")).Once()
-				mockPublicAccessService.On("Set", mock.Anything, mock.Anything, mock.Anything,
-					mock.Anything).Return(nil).Once()
+				mockPublicAccessService.On("Set", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 				fileManager := filemanager.NewFileManager(
 					mockRegistryRepo,
 					mockGenericBlobRepo,
 					nil, // nodesRepo - not needed for this test.
 					mockTransactor,
+					nil, // reporter - not needed for this test.
 					nil, // config - not needed for this test.
 					nil, // storageService - not needed for this test.
 					nil, // bucketService - not needed for this test.
-					nil, // replicationReporter - not needed for this test.
-					nil, // blobCreationDBHook - not needed for this test.
 				)
 
 				return metadata.NewAPIController(
-					mockRegistryRepo,           // repositoryStore
-					fileManager,                // fileManager
-					nil,                        // blobStore
-					nil,                        // genericBlobStore
-					nil,                        // upstreamProxyStore
-					nil,                        // tagStore
-					nil,                        // manifestStore
-					nil,                        // cleanupPolicyStore
-					nil,                        // imageStore
-					nil,                        // spaceFinder
-					mockTransactor,             // tx
-					nil,                        // urlProvider
-					nil,                        // authorizer
-					nil,                        // auditService
-					nil,                        // artifactStore
-					nil,                        // webhooksRepository
-					nil,                        // webhooksExecutionRepository
-					mockRegistryMetadataHelper, // registryMetadataHelper
-					nil,                        // webhookService
-					eventReporter,              // artifactEventReporter
-					nil,                        // downloadStatRepository
-					"",                         // setupDetailsAuthHeaderPrefix
-					nil,                        // registryBlobStore
-					mockRegFinder,              // regFinder
-					nil,                        // postProcessingReporter
-					nil,                        // cargoRegistryHelper
-					nil,                        // spaceController
-					nil,                        // quarantineArtifactRepository
-					nil,                        // quarantineFinder
-					nil,                        // spaceStore
-					func(_ context.Context) bool { return true }, // untaggedImagesEnabled
-					nil, // packageWrapper
-					nil, // publicAccess
-					nil, // storageService
-					nil, // app
+					mockRegistryRepo,
+					fileManager,
+					nil, // blobStore.
+					nil, // genericBlobStore.
+					nil, // upstreamProxyStore.
+					nil, // tagStore.
+					nil, // manifestStore.
+					nil, // cleanupPolicyStore.
+					nil, // imageStore.
+					nil, // driver.
+					mockSpaceFinder,
+					mockTransactor,
+					nil, // db.
+					mockURLProvider,
+					mockAuthorizer,
+					mockAuditService,
+					&udp.Noop{}, // udpService.
+					nil,         // artifactStore.
+					nil,         // webhooksRepository.
+					nil,         // webhooksExecutionRepository.
+					mockRegistryMetadataHelper,
+					nil, // webhookService.
+					eventReporter,
+					nil, // downloadStatRepository.
+					"",  // setupDetailsAuthHeaderPrefix.
+					nil, // registryBlobStore.
+					mockRegFinder,
+					nil, // PostProcessingReporter - not needed for this test.
+					nil, // cargoRegistryHelper.
+					nil, // spaceController.
+					nil, // quarantineArtifactRepository.
+					nil, // quarantineFinder.
+					nil, // spaceStore.
+					func(_ context.Context) bool {
+						return true
+					},
+					mockPackageWrapper,
+					mockPublicAccessService,
 				)
 			},
 		},

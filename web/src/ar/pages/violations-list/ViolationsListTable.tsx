@@ -25,7 +25,7 @@ import { useStrings } from '@ar/frameworks/strings'
 
 import {
   DependencyAndVersionCell,
-  PolicySetName,
+  LastEvaluatedAtCell,
   RegistryNameCell,
   StatusCell,
   ViolationActionsCell
@@ -74,16 +74,16 @@ export default function ViolationsListTable(props: ViolationsListTableProps): JS
         width: '100%'
       },
       {
-        Header: getString('violationsList.table.columns.policySet'),
-        accessor: 'policySetName',
-        Cell: PolicySetName,
+        Header: getString('violationsList.table.columns.status'),
+        accessor: 'scanStatus',
+        Cell: StatusCell,
         disableSortBy: true,
         width: '100%'
       },
       {
-        Header: getString('violationsList.table.columns.status'),
-        accessor: 'scanStatus',
-        Cell: StatusCell,
+        Header: getString('violationsList.table.columns.lastEvaluatedAt'),
+        accessor: 'lastEvaluatedAt',
+        Cell: LastEvaluatedAtCell,
         disableSortBy: true,
         width: '100%'
       },

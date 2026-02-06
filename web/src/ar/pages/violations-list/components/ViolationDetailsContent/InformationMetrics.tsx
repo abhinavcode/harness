@@ -33,17 +33,19 @@ function TextMetric(props: TextMetricProps) {
   return (
     <Layout.Vertical spacing="xsmall">
       <Text
-        font={{ variation: FontVariation.BODY }}
+        font={{ variation: FontVariation.BODY, weight: 'semi-bold' }}
         color={Color.GREY_700}
         icon={props.labelIconProps?.name}
-        iconProps={props.labelIconProps}>
+        iconProps={props.labelIconProps}
+        lineClamp={1}>
         {props.label}
       </Text>
       <Text
         font={{ variation: FontVariation.BODY }}
         color={Color.GREY_800}
         icon={props.valueIconProps?.name}
-        iconProps={props.valueIconProps}>
+        iconProps={props.valueIconProps}
+        lineClamp={1}>
         {props.value}
       </Text>
     </Layout.Vertical>
@@ -58,10 +60,11 @@ function LinkMetric(props: LinkMetricProps) {
   return (
     <Layout.Vertical spacing="xsmall">
       <Text
-        font={{ variation: FontVariation.BODY }}
+        font={{ variation: FontVariation.BODY, weight: 'semi-bold' }}
         color={Color.GREY_700}
         icon={props.labelIconProps?.name}
-        iconProps={props.labelIconProps}>
+        iconProps={props.labelIconProps}
+        lineClamp={1}>
         {props.label}
       </Text>
       <Link to={props.linkTo}>
@@ -69,7 +72,8 @@ function LinkMetric(props: LinkMetricProps) {
           font={{ variation: FontVariation.BODY }}
           color={Color.PRIMARY_7}
           icon={props.valueIconProps?.name}
-          iconProps={props.valueIconProps}>
+          iconProps={props.valueIconProps}
+          lineClamp={1}>
           {props.value}
         </Text>
       </Link>
@@ -88,7 +92,7 @@ function ScanStatusMetric(props: StatusMetricProps) {
   return (
     <Layout.Vertical spacing="xsmall">
       <Text
-        font={{ variation: FontVariation.BODY }}
+        font={{ variation: FontVariation.BODY, weight: 'semi-bold' }}
         color={Color.GREY_700}
         icon={props.labelIconProps?.name}
         iconProps={props.labelIconProps}>

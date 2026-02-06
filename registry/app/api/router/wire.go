@@ -53,6 +53,7 @@ import (
 	registrywebhook "github.com/harness/gitness/registry/services/webhook"
 	"github.com/harness/gitness/store/database/dbtx"
 	"github.com/harness/gitness/types"
+	"github.com/harness/gitness/udp"
 
 	"github.com/google/wire"
 )
@@ -77,10 +78,12 @@ func APIHandlerProvider(
 	imageDao store.ImageRepository,
 	spaceFinder refcache.SpaceFinder,
 	tx dbtx.Transactor,
+	db dbtx.Accessor,
 	authenticator authn.Authenticator,
 	urlProvider urlprovider.Provider,
 	authorizer authz.Authorizer,
 	auditService audit.Service,
+	udpService udp.Service,
 	artifactStore store.ArtifactRepository,
 	webhooksRepository store.WebhooksRepository,
 	webhooksExecutionRepository store.WebhooksExecutionRepository,
@@ -102,12 +105,43 @@ func APIHandlerProvider(
 	storageService *storage.Service,
 	app *docker.App,
 ) harness.APIHandler {
-	return harness.NewAPIHandler(repoDao, fileManager, upstreamproxyDao, tagDao, manifestDao, cleanupPolicyDao,
-		imageDao, config.APIURL, spaceFinder, tx, authenticator, urlProvider, authorizer, auditService, artifactStore,
-		webhooksRepository, webhooksExecutionRepository, *webhookService, spacePathStore, artifactEventReporter,
-		downloadStatRepository, gitnessConfig, registryBlobsDao, regFinder, postProcessingReporter, cargoRegistryHelper,
-		spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, publicAccess, quarantineFinder,
-		storageService, app)
+	return harness.NewAPIHandler(
+		repoDao,
+		fileManager,
+		upstreamproxyDao,
+		tagDao,
+		manifestDao,
+		cleanupPolicyDao,
+		imageDao,
+		config.APIURL,
+		spaceFinder,
+		tx,
+		authenticator,
+		urlProvider,
+		authorizer,
+		auditService,
+		udpService,
+		artifactStore,
+		webhooksRepository,
+		webhooksExecutionRepository,
+		*webhookService,
+		spacePathStore,
+		artifactEventReporter,
+		downloadStatRepository,
+		gitnessConfig,
+		registryBlobsDao,
+		regFinder,
+		postProcessingReporter,
+		cargoRegistryHelper,
+		spaceController,
+		quarantineArtifactRepository,
+		spaceStore,
+		packageWrapper,
+		publicAccess,
+		quarantineFinder,
+		storageService,
+		app,
+	)
 }
 
 func OCIHandlerProvider(handlerV2 *hoci.Handler) oci.RegistryOCIHandler {

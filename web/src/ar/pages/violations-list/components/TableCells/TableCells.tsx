@@ -15,9 +15,11 @@
  */
 
 import React from 'react'
+import { Color } from '@harnessio/design-system'
 import type { ArtifactScan } from '@harnessio/react-har-service-client'
+import { Button, ButtonSize, ButtonVariation, Layout, Text } from '@harnessio/uicore'
 import type { TableInstance, ColumnInstance, Row, Cell, CellValue, Renderer } from 'react-table'
-import { Button, ButtonSize, ButtonVariation, Layout } from '@harnessio/uicore'
+
 import TableCells from '@ar/components/TableCells/TableCells'
 import RepositoryIcon from '@ar/frameworks/RepositoryStep/RepositoryIcon'
 import type { RepositoryPackageType } from '@ar/common/types'
@@ -25,8 +27,8 @@ import { useRoutes } from '@ar/hooks'
 import { VersionDetailsTab } from '@ar/pages/version-details/components/VersionDetailsTabs/constants'
 import ScanBadgeComponent from '@ar/components/Badge/ScanBadge'
 import { useStrings } from '@ar/frameworks/strings'
-import useGetPolicySetDetailsPageUrl from '../../hooks/useGetPolicySetDetailsPageUrl'
 import { useViolationDetailsModal } from '../../hooks/useViolationDetailsModal/useViolationDetailsModal'
+import css from './TableCells.module.scss'
 
 type CellTypeWithActions<D extends Record<string, any>, V = any> = TableInstance<D> & {
   column: ColumnInstance<D>
@@ -35,12 +37,31 @@ type CellTypeWithActions<D extends Record<string, any>, V = any> = TableInstance
   value: CellValue<V>
 }
 
+export interface PolicySetSpec {
+  name?: string
+  identifier: string
+  scanId: string
+}
+
 type CellType = Renderer<CellTypeWithActions<ArtifactScan>>
 
 export const DependencyAndVersionCell: CellType = ({ row }) => {
   const { original } = row
-  const { packageName, version, packageType, registryName } = original
+  const { packageName, version, packageType, registryName, scanStatus } = original
   const routes = useRoutes()
+  if (scanStatus === 'BLOCKED') {
+    return (
+      <Layout.Horizontal className={css.dependencyNameCell}>
+        <RepositoryIcon packageType={packageType as RepositoryPackageType} />
+        <Layout.Vertical className={css.labelCellContainer}>
+          <Text color={Color.GREY_800} lineClamp={1}>
+            {packageName}
+          </Text>
+          <Text lineClamp={1}>{version}</Text>
+        </Layout.Vertical>
+      </Layout.Horizontal>
+    )
+  }
   return (
     <Layout.Vertical>
       <TableCells.LinkCell
@@ -73,11 +94,12 @@ export const RegistryNameCell: CellType = ({ row }) => {
   )
 }
 
-export const PolicySetName: CellType = ({ row }) => {
+export const LastEvaluatedAtCell: CellType = ({ row }) => {
   const { original } = row
-  const { policySetName, policySetRef } = original
-  const getPolicySetDetailsPageUrl = useGetPolicySetDetailsPageUrl(policySetRef)
-  return <TableCells.LinkCell linkTo={getPolicySetDetailsPageUrl} label={policySetName || policySetRef} />
+  const { lastEvaluatedAt } = original
+  const { getString } = useStrings()
+  if (!lastEvaluatedAt) return <TableCells.TextCell value={getString('na')} />
+  return <TableCells.LastModifiedCell value={lastEvaluatedAt} />
 }
 
 export const StatusCell: CellType = ({ row }) => {

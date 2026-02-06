@@ -23,22 +23,28 @@ export const mockData: ListArtifactScanResponseResponse = {
       packageType: 'NPM',
       packageName: 'package1',
       registryName: 'registry1',
-      policySetName: 'policy1',
+      policySets: [
+        { policySetName: 'policy1', policySetRef: 'policy1' },
+        { policySetName: 'policy2', policySetRef: 'policy2' },
+        { policySetName: 'policy3', policySetRef: 'policy3' }
+      ],
       scanStatus: 'BLOCKED',
       version: '1.0.0',
-      registryId: '1',
-      policySetRef: 'policy1'
+      registryId: '1'
     },
     {
       id: '2',
       packageType: 'NPM',
       packageName: 'package2',
       registryName: 'registry2',
-      policySetName: 'policy2',
+      policySets: [
+        { policySetName: 'policy1', policySetRef: 'policy1' },
+        { policySetName: 'policy2', policySetRef: 'policy2' },
+        { policySetName: 'policy3', policySetRef: 'policy3' }
+      ],
       scanStatus: 'WARN',
       version: '2.0.0',
-      registryId: '2',
-      policySetRef: 'policy2'
+      registryId: '2'
     }
   ],
   meta: {
@@ -60,6 +66,8 @@ export const mockArtifactScanDetails: ArtifactScanDetails = {
   scanStatus: 'BLOCKED',
   version: '1.0.0',
   registryId: '1',
+  policySetName: 'policy set 1',
+  policySetRef: 'policySetRef1',
   fixVersionDetails: {
     fixVersionAvailable: true,
     currentVersion: '1.0.0',
@@ -67,20 +75,35 @@ export const mockArtifactScanDetails: ArtifactScanDetails = {
   },
   policyFailureDetails: [
     {
-      name: 'Policy 1',
-      description: 'Policy 1 description'
+      policyName: 'Policy 1',
+      policyRef: 'policy1',
+      category: 'Security',
+      vulnerabilities: [
+        {
+          cveId: 'CVE-2023-12345',
+          cvssScore: 10,
+          cvssThreshold: 10
+        },
+        {
+          cveId: 'CVE-2023-54332',
+          cvssScore: 2,
+          cvssThreshold: 8
+        }
+      ]
     },
     {
-      name: 'Policy 2',
-      description: 'Policy 2 description'
+      policyName: 'Policy 2',
+      policyRef: 'policy2',
+      category: 'License',
+      allowedLicenses: ['Apache-2.0', 'MIT'],
+      blockedLicense: 'GPL-3.0'
     },
     {
-      name: 'Policy 3',
-      description: 'Policy 3 description'
-    },
-    {
-      name: 'Policy 4',
-      description: 'Policy 4 description'
+      policyName: 'Policy 3',
+      policyRef: 'policy3',
+      category: 'PackageAge',
+      packageAgeThreshold: '365',
+      publishedOn: '2023-01-01'
     }
   ]
 }

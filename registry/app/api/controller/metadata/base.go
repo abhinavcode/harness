@@ -420,6 +420,8 @@ func (c *APIController) CreateUpstreamProxyResponseJSONResponse(
 		Data: api.Registry{
 			Uuid:           upstreamproxy.RegistryUUID,
 			Identifier:     upstreamproxy.RepoKey,
+			Description:    &upstreamproxy.Description,
+			Labels:         &upstreamproxy.Labels,
 			PackageType:    upstreamproxy.PackageType,
 			Url:            upstreamproxy.RepoURL,
 			AllowedPattern: &allowedPattern,
