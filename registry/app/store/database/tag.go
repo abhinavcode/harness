@@ -1194,6 +1194,7 @@ func (t tagDao) GetTagMetadata(
 	}
 
 	finalQuery := withClause + " " + sql
+	// nolint:gocritic
 	finalArgs := append(ociArtifactsArgs, args...)
 
 	db := dbtx.GetAccessor(ctx, t.db)
@@ -1260,6 +1261,7 @@ func (t tagDao) GetOCIVersionMetadata(
 	}
 
 	finalQuery := withClause + " " + sql
+	// nolint:gocritic
 	finalArgs := append(ociArtifactsArgs, args...)
 
 	db := dbtx.GetAccessor(ctx, t.db)
