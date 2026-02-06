@@ -601,7 +601,7 @@ func (t tagDao) getCoreArtifactsQuery(
 	}
 
 	return query.OrderBy(fmt.Sprintf("%s %s", sortField, sortByOrder)).
-		Limit(uint64(limit)).  // nolint:gosec
+		Limit(uint64(limit)). // nolint:gosec
 		Offset(uint64(offset)) // nolint:gosec
 }
 
@@ -1194,6 +1194,7 @@ func (t tagDao) GetTagMetadata(
 	}
 
 	finalQuery := withClause + " " + sql
+	// nolint:gocritic
 	finalArgs := append(ociArtifactsArgs, args...)
 
 	db := dbtx.GetAccessor(ctx, t.db)
@@ -1260,6 +1261,7 @@ func (t tagDao) GetOCIVersionMetadata(
 	}
 
 	finalQuery := withClause + " " + sql
+	// nolint:gocritic
 	finalArgs := append(ociArtifactsArgs, args...)
 
 	db := dbtx.GetAccessor(ctx, t.db)
