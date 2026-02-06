@@ -23,12 +23,6 @@ import (
 	"strings"
 	"time"
 
-	sq "github.com/Masterminds/squirrel"
-	"github.com/jmoiron/sqlx"
-	"github.com/opencontainers/go-digest"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
-
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/store"
@@ -37,6 +31,12 @@ import (
 	store2 "github.com/harness/gitness/store"
 	databaseg "github.com/harness/gitness/store/database"
 	"github.com/harness/gitness/store/database/dbtx"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
+	"github.com/opencontainers/go-digest"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 const (
