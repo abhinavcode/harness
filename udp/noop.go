@@ -17,23 +17,12 @@ package udp
 import (
 	"context"
 
-	"github.com/harness/gitness/types"
+	"github.com/harness/gitness/audit"
 )
 
 type Noop struct{}
 
-func (n *Noop) InsertEvent(
-	_ context.Context,
-	_ string,
-	_ string,
-	_ string,
-	_ string,
-	_ types.Principal,
-	_ interface{},
-	_ interface{},
-) {
-	// No-op implementation
-}
+func (n *Noop) InsertEvent(_ context.Context, _ *audit.Event, _ string, _ string, _ string, _ string) {}
 
 // ProvideNoop provides a no-op UDP service implementation.
 func ProvideNoop() Service {
