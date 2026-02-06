@@ -104,7 +104,7 @@ func APIHandlerProvider(
 ) harness.APIHandler {
 	return harness.NewAPIHandler(repoDao, fileManager, upstreamproxyDao, tagDao, manifestDao, cleanupPolicyDao,
 		imageDao, config.APIURL, spaceFinder, tx, authenticator, urlProvider, authorizer, auditService, artifactStore,
-		webhooksRepository, webhooksExecutionRepository, *webhookService, spacePathStore, *artifactEventReporter,
+		webhooksRepository, webhooksExecutionRepository, *webhookService, spacePathStore, artifactEventReporter,
 		downloadStatRepository, gitnessConfig, registryBlobsDao, regFinder, postProcessingReporter, cargoRegistryHelper,
 		spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, publicAccess, quarantineFinder,
 		storageService, app)

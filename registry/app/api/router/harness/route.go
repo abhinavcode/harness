@@ -82,7 +82,7 @@ func NewAPIHandler(
 	webhooksExecutionRepository store.WebhooksExecutionRepository,
 	webhookService registrywebhook.Service,
 	spacePathStore corestore.SpacePathStore,
-	artifactEventReporter registryevents.Reporter,
+	artifactEventReporter *registryevents.Reporter,
 	downloadStatRepository store.DownloadStatRepository,
 	gitnessConfig *types.Config,
 	registryBlobsDao store.RegistryBlobRepository,

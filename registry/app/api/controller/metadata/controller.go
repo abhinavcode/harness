@@ -64,7 +64,7 @@ type APIController struct {
 	WebhooksExecutionRepository  store.WebhooksExecutionRepository
 	RegistryMetadataHelper       interfaces.RegistryMetadataHelper
 	WebhookService               webhook.ServiceInterface
-	ArtifactEventReporter        registryevents.Reporter
+	ArtifactEventReporter        *registryevents.Reporter
 	DownloadStatRepository       store.DownloadStatRepository
 	SetupDetailsAuthHeaderPrefix string
 	RegistryBlobStore            store.RegistryBlobRepository
@@ -102,7 +102,7 @@ func NewAPIController(
 	webhooksExecutionRepository store.WebhooksExecutionRepository,
 	registryMetadataHelper interfaces.RegistryMetadataHelper,
 	webhookService webhook.ServiceInterface,
-	artifactEventReporter registryevents.Reporter,
+	artifactEventReporter *registryevents.Reporter,
 	downloadStatRepository store.DownloadStatRepository,
 	setupDetailsAuthHeaderPrefix string,
 	registryBlobStore store.RegistryBlobRepository,
