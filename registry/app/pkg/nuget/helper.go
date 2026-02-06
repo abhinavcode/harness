@@ -672,7 +672,6 @@ func createRegistrationIndexPageItem(baseURL string, info nuget.ArtifactInfo, ar
 			Tags:                     metadata.PackageMetadata.Tags,
 			Title:                    metadata.PackageMetadata.Title,
 			Published:                artifact.CreatedAt.Format(time.RFC3339),
-			ReadmeURL:                metadata.PackageMetadata.Readme,
 		},
 	}
 	return res, nil
