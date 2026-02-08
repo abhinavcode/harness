@@ -19,6 +19,7 @@ import (
 	"github.com/harness/gitness/app/pipeline/resolver"
 	"github.com/harness/gitness/app/server"
 	"github.com/harness/gitness/app/services"
+	"github.com/harness/gitness/http"
 	"github.com/harness/gitness/ssh"
 
 	"github.com/drone/runner-go/poller"
@@ -32,9 +33,16 @@ type System struct {
 	resolverManager *resolver.Manager
 	poller          *poller.Poller
 	services        services.Services
+	metricServer    http.ListenAndServeServer
+}
+
+// ProvideNoOpMetricServer returns a no-op ListenAndServeServer for standalone gitness (metrics served elsewhere or disabled).
+func ProvideNoOpMetricServer() http.ListenAndServeServer {
+	return http.NoOpListenAndServeServer{}
 }
 
 // NewSystem returns a new system structure.
+// metricServer is optional: pass nil or NoOpListenAndServeServer{} for standalone; harness-code injects a real server.
 func NewSystem(
 	bootstrap bootstrap.Bootstrap,
 	server *server.Server,
@@ -42,6 +50,7 @@ func NewSystem(
 	poller *poller.Poller,
 	resolverManager *resolver.Manager,
 	services services.Services,
+	metricServer http.ListenAndServeServer,
 ) *System {
 	return &System{
 		bootstrap:       bootstrap,
@@ -50,5 +59,6 @@ func NewSystem(
 		poller:          poller,
 		resolverManager: resolverManager,
 		services:        services,
+		metricServer:    metricServer,
 	}
 }
