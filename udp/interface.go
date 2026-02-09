@@ -21,5 +21,13 @@ import (
 )
 
 type Service interface {
-	InsertEvent(ctx context.Context, event *audit.Event, module string, mappedAction string, mappedResourceType string, mappedPrincipalType string)
+	InsertEvent(
+		ctx context.Context,
+		event *audit.Event,
+		module string,
+		mappedAction string,
+		mappedResourceType string,
+		mappedPrincipalType string,
+	)
 }
+

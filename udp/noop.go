@@ -22,7 +22,15 @@ import (
 
 type Noop struct{}
 
-func (n *Noop) InsertEvent(_ context.Context, _ *audit.Event, _ string, _ string, _ string, _ string) {}
+func (n *Noop) InsertEvent(
+	_ context.Context,
+	_ *audit.Event,
+	_ string,
+	_ string,
+	_ string,
+	_ string,
+) {
+}
 
 // ProvideNoop provides a no-op UDP service implementation.
 func ProvideNoop() Service {
