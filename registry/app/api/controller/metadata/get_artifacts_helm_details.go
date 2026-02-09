@@ -74,6 +74,7 @@ func (c *APIController) GetHelmArtifactDetails(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		if errors.Is(err, store2.ErrResourceNotFound) {
@@ -147,7 +148,7 @@ func (c *APIController) GetHelmArtifactDetails(
 	}
 
 	art, err := c.ArtifactStore.GetArtifactMetadata(
-		ctx, registry.ParentID, registry.Name, image, parsedDigest.String(), nil,
+		ctx, registry.ParentID, registry.Name, image, parsedDigest.String(), nil, types.WithAllDeleted(),
 	)
 	if err != nil {
 		return getHelmArtifactDetailsErrResponse(err)

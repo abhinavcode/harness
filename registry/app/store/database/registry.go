@@ -642,6 +642,9 @@ func (r registryDao) fetchGenericBlobSizes(
 			filterCondition = " AND (i.image_id IS NULL OR (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL))"
 		case types.SoftDeleteFilterOnly:
 			filterCondition = " AND (i.image_id IS NOT NULL AND a.artifact_id IS NOT NULL AND a.artifact_deleted_at IS NOT NULL)"
+		case types.SoftDeleteFilterInclude:
+			// No filter condition - include all
+			filterCondition = ""
 		}
 		query = baseQuery + filterCondition + `
 			GROUP BY n.node_registry_id

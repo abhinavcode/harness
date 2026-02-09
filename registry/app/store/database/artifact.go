@@ -966,7 +966,7 @@ func (a ArtifactDao) CountArtifactsByRepo(
 		// No filtering - include all
 	}
 
-	if artifactType != nil {
+	if artifactType != nil && *artifactType != "" {
 		q = q.Where("i.image_type = ?", *artifactType)
 	}
 

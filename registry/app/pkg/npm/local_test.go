@@ -46,8 +46,12 @@ import (
 // -----------------------
 
 type mockLocalBase struct {
-	checkIfVersionExists func(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error)
-	download             func(
+	checkIfVersionExists func(
+		ctx context.Context,
+		info pkg.PackageArtifactInfo,
+		opts ...types.QueryOption,
+	) (*types.Artifact, error)
+	download func(
 		ctx context.Context,
 		info pkg.ArtifactInfo, version, filename string,
 	) (*commons.ResponseHeaders, *storage.FileReader, string, error)
@@ -172,8 +176,15 @@ func (m *mockLocalBase) DeleteFile(context.Context, pkg.PackageArtifactInfo, str
 func (m *mockLocalBase) ExistsByFilePath(context.Context, int64, string) (bool, error) {
 	return false, nil
 }
-func (m *mockLocalBase) CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo) (bool, error) {
-	return m.checkIfVersionExists(ctx, info)
+func (m *mockLocalBase) CheckIfVersionExists(
+	ctx context.Context,
+	info pkg.PackageArtifactInfo,
+	opts ...types.QueryOption,
+) (*types.Artifact, error) {
+	if m.checkIfVersionExists != nil {
+		return m.checkIfVersionExists(ctx, info, opts...)
+	}
+	return nil, nil //nolint:nilnil
 }
 func (m *mockLocalBase) DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error {
 	return m.deletePackage(ctx, info)
@@ -570,7 +581,13 @@ func TestHeadAndDownloadAndDeleteDelegation(t *testing.T) {
 	info := sampleArtifactInfo()
 
 	lb := &mockLocalBase{
-		checkIfVersionExists: func(_ context.Context, _ pkg.PackageArtifactInfo) (bool, error) { return true, nil },
+		checkIfVersionExists: func(
+			_ context.Context,
+			_ pkg.PackageArtifactInfo,
+			_ ...types.QueryOption,
+		) (*types.Artifact, error) {
+			return &types.Artifact{ID: 1}, nil
+		},
 		download: func(
 			_ context.Context,
 			_ pkg.ArtifactInfo, _, _ string,

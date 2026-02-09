@@ -106,7 +106,11 @@ type LocalBase interface {
 		imageUUID string, artifactUUID string,
 	)
 
-	CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo, opts ...types.QueryOption) (*types.Artifact, error)
+	CheckIfVersionExists(
+		ctx context.Context,
+		info pkg.PackageArtifactInfo,
+		opts ...types.QueryOption,
+	) (*types.Artifact, error)
 
 	DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error
 
@@ -611,7 +615,11 @@ func (l *localBase) ExistsByFilePath(ctx context.Context, registryID int64, file
 	return exists, err
 }
 
-func (l *localBase) CheckIfVersionExists(ctx context.Context, info pkg.PackageArtifactInfo, opts ...types.QueryOption) (*types.Artifact, error) {
+func (l *localBase) CheckIfVersionExists(
+	ctx context.Context,
+	info pkg.PackageArtifactInfo,
+	opts ...types.QueryOption,
+) (*types.Artifact, error) {
 	artifact, err := l.artifactDao.GetByRegistryImageAndVersion(ctx,
 		info.BaseArtifactInfo().RegistryID,
 		info.BaseArtifactInfo().Image,
@@ -712,7 +720,7 @@ func (l *localBase) CheckIfFileAlreadyExist(
 		return nil
 	}
 
-	dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.WithAllDeleted())
+	dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
 
 	if err != nil && !strings.Contains(err.Error(), "resource not found") {
 		return fmt.Errorf("failed to fetch artifact : [%s] with registry : [%s]", info.Image, info.RegIdentifier)

@@ -41,17 +41,21 @@ import (
 
 const (
 	// OrderDesc is the normalized string to be used for sorting results in descending order.
-	OrderDesc           types.SortOrder = "desc"
-	lessThan            string          = "<"
-	greaterThan         string          = ">"
-	labelSeparatorStart string          = "%^_"
-	labelSeparatorEnd   string          = "^_%"
-	downloadCount       string          = "download_count"
-	imageName           string          = "image_name"
-	driverPostgres      string          = "postgres"
-	name                string          = "name"
-	postgresStringAgg   string          = "string_agg"
-	sqliteGroupConcat   string          = "group_concat"
+	OrderDesc   types.SortOrder = "desc"
+	lessThan    string          = "<"
+	greaterThan string          = ">"
+	// whereImageDeletedAtIsNull is the WHERE clause to filter out soft-deleted images.
+	whereImageDeletedAtIsNull = " AND i.image_deleted_at IS NULL"
+	// whereImageDeletedAtIsNotNull is the WHERE clause to filter only soft-deleted images.
+	whereImageDeletedAtIsNotNull        = " AND i.image_deleted_at IS NOT NULL"
+	labelSeparatorStart          string = "%^_"
+	labelSeparatorEnd            string = "^_%"
+	downloadCount                string = "download_count"
+	imageName                    string = "image_name"
+	driverPostgres               string = "postgres"
+	name                         string = "name"
+	postgresStringAgg            string = "string_agg"
+	sqliteGroupConcat            string = "group_concat"
 	// SQL join clause for joining tags with images by registry and image name.
 	joinTagsWithImages string = " JOIN images i ON i.image_registry_id = t.tag_registry_id" +
 		" AND i.image_name = t.tag_image_name"
@@ -495,10 +499,10 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 		switch softDeleteFilter {
 		case types.SoftDeleteFilterExclude:
 			joinClause = joinTagsWithImages
-			whereClause += " AND i.image_deleted_at IS NULL"
+			whereClause += whereImageDeletedAtIsNull
 		case types.SoftDeleteFilterOnly:
 			joinClause = joinTagsWithImages
-			whereClause += " AND i.image_deleted_at IS NOT NULL"
+			whereClause += whereImageDeletedAtIsNotNull
 		case types.SoftDeleteFilterInclude:
 			// No filtering
 		}
@@ -921,10 +925,10 @@ func (t tagDao) CountAllOCIArtifactsByParentID(
 		switch softDeleteFilter {
 		case types.SoftDeleteFilterExclude:
 			joinClause = joinTagsWithImages
-			whereClause += " AND i.image_deleted_at IS NULL"
+			whereClause += whereImageDeletedAtIsNull
 		case types.SoftDeleteFilterOnly:
 			joinClause = joinTagsWithImages
-			whereClause += " AND i.image_deleted_at IS NOT NULL"
+			whereClause += whereImageDeletedAtIsNotNull
 		case types.SoftDeleteFilterInclude:
 			// No filtering
 		}
