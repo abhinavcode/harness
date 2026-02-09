@@ -601,7 +601,7 @@ func (t tagDao) getCoreArtifactsQuery(
 	}
 
 	return query.OrderBy(fmt.Sprintf("%s %s", sortField, sortByOrder)).
-		Limit(uint64(limit)). // nolint:gosec
+		Limit(uint64(limit)).  // nolint:gosec
 		Offset(uint64(offset)) // nolint:gosec
 }
 
@@ -1153,13 +1153,16 @@ func (t tagDao) GetTagMetadata(
 ) (*types.OciVersionMetadata, error) {
 	var decodeFunction string
 	if t.db.DriverName() == driverPostgres {
-		decodeFunction = "decode(oa.artifact_version, 'hex')"
+		decodeFunction = "decode(a.artifact_version, 'hex')"
 	} else {
-		decodeFunction = "unhex(oa.artifact_version)"
+		decodeFunction = "unhex(a.artifact_version)"
 	}
 
 	ociArtifactsCTE := databaseg.Builder.Select(
-		"a.artifact_uuid, a.artifact_image_id, a.artifact_version",
+		"a.artifact_uuid, a.artifact_image_id," +
+			"CASE  WHEN a.artifact_version ~ '^[0-9A-Fa-f]+$' " +
+			"AND length(a.artifact_version) % 2 = 0 THEN " + decodeFunction +
+			" ELSE NULL END AS version_digest",
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -1180,8 +1183,8 @@ func (t tagDao) GetTagMetadata(
 		Join("registries ON tag_registry_id = registry_id").
 		Join("manifests ON manifest_id = tag_manifest_id").
 		LeftJoin("images i ON i.image_registry_id = registry_id AND i.image_name = tag_image_name").
-		LeftJoin(fmt.Sprintf("oci_artifacts oa ON oa.artifact_image_id = i.image_id AND manifest_digest = %s",
-			decodeFunction)).
+		LeftJoin(fmt.Sprintf("oci_artifacts oa ON oa.artifact_image_id = i.image_id "+
+			"AND oa.version_digest = manifest_digest")).
 		Where(
 			"registry_parent_id = ? AND registry_name = ?"+
 				" AND tag_image_name = ? AND tag_name = ?", parentID, repoKey, imageName, name,
@@ -1221,13 +1224,16 @@ func (t tagDao) GetOCIVersionMetadata(
 
 	var decodeFunction string
 	if t.db.DriverName() == driverPostgres {
-		decodeFunction = "decode(oa.artifact_version, 'hex')"
+		decodeFunction = "decode(a.artifact_version, 'hex')"
 	} else {
-		decodeFunction = "unhex(oa.artifact_version)"
+		decodeFunction = "unhex(a.artifact_version)"
 	}
 
 	ociArtifactsCTE := databaseg.Builder.Select(
-		"a.artifact_uuid, a.artifact_image_id, a.artifact_version",
+		"a.artifact_uuid, a.artifact_image_id," +
+			"CASE  WHEN a.artifact_version ~ '^[0-9A-Fa-f]+$' " +
+			"AND length(a.artifact_version) % 2 = 0 THEN " + decodeFunction +
+			" ELSE NULL END AS version_digest",
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -1247,8 +1253,8 @@ func (t tagDao) GetOCIVersionMetadata(
 		From("manifests").
 		Join("registries ON manifest_registry_id = registry_id").
 		LeftJoin("images i ON i.image_registry_id = registry_id AND i.image_name = manifest_image_name").
-		LeftJoin(fmt.Sprintf("oci_artifacts oa ON oa.artifact_image_id = i.image_id AND manifest_digest = %s",
-			decodeFunction)).
+		LeftJoin(fmt.Sprintf("oci_artifacts oa ON oa.artifact_image_id = i.image_id "+
+			"AND oa.version_digest = manifest_digest")).
 		Where(
 			"registry_parent_id = ? AND registry_name = ?"+
 				" AND manifest_image_name = ? AND manifest_digest = ?", parentID, repoKey, imageName, digestBytes,
