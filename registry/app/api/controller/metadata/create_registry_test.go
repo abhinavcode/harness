@@ -258,8 +258,8 @@ func TestCreateRegistry(t *testing.T) {
 					mockAuthorizer,
 					mockAuditService,
 					nil, // artifactStore.
-				nil, // webhooksRepository.
-				nil, // webhooksExecutionRepository.
+					nil, // webhooksRepository.
+					nil, // webhooksExecutionRepository.
 					mockRegistryMetadataHelper,
 					nil, // webhookService.
 					eventReporter,
@@ -349,8 +349,8 @@ func TestCreateRegistry(t *testing.T) {
 					mockAuthorizer,
 					mockAuditService,
 					nil, // artifactStore.
-				nil, // webhooksRepository.
-				nil, // webhooksExecutionRepository.
+					nil, // webhooksRepository.
+					nil, // webhooksExecutionRepository.
 					mockRegistryMetadataHelper,
 					nil, // webhookService.
 					eventReporter,

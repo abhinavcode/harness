@@ -30,4 +30,3 @@ type Service interface {
 		mappedPrincipalType string,
 	)
 }
-

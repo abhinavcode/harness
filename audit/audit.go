@@ -56,7 +56,7 @@ type Action string
 
 const (
 	ActionCreated    Action = "created"
-	ActionUpdated    Action = "updated"    // update default branch, switching default branch, updating description
+	ActionUpdated    Action = "updated" // update default branch, switching default branch, updating description
 	ActionDeleted    Action = "deleted"
 	ActionUploaded   Action = "uploaded"   // artifact upload
 	ActionDownloaded Action = "downloaded" // artifact download
