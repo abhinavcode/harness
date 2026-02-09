@@ -25,6 +25,7 @@ import (
 	"github.com/harness/gitness/app/auth/authz"
 	"github.com/harness/gitness/app/services/refcache"
 	corestore "github.com/harness/gitness/app/store"
+	gerrors "github.com/harness/gitness/errors"
 	"github.com/harness/gitness/registry/app/api/interfaces"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
@@ -192,7 +193,12 @@ func (c *Controller) GetArtifact(ctx context.Context, info pkg.MavenArtifactInfo
 			body, fileReader,
 		}
 	}
-	result := c.ProxyWrapper(ctx, f, info)
+	result, err := c.ProxyWrapper(ctx, f, info)
+	if err != nil {
+		return &GetArtifactResponse{
+			Errors: []error{err},
+		}
+	}
 	getArtifactResponse, ok := result.(*GetArtifactResponse)
 	if !ok {
 		return &GetArtifactResponse{
@@ -223,7 +229,12 @@ func (c *Controller) HeadArtifact(ctx context.Context, info pkg.MavenArtifactInf
 		headers, e := r.HeadArtifact(ctx, info)
 		return &HeadArtifactResponse{e, headers}
 	}
-	result := c.ProxyWrapper(ctx, f, info)
+	result, err := c.ProxyWrapper(ctx, f, info)
+	if err != nil {
+		return &HeadArtifactResponse{
+			Errors: []error{err},
+		}
+	}
 	headArtifactResponse, ok := result.(*HeadArtifactResponse)
 	if !ok {
 		return &HeadArtifactResponse{
@@ -262,39 +273,47 @@ func (c *Controller) ProxyWrapper(
 	ctx context.Context,
 	f func(registry registrytypes.Registry, a Artifact) Response,
 	info pkg.MavenArtifactInfo,
-) Response {
+) (Response, error) {
 	none := pkg.MavenArtifactInfo{}
 	if info == none {
-		log.Ctx(ctx).Error().Stack().Msg("artifactinfo is not found")
-		return nil
+		err := fmt.Errorf("artifactinfo is not found")
+		log.Ctx(ctx).Error().Stack().Msg(err.Error())
+		return nil, err
 	}
 
 	var response Response
+	var lastErr error
 	requestRepoKey := info.RegIdentifier
 	repos, err := c.GetOrderedRepos(ctx, requestRepoKey, info.Registry)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msgf(
 			"GetOrderedRepos failed: registry=%s, parentID=%d",
 			requestRepoKey, info.BaseInfo.ParentID)
-		return response
+		return response, err
 	}
 	for _, registry := range repos {
 		log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
-		artifact, ok := c.GetArtifactRegistry(ctx, registry).(Registry)
+		art, ok := c.GetArtifactRegistry(ctx, registry).(Registry)
 		if !ok {
 			log.Ctx(ctx).Warn().Msgf("artifact %s is not a registry", registry.Name)
 			continue
 		}
-		if artifact != nil {
-			response = f(registry, artifact)
+		if art != nil {
+			response = f(registry, art)
 			if pkg.IsEmpty(response.GetErrors()) {
-				return response
+				return response, nil
+			}
+			if len(response.GetErrors()) > 0 {
+				lastErr = response.GetErrors()[0]
 			}
 			log.Ctx(ctx).Warn().Msgf("Repository: %s, Type: %s, errors: %v", registry.Name, registry.Type,
 				response.GetErrors())
 		}
 	}
-	return response
+	if lastErr == nil {
+		lastErr = gerrors.NotFoundf("no matching artifacts found in registry %s", requestRepoKey)
+	}
+	return response, lastErr
 }
 
 func (c *Controller) GetOrderedRepos(
