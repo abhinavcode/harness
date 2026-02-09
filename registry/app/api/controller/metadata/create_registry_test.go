@@ -32,13 +32,12 @@ import (
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	"github.com/harness/gitness/registry/app/factory"
 	"github.com/harness/gitness/registry/app/helpers"
-	"github.com/harness/gitness/registry/app/helpers/pkg"
+	pkg "github.com/harness/gitness/registry/app/helpers/pkg"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/registry/utils"
 	coretypes "github.com/harness/gitness/types"
 	gitnessenum "github.com/harness/gitness/types/enum"
-	"github.com/harness/gitness/udp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -258,8 +257,7 @@ func TestCreateRegistry(t *testing.T) {
 					mockURLProvider,
 					mockAuthorizer,
 					mockAuditService,
-					&udp.Noop{}, // udpService.
-					nil,         // artifactStore.
+					nil, // artifactStore.
 					nil,         // webhooksRepository.
 					nil,         // webhooksExecutionRepository.
 					mockRegistryMetadataHelper,
@@ -350,8 +348,7 @@ func TestCreateRegistry(t *testing.T) {
 					mockURLProvider,
 					mockAuthorizer,
 					mockAuditService,
-					&udp.Noop{}, // udpService.
-					nil,         // artifactStore.
+					nil, // artifactStore.
 					nil,         // webhooksRepository.
 					nil,         // webhooksExecutionRepository.
 					mockRegistryMetadataHelper,
