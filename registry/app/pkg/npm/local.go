@@ -37,8 +37,8 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/types/npm"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
+	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store/database/dbtx"
-	"github.com/harness/gitness/types"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
