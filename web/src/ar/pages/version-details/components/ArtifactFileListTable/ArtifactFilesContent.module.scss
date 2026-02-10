@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-import React from 'react'
-
-import ArtifactFilesContent from '@ar/pages/version-details/components/ArtifactFileListTable/ArtifactFilesContent'
-
-export default function PythonVersionFilesContent() {
-  return <ArtifactFilesContent />
+.tableContainer {
+  width: 100%;
 }
