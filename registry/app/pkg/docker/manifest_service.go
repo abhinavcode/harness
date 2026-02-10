@@ -1318,19 +1318,19 @@ func (l *manifestService) DeleteManifest(
 
 			err = l.artifactDao.DeleteByVersionAndImageName(ctx, imageName, newDigest.String(), registry.ID)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to delete artifact for: %s, err: %w", d.String(), err)
 			}
 
 			count, err := l.manifestDao.CountByImageName(ctx, registry.ID, imageName)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to count manifests for image: %s, err: %w", imageName, err)
 			}
 			if count < 1 {
 				err = l.imageDao.DeleteByImageNameAndRegID(
 					ctx, registry.ID, imageName,
 				)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to delete image: %s, err: %w", imageName, err)
 				}
 			}
 
