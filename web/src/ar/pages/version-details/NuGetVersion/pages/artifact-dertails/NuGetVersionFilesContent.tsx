@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-import React, { useContext } from 'react'
+import React from 'react'
 
-import { DEFAULT_PAGE_INDEX } from '@ar/constants'
-import { VersionFilesContext } from '@ar/pages/version-details/context/VersionFilesProvider'
-import ArtifactFileListTable from '@ar/pages/version-details/components/ArtifactFileListTable/ArtifactFileListTable'
+import ArtifactFilesContent from '@ar/pages/version-details/components/ArtifactFileListTable/ArtifactFilesContent'
 
 export default function NuGetVersionFilesContent() {
-  const { data, updateQueryParams, sort } = useContext(VersionFilesContext)
-  return (
-    <ArtifactFileListTable
-      data={data}
-      gotoPage={pageNumber => updateQueryParams({ page: pageNumber })}
-      setSortBy={sortArr => {
-        updateQueryParams({ sort: sortArr, page: DEFAULT_PAGE_INDEX })
-      }}
-      sortBy={sort}
-    />
-  )
+  return <ArtifactFilesContent />
 }
