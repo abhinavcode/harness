@@ -295,7 +295,7 @@ func (c *Controller) ProxyWrapper(
 		log.Ctx(ctx).Info().Msgf("Using Repository: %s, Type: %s", registry.Name, registry.Type)
 		art, ok := c.GetArtifactRegistry(ctx, registry).(Registry)
 		if !ok {
-			log.Ctx(ctx).Warn().Msgf("artifact %s is not a registry", registry.Name)
+			log.Ctx(ctx).Warn().Msgf("Invalid registry type for registry %s", registry.Name)
 			continue
 		}
 		if art != nil {
@@ -310,10 +310,12 @@ func (c *Controller) ProxyWrapper(
 				response.GetErrors())
 		}
 	}
-	if lastErr == nil {
-		lastErr = gerrors.NotFoundf("no matching artifacts found in registry %s", requestRepoKey)
+
+	if lastErr != nil {
+		return response, lastErr
 	}
-	return response, lastErr
+
+	return response, gerrors.NotFoundf("no matching artifacts found in registry %s", requestRepoKey)
 }
 
 func (c *Controller) GetOrderedRepos(
