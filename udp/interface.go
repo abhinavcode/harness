@@ -28,5 +28,5 @@ type Service interface {
 		mappedAction string,
 		mappedResourceType string,
 		mappedPrincipalType string,
-	)
+	) error
 }

@@ -29,7 +29,8 @@ func (n *Noop) InsertEvent(
 	_ string,
 	_ string,
 	_ string,
-) {
+) error {
+	return nil
 }
 
 // ProvideNoop provides a no-op UDP service implementation.
