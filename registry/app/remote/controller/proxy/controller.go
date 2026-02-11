@@ -173,7 +173,7 @@ func (c *controller) UseLocalManifest(
 	if err != nil {
 		if errors.IsRateLimitError(err) { // if rate limit, use localRegistry if it exists, otherwise return error.
 			log.Ctx(ctx).Warn().Msgf("Rate limit error: %v", err)
-			if man != nil && &d != nil {
+			if man != nil && d.Digest != "" {
 				mediaType, payload, _ := man.Payload()
 				return true, &ManifestList{payload, d.Digest.String(), mediaType}, nil
 			}
