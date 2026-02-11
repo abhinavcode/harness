@@ -93,7 +93,12 @@ func (c *Controller) processObjects(
 			sizeLimit,
 		)
 		if checks.SettingsFileSizeLimit > 0 {
-			settingsViolations.FileSizeLimitExceeded = true
+			for _, fileInfo := range preReceiveObjsOut.FindOversizeFilesOutput.FileInfos {
+				if fileInfo.Size > checks.SettingsFileSizeLimit {
+					settingsViolations.FileSizeLimitExceeded = true
+					break
+				}
+			}
 		}
 	}
 
