@@ -36,13 +36,10 @@ type System struct {
 	metricServer    http.ListenAndServeServer
 }
 
-// ProvideNoOpMetricServer returns a no-op ListenAndServeServer for standalone gitness (metrics served elsewhere or disabled).
 func ProvideNoOpMetricServer() http.ListenAndServeServer {
 	return http.NoOpListenAndServeServer{}
 }
 
-// NewSystem returns a new system structure.
-// metricServer is optional: pass nil or NoOpListenAndServeServer{} for standalone; harness-code injects a real server.
 func NewSystem(
 	bootstrap bootstrap.Bootstrap,
 	server *server.Server,

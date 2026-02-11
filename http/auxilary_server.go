@@ -21,7 +21,7 @@ type ListenAndServeServer interface {
 	ListenAndServe() (*errgroup.Group, ShutdownFunction)
 }
 
-// NoOpListenAndServeServer is a no-op implementation of ListenAndServeServer
+// NoOpListenAndServeServer is a no-op implementation of ListenAndServeServer.
 type NoOpListenAndServeServer struct{}
 
 // ListenAndServe returns (nil, nil); callers should skip starting/shutting down when both are nil.
