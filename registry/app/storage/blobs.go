@@ -170,7 +170,7 @@ type OciBlobStore interface {
 	Path() string
 
 	// BucketKey returns the storage bucket key this store writes to.
-	BucketKey() string
+	BucketKey() BucketKey
 }
 
 // GenericBlobStore represent the entire suite of Generic blob related operations. Such an
@@ -193,7 +193,7 @@ type GenericBlobStore interface {
 	StatByDigest(ctx context.Context, rootIdentifier, sha256 string) (int64, error)
 
 	// BucketKey returns the storage bucket key this store writes to.
-	BucketKey() string
+	BucketKey() BucketKey
 }
 
 // GlobalBlobStore combines both OCI and Generic blob store capabilities.

@@ -584,7 +584,6 @@ func (f *fileManager) UploadFileNoDBUpdate(
 		return fileInfo, err
 	}
 
-	// Execute the commit callback immediately since there's no DB transaction
 	if commitCallback != nil {
 		if err = commitCallback(ctx); err != nil {
 			return fileInfo, fmt.Errorf("failed to execute commit callback: %w", err)

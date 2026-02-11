@@ -17,6 +17,7 @@ package hook
 import (
 	"context"
 
+	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/types"
 
 	"github.com/rs/zerolog/log"
@@ -25,7 +26,7 @@ import (
 type BlobEventBase struct {
 	BlobLocator types.BlobLocator
 	ClientIP    string
-	BucketKey   string
+	BucketKey   storage.BucketKey
 }
 
 type BlobCommitEvent struct {
@@ -49,23 +50,23 @@ type BlobActionHook interface {
 type noOpBlobActionHook struct{}
 
 func (b *noOpBlobActionHook) OnRead(ctx context.Context, event BlobReadEvent) error {
-	log.Ctx(ctx).Info().
+	log.Ctx(ctx).Trace().
 		Str("sha256", event.BlobLocator.Digest.String()).
 		Int64("registry_id", event.BlobLocator.RegistryID).
 		Int64("root_parent_id", event.BlobLocator.RootParentID).
-		Str("bucket_key", event.BucketKey).
+		Str("bucket_key", string(event.BucketKey)).
 		Msg("BlobActionHook.OnRead called")
 	return nil
 }
 
 func (b *noOpBlobActionHook) OnCommit(ctx context.Context, event BlobCommitEvent) error {
-	log.Ctx(ctx).Info().
+	log.Ctx(ctx).Trace().
 		Str("sha1", event.Digests.SHA1.String()).
 		Str("sha256", event.Digests.SHA256.String()).
 		Str("sha512", event.Digests.SHA512.String()).
 		Str("md5", event.Digests.MD5.String()).
 		Int64("size", event.Size).
-		Str("bucket_key", event.BucketKey).
+		Str("bucket_key", string(event.BucketKey)).
 		Int64("registry_id", event.BlobLocator.RegistryID).
 		Int64("root_parent_id", event.BlobLocator.RootParentID).
 		Msg("BlobActionHook.OnCommit called")

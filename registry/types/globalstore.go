@@ -15,6 +15,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
 )
@@ -25,6 +27,10 @@ type BlobLocator struct {
 	GenericBlobID uuid.UUID
 	RootParentID  int64
 	RegistryID    int64
+}
+
+func (b BlobLocator) String() string {
+	return fmt.Sprintf("%s:%d:%s:%d:%d", b.Digest, b.BlobID, b.GenericBlobID, b.RootParentID, b.RegistryID)
 }
 
 type StorageLookup struct {

@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+type BucketKey string
+
 var errResumableDigestNotAvailable = errors.New("resumable digest not available")
 
 const (

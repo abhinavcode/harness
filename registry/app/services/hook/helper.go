@@ -48,7 +48,7 @@ func EmitCommitEventCallback(
 			log.Ctx(ctx).Error().Err(err).
 				Str("sha256", event.Digests.SHA256.String()).
 				Int64("size", event.Size).
-				Str("bucket_key", event.BucketKey).
+				Str("bucket_key", string(event.BucketKey)).
 				Int64("registry_id", event.BlobLocator.RegistryID).
 				Int64("root_parent_id", event.BlobLocator.RootParentID).
 				Msg("failed to emit commit event")
