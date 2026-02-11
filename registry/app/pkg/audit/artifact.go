@@ -33,9 +33,9 @@ const (
 	AuditKeyImageUUID    = "imageUuid"
 )
 
-// LogArtifactPush logs audit trail for artifact push/upload operations.
+// LogArtifactUpload logs audit trail for artifact push/upload operations.
 // This is a centralized audit utility that can be called from any package type handler.
-func LogArtifactPush(
+func LogArtifactUpload(
 	ctx context.Context,
 	auditService audit.Service,
 	spaceFinder refcache.SpaceFinder,
@@ -85,6 +85,53 @@ func LogArtifactPush(
 	if err != nil {
 		log.Ctx(ctx).Warn().Err(err).Msgf(
 			"failed to insert audit log for upload artifact operation: %s",
+			artifactIdentifier,
+		)
+	}
+}
+
+// LogArtifactDownload logs audit trail for artifact download/pull operations.
+func LogArtifactDownload(
+	ctx context.Context,
+	auditService audit.Service,
+	spaceFinder refcache.SpaceFinder,
+	info pkg.ArtifactInfo,
+	version string,
+	artifactUUID string,
+) {
+	session, ok := request.AuthSessionFrom(ctx)
+	if !ok {
+		log.Ctx(ctx).Debug().Msg("no auth session for audit log")
+		return
+	}
+
+	parentSpace, err := spaceFinder.FindByID(ctx, info.ParentID)
+	if err != nil {
+		log.Ctx(ctx).Warn().Err(err).Msg("failed to get parent space for audit log")
+		return
+	}
+
+	packageName := info.Image
+	artifactIdentifier := fmt.Sprintf("%s:%s", packageName, version)
+	if version == "" {
+		artifactIdentifier = packageName
+	}
+
+	err = auditService.Log(
+		ctx,
+		session.Principal,
+		audit.NewResource(
+			audit.ResourceTypeRegistryArtifact,
+			artifactIdentifier,
+			AuditKeyResourceName, artifactIdentifier,
+			AuditKeyArtifactUUID, artifactUUID,
+		),
+		audit.ActionDownloaded,
+		parentSpace.Path,
+	)
+	if err != nil {
+		log.Ctx(ctx).Warn().Err(err).Msgf(
+			"failed to insert audit log for download artifact operation: %s",
 			artifactIdentifier,
 		)
 	}

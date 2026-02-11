@@ -200,7 +200,7 @@ func (c Controller) UploadArtifact(
 	}
 
 	// Audit log for artifact push
-	registryaudit.LogArtifactPush(
+	registryaudit.LogArtifactUpload(
 		ctx, c.auditService, c.spaceFinder, *info.ArtifactInfo,
 		info.Version, imageUUID, artifactUUID,
 	)
