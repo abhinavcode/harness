@@ -75,7 +75,8 @@ func (s *Service) OciBlobsStore(
 	})
 	if err != nil {
 		// TODO(Arvind): Return this error
-		log.Ctx(ctx).Error().Err(err).Msgf("Failed to resolve storage target for %s", locator.String())
+		log.Ctx(ctx).Fatal().Err(err).Msgf("Failed to resolve storage target for %s", locator.String())
+		return nil
 	}
 
 	if !target.IsDefault() {
@@ -105,7 +106,8 @@ func (s *Service) GenericBlobsStore(
 
 	if err != nil {
 		// TODO(Arvind): Return this error
-		log.Ctx(ctx).Error().Err(err).Msgf("Failed to resolve storage target for %s", locator.String())
+		log.Ctx(ctx).Fatal().Err(err).Msgf("Failed to resolve storage target for %s", locator.String())
+		return nil
 	}
 
 	if !target.IsDefault() {
