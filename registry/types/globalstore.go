@@ -21,6 +21,10 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+type BucketKey string
+
+func (k BucketKey) String() string { return string(k) }
+
 type BlobLocator struct {
 	Digest        digest.Digest
 	BlobID        int64

@@ -17,7 +17,6 @@ package hook
 import (
 	"context"
 
-	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/types"
 
 	"github.com/rs/zerolog/log"
@@ -26,7 +25,7 @@ import (
 type BlobEventBase struct {
 	BlobLocator types.BlobLocator
 	ClientIP    string
-	BucketKey   storage.BucketKey
+	BucketKey   types.BucketKey
 }
 
 type BlobCommitEvent struct {

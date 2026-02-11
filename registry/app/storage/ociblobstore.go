@@ -25,6 +25,7 @@ import (
 	"github.com/harness/gitness/registry/app/dist_temp/dcontext"
 	"github.com/harness/gitness/registry/app/driver"
 	"github.com/harness/gitness/registry/app/manifest"
+	"github.com/harness/gitness/registry/types"
 
 	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
@@ -322,6 +323,6 @@ func (bs *ociBlobStore) newBlobUpload(
 	return bw, nil
 }
 
-func (bs *ociBlobStore) BucketKey() BucketKey {
+func (bs *ociBlobStore) BucketKey() types.BucketKey {
 	return DefaultBucketKey
 }

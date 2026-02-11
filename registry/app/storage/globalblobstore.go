@@ -43,7 +43,7 @@ Important notes:
  2. All Path for S3 should remain here.
 */
 type globalBlobStore struct {
-	bucketKey              BucketKey
+	bucketKey              types.BucketKey
 	driver                 driver.StorageDriver
 	ctx                    context.Context
 	resumableDigestEnabled bool
@@ -377,7 +377,7 @@ func (bs *globalBlobStore) StatByDigest(ctx context.Context, rootIdentifier, sha
 	return fileInfo.Size(), nil
 }
 
-func (bs *globalBlobStore) BucketKey() BucketKey {
+func (bs *globalBlobStore) BucketKey() types.BucketKey {
 	log.Ctx(bs.ctx).Debug().
 		Str("method", "globalBlobStore.BucketKey").
 		Str("bucket_key", string(bs.bucketKey)).

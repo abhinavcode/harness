@@ -22,12 +22,12 @@ import (
 )
 
 const (
-	DefaultBucketKey BucketKey = "default"
+	DefaultBucketKey types.BucketKey = "default"
 )
 
 type StorageTarget struct {
 	Driver    driver.StorageDriver
-	BucketKey BucketKey
+	BucketKey types.BucketKey
 }
 
 func (t StorageTarget) IsDefault() bool {
