@@ -21,6 +21,8 @@ import (
 
 type BucketKey string
 
+func (k BucketKey) String() string { return string(k) }
+
 var errResumableDigestNotAvailable = errors.New("resumable digest not available")
 
 const (
