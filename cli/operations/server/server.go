@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/harness/gitness/app/pipeline/logger"
-	"github.com/harness/gitness/http"
 	"github.com/harness/gitness/profiler"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/version"
@@ -113,14 +112,9 @@ func (c *command) run(*kingpin.ParseContext) error {
 	gHTTP, shutdownHTTP := system.server.ListenAndServe()
 	g.Go(gHTTP.Wait)
 
-	var shutdownMetricServerFn http.ShutdownFunction
-	if system.metricServer != nil {
-		gMetric, shutdownMetric := system.metricServer.ListenAndServe()
-		if gMetric != nil {
-			g.Go(gMetric.Wait)
-		}
-		shutdownMetricServerFn = shutdownMetric
-	}
+	gMetric, shutdownMetric := system.metricServer.ListenAndServe()
+	g.Go(gMetric.Wait)
+	shutdownMetricServerFn := shutdownMetric
 
 	if c.enableCI {
 		// start populating plugins
@@ -177,10 +171,8 @@ func (c *command) run(*kingpin.ParseContext) error {
 		}
 	}
 
-	if shutdownMetricServerFn != nil {
-		if sErr := shutdownMetricServerFn(shutdownCtx); sErr != nil {
-			log.Err(sErr).Msg("failed to shutdown metric server gracefully")
-		}
+	if sErr := shutdownMetricServerFn(shutdownCtx); sErr != nil {
+		log.Err(sErr).Msg("failed to shutdown metric server gracefully")
 	}
 
 	// shutdown instrumentation

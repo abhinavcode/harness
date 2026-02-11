@@ -14,7 +14,11 @@
 
 package http
 
-import "golang.org/x/sync/errgroup"
+import (
+	"context"
+
+	"golang.org/x/sync/errgroup"
+)
 
 // ListenAndServeServer is an optional auxiliary server (e.g. metrics) that can be started.
 type ListenAndServeServer interface {
@@ -24,7 +28,7 @@ type ListenAndServeServer interface {
 // NoOpListenAndServeServer is a no-op implementation of ListenAndServeServer.
 type NoOpListenAndServeServer struct{}
 
-// ListenAndServe returns (nil, nil); callers should skip starting/shutting down when both are nil.
+// ListenAndServe returns an empty group and a no-op shutdown so callers need not nil-check.
 func (NoOpListenAndServeServer) ListenAndServe() (*errgroup.Group, ShutdownFunction) {
-	return nil, nil
+	return &errgroup.Group{}, func(context.Context) error { return nil }
 }
