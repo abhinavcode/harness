@@ -1030,8 +1030,8 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 	var latestArtifactID int64
 	if err = db.GetContext(ctx, &latestArtifactID, sql1, args1...); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			// No artifact exists - return nil without error
-			return nil, nil
+			// No artifact exists - return nil.
+			return nil, nil //nolint:nilnil
 		}
 		return nil, databaseg.ProcessSQLErrorf(ctx, err, "Failed to get latest artifact ID")
 	}
@@ -1548,42 +1548,4 @@ type nonOCIArtifactMetadataDB struct {
 type downloadCountResult struct {
 	ArtifactID    string `db:"download_stat_artifact_id"`
 	DownloadCount int64  `db:"download_count"`
-}
-
-// Purge permanently deletes soft-deleted artifacts older than the given timestamp.
-// Returns the number of artifacts deleted.
-// accountID is the root parent space UID (space_uid from spaces table).
-func (a ArtifactDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
-	// First get the space_id for the given space_uid
-	var spaceID int64
-	db := dbtx.GetAccessor(ctx, a.db)
-	err := db.QueryRowContext(ctx, "SELECT space_id FROM spaces WHERE space_uid = $1", accountID).Scan(&spaceID)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to find space for account ID")
-	}
-
-	// Delete artifacts that belong to registries of the specified root parent space
-	// Using JOINs for better performance with large datasets
-	sql := `DELETE FROM artifacts
-		WHERE artifact_id IN (
-			SELECT a.artifact_id 
-			FROM artifacts a
-			INNER JOIN images i ON a.artifact_image_id = i.image_id
-			INNER JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE r.registry_root_parent_id = $1
-			  AND a.artifact_deleted_at IS NOT NULL
-			  AND a.artifact_deleted_at <= $2
-		)`
-
-	result, err := db.ExecContext(ctx, sql, spaceID, deletedBeforeOrAt)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge artifacts")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	return rowsAffected, nil
 }

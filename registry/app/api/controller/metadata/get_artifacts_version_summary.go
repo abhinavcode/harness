@@ -150,15 +150,38 @@ func (c *APIController) FetchArtifactSummary(
 	if registry.PackageType == artifact.PackageTypeDOCKER || registry.PackageType == artifact.PackageTypeHELM {
 		var ociVersion *types.OciVersionMetadata
 		if c.UntaggedImagesEnabled(ctx) {
-			ociVersion, err = c.TagStore.GetOCIVersionMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version)
+			var d string
+			if r.Params.Digest != nil && strings.TrimSpace(string(*r.Params.Digest)) != "" {
+				d = string(*r.Params.Digest)
+			} else {
+				d = version
+			}
+			parsedDigest, err := types.NewDigest(digest.Digest(d))
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			ociVersion, err = c.TagStore.GetTagMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version)
+			art, err := c.ArtifactStore.GetArtifactMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image,
+				parsedDigest.String(), artifactType, types.WithAllDeleted())
 			if err != nil {
 				return nil, err
 			}
+
+			return &ArtifactSummary{
+				Image:            image,
+				Version:          version,
+				PackageType:      art.PackageType,
+				IsQuarantined:    isQuarantined,
+				QuarantineReason: quarantineReason,
+				ArtifactType:     art.ArtifactType,
+				DeletedAt:        art.DeletedAt,
+				ArtifactUUID:     art.UUID,
+				RegistryUUID:     registry.UUID,
+			}, nil
+		}
+
+		ociVersion, err = c.TagStore.GetTagMetadata(ctx, regInfo.ParentID, regInfo.RegistryIdentifier, image, version)
+		if err != nil {
+			return nil, err
 		}
 
 		var deletedAt *time.Time

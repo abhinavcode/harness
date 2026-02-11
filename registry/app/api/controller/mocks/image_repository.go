@@ -373,17 +373,17 @@ func (_m *ImageRepository) RestoreByUUID(ctx context.Context, uuid string) error
 	return r0
 }
 
-// SoftDeleteByImageNameAndRegID provides a mock function with given fields: ctx, regID, image
-func (_m *ImageRepository) SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string) error {
-	ret := _m.Called(ctx, regID, image)
+// SoftDeleteByImageNameAndRegID provides a mock function with given fields: ctx, regID, image, principalID
+func (_m *ImageRepository) SoftDeleteByImageNameAndRegID(ctx context.Context, regID int64, image string, principalID *int64) error {
+	ret := _m.Called(ctx, regID, image, principalID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SoftDeleteByImageNameAndRegID")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
-		r0 = rf(ctx, regID, image)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, *int64) error); ok {
+		r0 = rf(ctx, regID, image, principalID)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -17,10 +17,10 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"sort"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/pkg/commons"
@@ -30,8 +30,6 @@ import (
 	gitness_store "github.com/harness/gitness/store"
 	databaseg "github.com/harness/gitness/store/database"
 	"github.com/harness/gitness/store/database/dbtx"
-
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
@@ -559,41 +557,4 @@ func (i ImageDao) mapToImageLabel(
 		}
 	}
 	return elements, res
-}
-
-// Purge permanently deletes soft-deleted images older than the given timestamp.
-// Returns the number of images deleted.
-// accountID is the root parent space UID (space_uid from spaces table).
-func (i ImageDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
-	// First get the space_id for the given space_uid
-	var spaceID int64
-	db := dbtx.GetAccessor(ctx, i.db)
-	err := db.QueryRowContext(ctx, "SELECT space_id FROM spaces WHERE space_uid = $1", accountID).Scan(&spaceID)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to find space for account ID")
-	}
-
-	// Delete images that belong to registries of the specified root parent space
-	// Using JOIN for better performance with large datasets
-	sql := `DELETE FROM images
-		WHERE image_id IN (
-			SELECT i.image_id 
-			FROM images i
-			INNER JOIN registries r ON i.image_registry_id = r.registry_id
-			WHERE r.registry_root_parent_id = $1
-			  AND i.image_deleted_at IS NOT NULL
-			  AND i.image_deleted_at <= $2
-		)`
-
-	result, err := db.ExecContext(ctx, sql, spaceID, deletedBeforeOrAt)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge images")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	return rowsAffected, nil
 }

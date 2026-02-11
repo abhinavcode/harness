@@ -1276,13 +1276,16 @@ func (t tagDao) GetTagMetadata(
 ) (*types.OciVersionMetadata, error) {
 	var decodeFunction string
 	if t.db.DriverName() == driverPostgres {
-		decodeFunction = "decode(oa.artifact_version, 'hex')"
+		decodeFunction = "decode(a.artifact_version, 'hex')"
 	} else {
-		decodeFunction = "unhex(oa.artifact_version)"
+		decodeFunction = "unhex(a.artifact_version)"
 	}
 
 	ociArtifactsCTE := databaseg.Builder.Select(
-		"a.artifact_uuid, a.artifact_image_id, a.artifact_version",
+		"a.artifact_uuid, a.artifact_image_id," +
+			"CASE  WHEN a.artifact_version ~ '^[0-9A-Fa-f]+$' " +
+			"AND length(a.artifact_version) % 2 = 0 THEN " + decodeFunction +
+			" ELSE NULL END AS version_digest",
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -1303,8 +1306,7 @@ func (t tagDao) GetTagMetadata(
 		Join("registries r ON t.tag_registry_id = r.registry_id").
 		Join("manifests ON manifest_id = t.tag_manifest_id").
 		LeftJoin("images i ON i.image_registry_id = r.registry_id AND i.image_name = t.tag_image_name").
-		LeftJoin(fmt.Sprintf("oci_artifacts oa ON oa.artifact_image_id = i.image_id AND manifest_digest = %s",
-			decodeFunction)).
+		LeftJoin("oci_artifacts oa ON oa.artifact_image_id = i.image_id AND oa.version_digest = manifest_digest").
 		Where(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
 				" AND t.tag_image_name = ? AND t.tag_name = ?", parentID, repoKey, imageName, name,
@@ -1344,13 +1346,16 @@ func (t tagDao) GetOCIVersionMetadata(
 
 	var decodeFunction string
 	if t.db.DriverName() == driverPostgres {
-		decodeFunction = "decode(oa.artifact_version, 'hex')"
+		decodeFunction = "decode(a.artifact_version, 'hex')"
 	} else {
-		decodeFunction = "unhex(oa.artifact_version)"
+		decodeFunction = "unhex(a.artifact_version)"
 	}
 
 	ociArtifactsCTE := databaseg.Builder.Select(
-		"a.artifact_uuid, a.artifact_image_id, a.artifact_version",
+		"a.artifact_uuid, a.artifact_image_id," +
+			"CASE  WHEN a.artifact_version ~ '^[0-9A-Fa-f]+$' " +
+			"AND length(a.artifact_version) % 2 = 0 THEN " + decodeFunction +
+			" ELSE NULL END AS version_digest",
 	).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
@@ -1363,21 +1368,20 @@ func (t tagDao) GetOCIVersionMetadata(
 	}
 
 	q := databaseg.Builder.Select(
-		"r.registry_package_type as package_type, manifest_digest, "+
+		"registry_package_type as package_type, manifest_digest, "+
 			"manifest_created_at as modified_at, manifest_total_size as size, "+
 			"oa.artifact_uuid as artifact_uuid",
 	).
 		From("manifests").
 		Join("registries r ON manifest_registry_id = r.registry_id").
 		LeftJoin("images i ON i.image_registry_id = r.registry_id AND i.image_name = manifest_image_name").
-		LeftJoin(fmt.Sprintf("oci_artifacts oa ON oa.artifact_image_id = i.image_id AND manifest_digest = %s",
-			decodeFunction)).
+		LeftJoin("oci_artifacts oa ON oa.artifact_image_id = i.image_id AND oa.version_digest = manifest_digest").
 		Where(
 			"r.registry_parent_id = ? AND r.registry_name = ?"+
 				" AND manifest_image_name = ? AND manifest_digest = ?", parentID, repoKey, imageName, digestBytes,
 		)
 
-	withClause := fmt.Sprintf("WITH oci_artifacts AS (%s)", ociArtifactsSQL)
+	withClause := "WITH oci_artifacts AS (" + ociArtifactsSQL + ")"
 	sql, args, err := q.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to convert query to sql")

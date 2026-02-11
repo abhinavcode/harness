@@ -431,12 +431,8 @@ type RegistryRepository interface {
 	Create(ctx context.Context, repository *types.Registry) (id int64, err error)
 	// Delete the repository specified by ID (hard delete)
 	Delete(ctx context.Context, parentID int64, name string) (err error)
-	// SoftDelete soft deletes a registry by setting deleted_at timestamp
-	SoftDelete(ctx context.Context, parentID int64, name string) (err error)
 	// GetByUUID gets a registry by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Registry, error)
-	// RestoreByUUID restores a soft-deleted registry by clearing deleted_at timestamp
-	RestoreByUUID(ctx context.Context, uuid string) (err error)
 	// Update updates the repository. Only the properties specified by "props" will be updated if it is set
 	Update(ctx context.Context, repository *types.Registry) (err error)
 
@@ -479,9 +475,6 @@ type RegistryRepository interface {
 
 	// GetDistinctAccountIDs returns a list of distinct account identifiers that have registries
 	GetDistinctAccountIDs(ctx context.Context) ([]string, error)
-
-	// Purge permanently deletes soft-deleted registries older than the given timestamp for a specific account
-	Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error)
 }
 
 type RegistryBlobRepository interface {
@@ -544,9 +537,6 @@ type ImageRepository interface {
 	// GetByUUID gets an image by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Image, error)
 	DuplicateImage(ctx context.Context, sourceImage *types.Image, targetRegistryID int64) (*types.Image, error)
-
-	// Purge permanently deletes soft-deleted images older than the given timestamp for a specific account
-	Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error)
 }
 
 type ArtifactRepository interface {
@@ -664,8 +654,6 @@ type ArtifactRepository interface {
 	DuplicateArtifact(
 		ctx context.Context, sourceArtifact *types.Artifact, targetImageID int64,
 	) (*types.Artifact, error)
-	// Purge permanently deletes soft-deleted artifacts older than the given timestamp for a specific account
-	Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error)
 }
 
 type DownloadStatRepository interface {

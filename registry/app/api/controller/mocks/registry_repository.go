@@ -472,42 +472,6 @@ func (_m *RegistryRepository) Restore(ctx context.Context, parentID int64, name 
 	return r0
 }
 
-// RestoreByUUID provides a mock function with given fields: ctx, uuid
-func (_m *RegistryRepository) RestoreByUUID(ctx context.Context, uuid string) error {
-	ret := _m.Called(ctx, uuid)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RestoreByUUID")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, uuid)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SoftDelete provides a mock function with given fields: ctx, parentID, name
-func (_m *RegistryRepository) SoftDelete(ctx context.Context, parentID int64, name string) error {
-	ret := _m.Called(ctx, parentID, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SoftDelete")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string) error); ok {
-		r0 = rf(ctx, parentID, name)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetIDsByParentSpace provides a mock function with given fields: ctx, parentSpaceID
 func (_m *RegistryRepository) GetIDsByParentSpace(ctx context.Context, parentSpaceID int64) ([]int64, error) {
 	ret := _m.Called(ctx, parentSpaceID)

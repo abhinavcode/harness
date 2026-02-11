@@ -878,17 +878,17 @@ func (_m *ArtifactRepository) SoftDeleteByImageNameAndRegistryID(ctx context.Con
 	return r0
 }
 
-// SoftDeleteByVersionAndImageName provides a mock function with given fields: ctx, image, version, regID
-func (_m *ArtifactRepository) SoftDeleteByVersionAndImageName(ctx context.Context, image string, version string, regID int64) error {
-	ret := _m.Called(ctx, image, version, regID)
+// SoftDeleteByVersionAndImageName provides a mock function with given fields: ctx, image, version, regID, principalID
+func (_m *ArtifactRepository) SoftDeleteByVersionAndImageName(ctx context.Context, image string, version string, regID int64, principalID *int64) error {
+	ret := _m.Called(ctx, image, version, regID, principalID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SoftDeleteByVersionAndImageName")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
-		r0 = rf(ctx, image, version, regID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int64, *int64) error); ok {
+		r0 = rf(ctx, image, version, regID, principalID)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -476,12 +476,12 @@ func (r registryDao) GetAll(
 		return nil, fmt.Errorf("failed to fetch artifact counts: %w", err)
 	}
 
-	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs)
+	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OCI blob sizes: %w", err)
 	}
 
-	genericSizes, err := r.fetchGenericBlobSizes(ctx, registryIDs, opts...)
+	genericSizes, err := r.fetchGenericBlobSizes(ctx, registryIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch generic blob sizes: %w", err)
 	}
@@ -568,18 +568,40 @@ func (r registryDao) fetchArtifactCounts(
 	return counts, nil
 }
 
-// fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs.
-func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64) (map[int64]int64, error) {
+// fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs with soft delete filtering.
+func (r registryDao) fetchOCIBlobSizes(
+	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
+) (map[int64]int64, error) {
+	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
-	query := `
-		SELECT rb.rblob_registry_id, COALESCE(SUM(blobs.blob_size), 0) AS total_size
-		FROM registry_blobs rb
-		LEFT JOIN blobs ON rb.rblob_blob_id = blobs.blob_id
-		WHERE rb.rblob_registry_id IN (?)
-		GROUP BY rb.rblob_registry_id
+	// Build query with deduplication (same blob shared across multiple images)
+	baseQuery := `
+		SELECT unique_blobs.rblob_registry_id, COALESCE(SUM(unique_blobs.blob_size), 0) AS total_size
+		FROM (
+			SELECT rb.rblob_registry_id, rb.rblob_blob_id, MAX(b.blob_size) AS blob_size
+			FROM registry_blobs rb
+			LEFT JOIN blobs b ON rb.rblob_blob_id = b.blob_id
+			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
+			WHERE rb.rblob_registry_id IN (?)`
+
+	var filterCondition string
+	switch softDeleteFilter {
+	case types.SoftDeleteFilterExclude:
+		filterCondition = " AND (i.image_id IS NULL OR i.image_deleted_at IS NULL)"
+	case types.SoftDeleteFilterOnly:
+		filterCondition = " AND (i.image_id IS NOT NULL AND i.image_deleted_at IS NOT NULL)"
+	case types.SoftDeleteFilterInclude:
+		// No filter - include all
+		filterCondition = ""
+	}
+
+	query := baseQuery + filterCondition + `
+			GROUP BY rb.rblob_registry_id, rb.rblob_blob_id
+		) AS unique_blobs
+		GROUP BY unique_blobs.rblob_registry_id
 	`
 
 	db := dbtx.GetAccessor(ctx, r.db)
@@ -606,50 +628,25 @@ func (r registryDao) fetchOCIBlobSizes(ctx context.Context, registryIDs []int64)
 	return sizes, nil
 }
 
-// fetchGenericBlobSizes fetches generic blob sizes for given registry IDs with soft delete filtering.
+// fetchGenericBlobSizes fetches generic blob sizes for given registry IDs.
+// NOTE: Soft delete filtering is NOT applied for Generic artifacts due to schema limitations.
+// Filtering would require expensive SPLIT_PART operations on node_path for every row.
+// TODO: Add node_artifact_id FK and node_deleted_at column to enable proper soft delete filtering.
 func (r registryDao) fetchGenericBlobSizes(
-	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
+	ctx context.Context, registryIDs []int64,
 ) (map[int64]int64, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
-	var query string
-	if softDeleteFilter == types.SoftDeleteFilterInclude {
-		query = `
-			SELECT nodes.node_registry_id, COALESCE(SUM(generic_blobs.generic_blob_size), 0) AS total_size
-			FROM nodes
-			LEFT JOIN generic_blobs ON generic_blob_id = nodes.node_generic_blob_id
-			WHERE node_is_file AND generic_blob_id IS NOT NULL
-			  AND node_registry_id IN (?)
-			GROUP BY nodes.node_registry_id
-		`
-	} else {
-		// Build query with artifact joins for filtering
-		baseQuery := `
-			SELECT n.node_registry_id, COALESCE(SUM(gb.generic_blob_size), 0) AS total_size
-			FROM nodes n
-			LEFT JOIN generic_blobs gb ON gb.generic_blob_id = n.node_generic_blob_id
-			LEFT JOIN images i ON i.image_registry_id = n.node_registry_id AND i.image_name = SPLIT_PART(n.node_path, '/', 2)
-			LEFT JOIN artifacts a ON a.artifact_image_id = i.image_id AND a.artifact_version = SPLIT_PART(n.node_path, '/', 3)
-			WHERE n.node_is_file AND gb.generic_blob_id IS NOT NULL
-			  AND n.node_registry_id IN (?)`
-
-		var filterCondition string
-		switch softDeleteFilter {
-		case types.SoftDeleteFilterExclude:
-			filterCondition = " AND (i.image_id IS NULL OR (a.artifact_id IS NULL OR a.artifact_deleted_at IS NULL))"
-		case types.SoftDeleteFilterOnly:
-			filterCondition = " AND (i.image_id IS NOT NULL AND a.artifact_id IS NOT NULL AND a.artifact_deleted_at IS NOT NULL)"
-		case types.SoftDeleteFilterInclude:
-			// No filter condition - include all
-			filterCondition = ""
-		}
-		query = baseQuery + filterCondition + `
-			GROUP BY n.node_registry_id
-		`
-	}
+	query := `
+		SELECT nodes.node_registry_id, COALESCE(SUM(generic_blobs.generic_blob_size), 0) AS total_size
+		FROM nodes
+		LEFT JOIN generic_blobs ON generic_blob_id = nodes.node_generic_blob_id
+		WHERE node_is_file AND generic_blob_id IS NOT NULL
+		  AND node_registry_id IN (?)
+		GROUP BY nodes.node_registry_id
+	`
 
 	db := dbtx.GetAccessor(ctx, r.db)
 	sql, args, err := sqlx.In(query, registryIDs)
@@ -830,74 +827,8 @@ func (r registryDao) Delete(ctx context.Context, parentID int64, name string) er
 	return nil
 }
 
-// SoftDelete soft deletes a registry by setting deleted_at timestamp.
-func (r registryDao) SoftDelete(ctx context.Context, parentID int64, name string) error {
-	now := time.Now().UnixMilli()
-	stmt := databaseg.Builder.Update("registries").
-		Set("registry_deleted_at", now).
-		Where("registry_parent_id = ? AND registry_name = ?", parentID, name).
-		Where("registry_deleted_at IS NULL") // Only soft delete if not already deleted
-
-	db := dbtx.GetAccessor(ctx, r.db)
-
-	query, args, err := stmt.ToSql()
-	if err != nil {
-		return fmt.Errorf("failed to convert soft delete query to sql: %w", err)
-	}
-
-	result, err := db.ExecContext(ctx, query, args...)
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "failed to soft delete registry")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("registry not found or already deleted")
-	}
-
-	return nil
-}
-
-// RestoreByUUID restores a soft-deleted registry by clearing deleted_at timestamp.
-func (r registryDao) RestoreByUUID(ctx context.Context, uuid string) error {
-	stmt := databaseg.Builder.Update("registries").
-		Set("registry_deleted_at", nil).
-		Set("registry_deleted_by", nil).
-		Where("registry_uuid = ?", uuid).
-		Where("registry_deleted_at IS NOT NULL") // Only restore if currently deleted
-
-	db := dbtx.GetAccessor(ctx, r.db)
-
-	query, args, err := stmt.ToSql()
-	if err != nil {
-		return fmt.Errorf("failed to convert restore query to sql: %w", err)
-	}
-
-	result, err := db.ExecContext(ctx, query, args...)
-	if err != nil {
-		return databaseg.ProcessSQLErrorf(ctx, err, "failed to restore registry")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return fmt.Errorf("registry not found or not deleted")
-	}
-
-	return nil
-}
-
 // GetByUUID gets a registry by its UUID (includes soft-deleted registries).
-func (r registryDao) GetByUUID(
-	ctx context.Context, uuid string,
-) (*types.Registry, error) {
+func (r registryDao) GetByUUID(ctx context.Context, uuid string) (*types.Registry, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
@@ -1152,44 +1083,6 @@ func (r registryDao) UpdateParentSpace(ctx context.Context, srcSpaceID int64, ta
 	result, err := db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to update registry parent space")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	return rowsAffected, nil
-}
-
-// Purge permanently deletes soft-deleted registries older than the given timestamp.
-// Returns the number of registries deleted.
-// accountID is the root parent space UID (space_uid from spaces table).
-func (r registryDao) Purge(ctx context.Context, accountID string, deletedBeforeOrAt int64) (int64, error) {
-	// First get the space_id for the given space_uid
-	var spaceID int64
-	db := dbtx.GetAccessor(ctx, r.db)
-	err := db.QueryRowContext(ctx, "SELECT space_id FROM spaces WHERE space_uid = $1", accountID).Scan(&spaceID)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to find space for account ID")
-	}
-
-	stmt := databaseg.Builder.
-		Delete("registries").
-		Where(sq.And{
-			sq.Eq{"registry_root_parent_id": spaceID},
-			sq.NotEq{"registry_deleted_at": nil},
-			sq.LtOrEq{"registry_deleted_at": deletedBeforeOrAt},
-		})
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return 0, fmt.Errorf("failed to convert purge registries query to sql: %w", err)
-	}
-
-	result, err := db.ExecContext(ctx, sql, args...)
-	if err != nil {
-		return 0, databaseg.ProcessSQLErrorf(ctx, err, "failed to purge registries")
 	}
 
 	rowsAffected, err := result.RowsAffected()

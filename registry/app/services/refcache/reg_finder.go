@@ -37,8 +37,6 @@ type RegistryFinder interface {
 	)
 	Update(ctx context.Context, registry *types.Registry) (err error)
 	Delete(ctx context.Context, parentID int64, name string) (err error)
-	SoftDelete(ctx context.Context, parentID int64, name string) (err error)
-	RestoreByUUID(ctx context.Context, uuid string) (err error)
 }
 
 type registryFinder struct {
@@ -146,36 +144,6 @@ func (r registryFinder) Delete(ctx context.Context, parentID int64, name string)
 	}
 	err = r.inner.Delete(ctx, parentID, name)
 	if err == nil {
-		r.MarkChanged(ctx, registry)
-	}
-	return err
-}
-
-// SoftDelete soft deletes a registry and evicts it from cache.
-func (r registryFinder) SoftDelete(ctx context.Context, parentID int64, name string) (err error) {
-	// Get registry before soft delete to evict cache
-	registry, err := r.inner.GetByParentIDAndName(ctx, parentID, name)
-	if err != nil {
-		return fmt.Errorf("error finding registry by parent-ref: %w", err)
-	}
-	err = r.inner.SoftDelete(ctx, parentID, name)
-	if err == nil {
-		// Evict cache after soft delete
-		r.MarkChanged(ctx, registry)
-	}
-	return err
-}
-
-// RestoreByUUID restores a soft-deleted registry and evicts it from cache.
-func (r registryFinder) RestoreByUUID(ctx context.Context, uuid string) (err error) {
-	// Get registry before restore to evict cache
-	registry, err := r.inner.GetByUUID(ctx, uuid)
-	if err != nil {
-		return fmt.Errorf("error finding registry by uuid: %w", err)
-	}
-	err = r.inner.RestoreByUUID(ctx, uuid)
-	if err == nil {
-		// Evict cache after restore
 		r.MarkChanged(ctx, registry)
 	}
 	return err
