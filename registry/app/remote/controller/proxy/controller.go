@@ -173,7 +173,8 @@ func (c *controller) UseLocalManifest(
 	if err != nil {
 		if errors.IsRateLimitError(err) { // if rate limit, use localRegistry if it exists, otherwise return error.
 			log.Ctx(ctx).Warn().Msgf("Rate limit error: %v", err)
-			return true, nil, nil
+			mediaType, payload, _ := man.Payload()
+			return true, &ManifestList{payload, d.Digest.String(), mediaType}, nil
 		}
 		log.Ctx(ctx).Warn().Msgf("Error in checking remote manifest exist: %v", err)
 		return false, nil, err
