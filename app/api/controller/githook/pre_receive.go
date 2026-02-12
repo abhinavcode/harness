@@ -47,8 +47,9 @@ type protectionChecks struct {
 }
 
 type settingsViolations struct {
-	SecretsFound           bool
-	FileSizeLimitExceeded  bool
+	SecretsFound bool
+	// 0 means no file exceeded the limit; >0 is the exceeded size limit
+	ExceededFileSizeLimit  int64
 	CommitterMismatchFound bool
 	UnknownLFSObjectsFound bool
 }
@@ -432,10 +433,10 @@ func processViolations(
 			)
 			criticalViolation = true
 		}
-		if settingsViolations.FileSizeLimitExceeded {
+		if settingsViolations.ExceededFileSizeLimit > 0 {
 			output.Messages = append(
 				output.Messages,
-				repoSettingsBlockPrefix+"File size limit exceeded.",
+				repoSettingsBlockPrefix+fmt.Sprintf("File size limit of %d bytes exceeded.", settingsViolations.ExceededFileSizeLimit),
 			)
 			criticalViolation = true
 		}

@@ -16,6 +16,7 @@ package githook
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/harness/gitness/git"
@@ -106,35 +107,76 @@ func FMTDuration(d time.Duration) string {
 
 func printOversizeFiles(
 	output *hook.Output,
-	oversizeFiles []git.FileInfo,
-	total int64,
-	sizeLimit int64,
+	findOut *git.FindOversizeFilesOutput,
 ) {
-	output.Messages = append(
-		output.Messages,
-		colorScanHeader.Sprintf(
-			"Push contains files exceeding the size limit:",
-		),
-		"", // add empty line for making it visually more consumable
-	)
-
-	for _, file := range oversizeFiles {
-		output.Messages = append(
-			output.Messages,
-			fmt.Sprintf("  %s", file.SHA),
-			fmt.Sprintf("      Size: %dB", file.Size),
-			"", // add empty line for making it visually more consumable
-		)
+	if output == nil || findOut == nil {
+		return
 	}
 
-	output.Messages = append(
-		output.Messages,
-		colorScanSummary.Sprintf(
-			"%d %s found exceeding the size limit of %dB",
-			total, singularOrPlural("file", total > 1), sizeLimit,
-		),
-		"", "", // add two empty lines for making it visually more consumable
-	)
+	if len(findOut.TotalPerLimit) == 0 {
+		return
+	}
+
+	// Deterministic ordering (important for stable test output)
+	limits := make([]int64, 0, len(findOut.TotalPerLimit))
+	for limit := range findOut.TotalPerLimit {
+		limits = append(limits, limit)
+	}
+	slices.Sort(limits)
+
+	for _, limit := range limits {
+		total := findOut.TotalPerLimit[limit]
+		if total == 0 {
+			continue
+		}
+
+		files := findOut.FileInfosPerLimit[limit]
+
+		output.Messages = append(
+			output.Messages,
+			colorScanHeader.Sprintf(
+				"Push contains files exceeding the size limit of %dB:",
+				limit,
+			),
+			"",
+		)
+
+		for _, file := range files {
+			output.Messages = append(
+				output.Messages,
+				fmt.Sprintf("  %s", file.SHA),
+				fmt.Sprintf("      Size: %dB", file.Size),
+				"",
+			)
+		}
+
+		// If capped, clarify.
+		if int64(len(files)) < total {
+			output.Messages = append(
+				output.Messages,
+				colorScanSummary.Sprintf(
+					"Showing %d of %d %s exceeding the size limit of %dB",
+					len(files),
+					total,
+					singularOrPlural("file", total != 1),
+					limit,
+				),
+				"", "",
+			)
+			continue
+		}
+
+		output.Messages = append(
+			output.Messages,
+			colorScanSummary.Sprintf(
+				"%d %s found exceeding the size limit of %dB",
+				total,
+				singularOrPlural("file", total != 1),
+				limit,
+			),
+			"", "",
+		)
+	}
 }
 
 func printCommitterMismatch(

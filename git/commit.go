@@ -281,39 +281,53 @@ func (s *Service) GetCommitDivergences(
 }
 
 // TODO: remove. Kept for backwards compatibility.
-//
-//nolint:gocognit
 func (s *Service) FindOversizeFiles(
 	ctx context.Context,
 	params *FindOversizeFilesParams,
 ) (*FindOversizeFilesOutput, error) {
-	if params.RepoUID == "" {
+	if params == nil || params.RepoUID == "" {
 		return nil, api.ErrRepositoryPathEmpty
 	}
 	repoPath := getFullPathForRepo(s.reposRoot, params.RepoUID)
 
-	var objects []parser.BatchCheckObject
+	out := &FindOversizeFilesOutput{
+		FileInfosPerLimit: make(map[int64][]FileInfo),
+		TotalPerLimit:     make(map[int64]int64),
+	}
+
+	if len(params.SizeLimits) == 0 {
+		return out, nil
+	}
+
 	for _, gitObjDir := range params.GitObjectDirs {
 		objs, err := s.listGitObjDir(ctx, repoPath, gitObjDir)
 		if err != nil {
 			return nil, err
 		}
-		objects = append(objects, objs...)
-	}
 
-	var fileInfos []FileInfo
-	for _, obj := range objects {
-		if obj.Type == string(TreeNodeTypeBlob) && obj.Size > params.SizeLimit {
-			fileInfos = append(fileInfos, FileInfo{
-				SHA:  obj.SHA,
-				Size: obj.Size,
-			})
+		for _, obj := range objs {
+			if obj.Type != string(TreeNodeTypeBlob) {
+				continue
+			}
+
+			for _, limit := range params.SizeLimits {
+				if obj.Size <= limit {
+					break
+				}
+
+				out.TotalPerLimit[limit]++
+
+				if int64(len(out.FileInfosPerLimit[limit])) < maxOversizeFiles {
+					out.FileInfosPerLimit[limit] = append(out.FileInfosPerLimit[limit], FileInfo{
+						SHA:  obj.SHA,
+						Size: obj.Size,
+					})
+				}
+			}
 		}
 	}
 
-	return &FindOversizeFilesOutput{
-		FileInfos: fileInfos,
-	}, nil
+	return out, nil
 }
 
 func (s *Service) listGitObjDir(

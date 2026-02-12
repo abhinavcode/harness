@@ -59,15 +59,15 @@ func (p *Push) Violations(
 ) (PushViolationsOutput, error) {
 	var violations types.RuleViolations
 
-	if in.FindOversizeFilesOutput != nil {
-		for _, fileInfos := range in.FindOversizeFilesOutput.FileInfos {
-			if p.Push.FileSizeLimit > 0 && fileInfos.Size > p.Push.FileSizeLimit {
-				violations.Addf(codePushFileSizeLimit,
-					"Found file(s) exceeding the filesize limit of %d.",
-					p.Push.FileSizeLimit,
-				)
-				break
-			}
+	if out := in.FindOversizeFilesOutput; out != nil && p.Push.FileSizeLimit > 0 {
+		limit := p.Push.FileSizeLimit
+
+		if total := out.TotalPerLimit[limit]; total > 0 {
+			violations.Addf(
+				codePushFileSizeLimit,
+				"Found file(s) exceeding the filesize limit of %d.",
+				limit,
+			)
 		}
 	}
 

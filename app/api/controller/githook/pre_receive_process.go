@@ -17,6 +17,7 @@ package githook
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/harness/gitness/app/services/protection"
 	"github.com/harness/gitness/git"
@@ -40,21 +41,23 @@ func (c *Controller) processObjects(
 		return nil
 	}
 
-	sizeLimit := int64(0)
+	var sizeLimits []int64
+
+	if checks.SettingsFileSizeLimit > 0 {
+		sizeLimits = append(sizeLimits, checks.SettingsFileSizeLimit)
+	}
 	for _, limit := range checks.RulesFileSizeLimits {
-		if sizeLimit == 0 || (limit > 0 && limit < sizeLimit) {
-			sizeLimit = limit
+		if limit > 0 {
+			sizeLimits = append(sizeLimits, limit)
 		}
 	}
-	if checks.SettingsFileSizeLimit > 0 && (sizeLimit == 0 || checks.SettingsFileSizeLimit < sizeLimit) {
-		sizeLimit = checks.SettingsFileSizeLimit
+
+	if len(sizeLimits) > 0 {
+		slices.Sort(sizeLimits)
+		sizeLimits = slices.Compact(sizeLimits)
 	}
 
 	principalCommitterMatch := checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch
-
-	if sizeLimit == 0 && !principalCommitterMatch && !checks.SettingsGitLFSEnabled {
-		return nil
-	}
 
 	preReceiveObjsIn := git.ProcessPreReceiveObjectsParams{
 		ReadParams: git.ReadParams{
@@ -63,9 +66,9 @@ func (c *Controller) processObjects(
 		},
 	}
 
-	if sizeLimit > 0 {
+	if len(sizeLimits) > 0 {
 		preReceiveObjsIn.FindOversizeFilesParams = &git.FindOversizeFilesParams{
-			SizeLimit: sizeLimit,
+			SizeLimits: sizeLimits,
 		}
 	}
 
@@ -87,20 +90,12 @@ func (c *Controller) processObjects(
 		return fmt.Errorf("failed to process pre-receive objects: %w", err)
 	}
 
-	if preReceiveObjsOut.FindOversizeFilesOutput != nil &&
-		len(preReceiveObjsOut.FindOversizeFilesOutput.FileInfos) > 0 {
-		printOversizeFiles(
-			output,
-			preReceiveObjsOut.FindOversizeFilesOutput.FileInfos,
-			preReceiveObjsOut.FindOversizeFilesOutput.Total,
-			sizeLimit,
-		)
+	if out := preReceiveObjsOut.FindOversizeFilesOutput; out != nil && len(out.TotalPerLimit) > 0 {
+		printOversizeFiles(output, out)
+
 		if checks.SettingsFileSizeLimit > 0 {
-			for _, fileInfo := range preReceiveObjsOut.FindOversizeFilesOutput.FileInfos {
-				if fileInfo.Size > checks.SettingsFileSizeLimit {
-					settingsViolations.FileSizeLimitExceeded = true
-					break
-				}
+			if out.TotalPerLimit[checks.SettingsFileSizeLimit] > 0 {
+				settingsViolations.ExceededFileSizeLimit = checks.SettingsFileSizeLimit
 			}
 		}
 	}
