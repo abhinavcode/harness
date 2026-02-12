@@ -17,7 +17,7 @@
 import React, { useState } from 'react'
 import { get } from 'lodash-es'
 
-import { useAppStore, useBulkDownloadFile, useAllowSoftDelete, useFeatureFlags, useRoutes } from '@ar/hooks'
+import { useAppStore, useBulkDownloadFile, useAllowSoftDelete, useRoutes } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
 import ActionButton from '@ar/components/ActionButton/ActionButton'
 import CopyMenuItem from '@ar/components/MenuItemTypes/CopyMenuItem'
@@ -49,7 +49,6 @@ export default function VersionActions({
   const routes = useRoutes()
   const { isCurrentSessionPublic } = useAppStore()
   const { getString } = useStrings()
-  const { HAR_ARTIFACT_QUARANTINE_ENABLED } = useFeatureFlags()
   const isBulkDownloadFileEnabled = useBulkDownloadFile()
   const allowSoftDelete = useAllowSoftDelete()
 
@@ -120,7 +119,6 @@ export default function VersionActions({
       )}
       {!isCurrentSessionPublic &&
         isAllowed(VersionAction.Quarantine) &&
-        HAR_ARTIFACT_QUARANTINE_ENABLED &&
         !data.isQuarantined &&
         digestCount < 2 && (
           <QuarantineMenuItem
@@ -138,7 +136,6 @@ export default function VersionActions({
         )}
       {!isCurrentSessionPublic &&
         isAllowed(VersionAction.Quarantine) &&
-        HAR_ARTIFACT_QUARANTINE_ENABLED &&
         data.isQuarantined &&
         digestCount < 2 && (
           <RemoveQurantineMenuItem

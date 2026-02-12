@@ -20,7 +20,7 @@ import classNames from 'classnames'
 import { FontVariation } from '@harnessio/design-system'
 import { Card, Container, Layout, Text } from '@harnessio/uicore'
 
-import { useAppStore, useFeatureFlags } from '@ar/hooks'
+import { useAppStore } from '@ar/hooks'
 import { Parent, RepositoryPackageType } from '@ar/common/types'
 import { useStrings } from '@ar/frameworks/strings'
 import { Separator } from '@ar/components/Separator/Separator'
@@ -51,7 +51,7 @@ export default function UpstreamProxyConfigurationFormContent(
   const { setIsDirty } = useContext(RepositoryProviderContext)
   const { dirty, values } = formikProps
   const [isCollapsedAdvancedConfig] = useState(getInitialStateOfCollapse())
-  const { HAR_ARTIFACT_QUARANTINE_ENABLED } = useFeatureFlags()
+  
 
   useEffect(() => {
     setIsDirty(dirty)
@@ -94,7 +94,7 @@ export default function UpstreamProxyConfigurationFormContent(
                 packageType={values.packageType as RepositoryPackageType}
                 readonly={readonly}
               />
-              {HAR_ARTIFACT_QUARANTINE_ENABLED && values.scanners && values.scanners.length > 0 && (
+              { values.scanners && values.scanners.length > 0 && (
                 <>
                   <Separator />
                   <Container className={css.cleanupPoliciesContainer}>
