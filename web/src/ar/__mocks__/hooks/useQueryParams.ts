@@ -18,9 +18,17 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import qs from 'qs'
 import type { IParseOptions } from 'qs'
-import { assignWith, get, isNil, set } from 'lodash-es'
+import { assignWith, isNil } from 'lodash-es'
 
 export interface UseQueryParamsOptions<T> extends IParseOptions {
+  /**
+   * Keys that should be converted to numbers
+   */
+  numberKeys?: (keyof T)[]
+  /**
+   * Keys that should be converted to booleans
+   */
+  booleanKeys?: (keyof T)[]
   processQueryParams?(data: any): T
 }
 
@@ -28,108 +36,72 @@ export function useQueryParams<T = unknown>(options?: UseQueryParamsOptions<T>):
   const { search } = useLocation()
 
   const queryParams = React.useMemo(() => {
-    // Parse without decoder to preserve raw string values (e.g. leading zeros in searchTerm)
-    const rawParams = qs.parse(search, { ignoreQueryPrefix: true })
-    const params = qs.parse(search, { ignoreQueryPrefix: true, ...options })
+    const {
+      numberKeys: _n,
+      booleanKeys: _b,
+      processQueryParams: _p,
+      ...qsOptions
+    } = (options ?? {}) as UseQueryParamsOptions<T> & Record<string, unknown>
+    const parsed = qs.parse(search, { ignoreQueryPrefix: true, ...qsOptions }) as Record<string, any>
+    const params = { ...parsed }
 
-    let result: Record<string, unknown>
-    if (typeof options?.processQueryParams === 'function') {
-      result = options.processQueryParams(params) as Record<string, unknown>
-    } else {
-      result = params as Record<string, unknown>
-    }
-
-    // Override ignoreList keys with raw values so they stay exact URL strings
-    ignoreList.forEach(key => {
-      const rawValue = get(rawParams, key)
-      if (!isNil(rawValue)) {
-        set(result, key, typeof rawValue === 'string' ? rawValue : String(rawValue))
+    options?.numberKeys?.forEach(key => {
+      const value = params[key as string]
+      if (typeof value === 'string' && value.trim() !== '' && !isNaN(Number(value))) {
+        params[key as string] = Number(value)
       }
     })
 
+    options?.booleanKeys?.forEach(key => {
+      const value = params[key as string]
+      if (value === 'true') params[key as string] = true
+      if (value === 'false') params[key as string] = false
+    })
+
+    let result = params as T
+    if (typeof options?.processQueryParams === 'function') {
+      result = options.processQueryParams(result)
+    }
     return result
   }, [search, options])
 
-  return queryParams as unknown as T
+  return queryParams as T
 }
 
-type CustomQsDecoderOptions = {
-  parseNumbers?: boolean
-  parseBoolean?: boolean
-  ignoreNull?: boolean
-  ignoreEmptyString?: boolean
-}
+/** Keys that are always kept as strings (e.g. searchTerm to preserve leading zeros) */
+const STRING_KEYS = ['searchTerm']
 
-type CustomQsDecoder = (customQsDecoderOptions?: CustomQsDecoderOptions) => IParseOptions['decoder']
-
-/**
- * By default, all values are parsed as strings by qs, except for arrays and objects
- * This is optional decoder that automatically transforms to numbers, booleans and null
- */
-export const queryParamDecodeAll: CustomQsDecoder =
-  ({ parseNumbers = true, parseBoolean = true, ignoreNull = true, ignoreEmptyString = true } = {}) =>
-  (value, decoder) => {
-    if (parseNumbers && /^(\d+|\d*\.\d+)$/.test(value)) {
-      return parseFloat(value)
-    }
-
-    if (ignoreEmptyString && value.length === 0) {
-      return
-    }
-
-    const keywords: Record<string, null | undefined> = {
-      null: ignoreNull ? undefined : null,
-      undefined: undefined
-    }
-
-    if (value in keywords) {
-      return keywords[value]
-    }
-
-    const booleanKeywords: Record<string, boolean> = {
-      true: true,
-      false: false
-    }
-
-    if (parseBoolean && value in booleanKeywords) {
-      return booleanKeywords[value]
-    }
-
-    return decoder(value)
-  }
-
-// list of params that should be converted back to strings
-// if searchTerm is '123', queryParamDecodeAll converts it to a number, but searchTerm should remain a string
-const ignoreList = ['searchTerm']
-
-// This uses queryParamDecodeAll as the decoder and assigns the value from default params if the processed param's value is null/undefined.
 export const useQueryParamsOptions = <Q extends object, DKey extends keyof Q>(
   defaultParams: { [K in DKey]: NonNullable<Q[K]> },
-  decoderOptions?: CustomQsDecoderOptions
+  _decoderOptions?: { ignoreEmptyString?: boolean }
 ): UseQueryParamsOptions<Required<Pick<Q, DKey>>> => {
   const defaultParamsRef = useRef(defaultParams)
   useEffect(() => {
     defaultParamsRef.current = defaultParams
   }, [defaultParams])
 
-  const options = useMemo(
+  return useMemo(
     () => ({
-      decoder: queryParamDecodeAll(decoderOptions),
+      numberKeys: ['page', 'size'] as (keyof Required<Pick<Q, DKey>>)[],
       processQueryParams: (params: Q) => {
-        const processedParams = { ...params }
+        const processed = { ...params }
 
-        ignoreList.forEach(param => {
-          if (!isNil(get(processedParams, param))) {
-            set(processedParams, param, get(processedParams, param).toString())
+        STRING_KEYS.forEach(key => {
+          if (processed[key as keyof Q] != null) {
+            ;(processed as Record<string, unknown>)[key] = String((processed as Record<string, unknown>)[key])
           }
         })
 
-        return assignWith(processedParams, defaultParamsRef.current, (objValue, srcValue) =>
+        const withDefaults = assignWith(processed, defaultParamsRef.current, (objValue, srcValue) =>
           isNil(objValue) ? srcValue : objValue
-        ) as Required<Pick<Q, DKey>>
+        ) as Record<string, unknown>
+
+        if ('sort' in withDefaults && typeof withDefaults.sort === 'string') {
+          withDefaults.sort = [withDefaults.sort]
+        }
+        return withDefaults as Required<Pick<Q, DKey>>
       }
     }),
     []
   )
-  return options
 }

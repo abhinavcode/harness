@@ -15,6 +15,7 @@
  */
 
 import React, { useCallback, useContext, useRef } from 'react'
+import classNames from 'classnames'
 import {
   Button,
   ButtonVariation,
@@ -71,7 +72,7 @@ export default function ArtifactFilesContent(props: ArtifactFilesContentProps): 
         />
       )}
       <Page.Body
-        className={css.tableContainer}
+        className={classNames(css.tableContainer, minimal && (css as { minimalPageBody?: string }).minimalPageBody)}
         loading={loading}
         error={errorMessage}
         retryOnError={() => refetch()}
