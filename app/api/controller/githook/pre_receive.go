@@ -36,7 +36,7 @@ import (
 
 type protectionChecks struct {
 	RulesSecretScanningEnabled   bool
-	RulesFileSizeLimit           int64
+	RulesFileSizeLimits          []int64
 	RulesPrincipalCommitterMatch bool
 
 	SettingsSecretScanningEnabled   bool
@@ -180,7 +180,7 @@ func (c *Controller) populateProtectionChecks(
 ) (protectionChecks, error) {
 	var checks protectionChecks
 
-	checks.RulesFileSizeLimit = out.FileSizeLimit
+	checks.RulesFileSizeLimits = out.FileSizeLimits
 	checks.RulesPrincipalCommitterMatch = out.PrincipalCommitterMatch
 	checks.RulesSecretScanningEnabled = out.SecretScanningEnabled
 
@@ -269,7 +269,7 @@ func (c *Controller) processPushProtection(
 		Actor:                   principal,
 		IsRepoOwner:             isRepoOwner,
 		Protections:             out.Protections,
-		FileSizeLimit:           checks.RulesFileSizeLimit,
+		FileSizeLimits:          checks.RulesFileSizeLimits,
 		PrincipalCommitterMatch: checks.RulesPrincipalCommitterMatch,
 		SecretScanningEnabled:   checks.RulesSecretScanningEnabled,
 	}

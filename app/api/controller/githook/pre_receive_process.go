@@ -40,11 +40,14 @@ func (c *Controller) processObjects(
 		return nil
 	}
 
-	sizeLimit := checks.SettingsFileSizeLimit
-	if checks.RulesFileSizeLimit != 0 {
-		if sizeLimit == 0 || checks.RulesFileSizeLimit < sizeLimit {
-			sizeLimit = checks.RulesFileSizeLimit
+	sizeLimit := int64(0)
+	for _, limit := range checks.RulesFileSizeLimits {
+		if sizeLimit == 0 || (limit > 0 && limit < sizeLimit) {
+			sizeLimit = limit
 		}
+	}
+	if checks.SettingsFileSizeLimit > 0 && (sizeLimit == 0 || checks.SettingsFileSizeLimit < sizeLimit) {
+		sizeLimit = checks.SettingsFileSizeLimit
 	}
 
 	principalCommitterMatch := checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch

@@ -41,7 +41,7 @@ type (
 		Actor                   *types.Principal
 		IsRepoOwner             bool
 		Protections             map[int64]PushProtection
-		FileSizeLimit           int64
+		FileSizeLimits          []int64
 		FindOversizeFilesOutput *git.FindOversizeFilesOutput
 		PrincipalCommitterMatch bool
 		CommitterMismatchCount  int64
@@ -54,7 +54,7 @@ type (
 	}
 
 	PushVerifyOutput struct {
-		FileSizeLimit           int64
+		FileSizeLimits          []int64
 		PrincipalCommitterMatch bool
 		SecretScanningEnabled   bool
 		Protections             map[int64]PushProtection
@@ -81,7 +81,7 @@ func (v *DefPush) PushVerify(
 	_ PushVerifyInput,
 ) (PushVerifyOutput, []types.RuleViolations, error) {
 	return PushVerifyOutput{
-		FileSizeLimit:           v.FileSizeLimit,
+		FileSizeLimits:          []int64{v.FileSizeLimit},
 		PrincipalCommitterMatch: v.PrincipalCommitterMatch,
 		SecretScanningEnabled:   v.SecretScanningEnabled,
 	}, nil, nil
