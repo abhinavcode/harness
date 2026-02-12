@@ -40,6 +40,7 @@ func HandlePreReceive(
 			render.BadRequestf(ctx, w, "Invalid Request Body: %s.", err)
 			return
 		}
+		in.BypassRules = true
 
 		// Harness doesn't require any custom git connector.
 		out, err := githookCtrl.PreReceive(ctx, git, session, in)

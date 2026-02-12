@@ -34,6 +34,7 @@ type (
 		IsRepoOwner        bool
 		RepoID             int64
 		RepoIdentifier     string
+		AllowBypass        bool
 	}
 
 	PushViolationsInput struct {
@@ -47,6 +48,7 @@ type (
 		CommitterMismatchCount  int64
 		SecretScanningEnabled   bool
 		FoundSecretCount        int
+		AllowBypass             bool
 	}
 
 	PushViolationsOutput struct {

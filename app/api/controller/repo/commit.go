@@ -195,6 +195,7 @@ func (c *Controller) CommitFiles(ctx context.Context,
 		CommitterDate: &now,
 		Author:        cmp.Or(in.Author, identityFromPrincipal(session.Principal)),
 		AuthorDate:    &now,
+		BypassRules:   in.BypassRules,
 	})
 	if err != nil {
 		return types.CommitFilesResponse{}, nil, err
