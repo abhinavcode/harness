@@ -362,7 +362,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	dotrangeService := dotrange.ProvideService(gitInterface, repoFinder, provider, authorizer)
 	repoLangStore := database.ProvideRepoLangStore(db)
 	repoController := repo.ProvideController(config, transactor, provider, authorizer, repoStore, linkedRepoStore, spaceStore, pipelineStore, principalStore, executionStore, ruleStore, checkStore, pullReqStore, settingsService, principalInfoCache, protectionManager, gitInterface, spaceFinder, repoFinder, jobRepository, jobReferenceSync, jobRepositoryLink, codeownersService, eventsReporter, indexer, resourceLimiter, lockerLocker, auditService, mutexManager, repoIdentifier, repoCheck, publicaccessService, labelService, instrumentService, userGroupStore, usergroupService, rulesService, streamer, lfsController, favoriteStore, signatureVerifyService, autolinkService, dotrangeService, connectorService, repoLangStore)
-	reposettingsController := reposettings.ProvideController(authorizer, repoFinder, settingsService, auditService)
+	reposettingsController := reposettings.ProvideController(authorizer, repoFinder, spaceFinder, settingsService, auditService)
 	stageStore := database.ProvideStageStore(db)
 	schedulerScheduler, err := scheduler.ProvideScheduler(stageStore, mutexManager)
 	if err != nil {
