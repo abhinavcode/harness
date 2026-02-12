@@ -23,7 +23,7 @@ import (
 
 	"github.com/harness/gitness/app/api/usererror"
 	"github.com/harness/gitness/registry/app/events/replication"
-	"github.com/harness/gitness/registry/app/pkg/docker"
+	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/types"
@@ -45,7 +45,7 @@ func NewFileManager(
 	registryDao store.RegistryRepository, genericBlobDao store.GenericBlobRepository,
 	nodesDao store.NodesRepository, tx dbtx.Transactor,
 	config *gitnesstypes.Config, storageService *storage.Service,
-	bucketService docker.BucketService, replicationReporter replication.Reporter,
+	bucketService commons.BucketService, replicationReporter replication.Reporter,
 ) FileManager {
 	return &fileManager{
 		registryDao:         registryDao,
@@ -66,7 +66,7 @@ type fileManager struct {
 	genericBlobDao      store.GenericBlobRepository
 	nodesDao            store.NodesRepository
 	tx                  dbtx.Transactor
-	bucketService       docker.BucketService
+	bucketService       commons.BucketService
 	replicationReporter replication.Reporter
 }
 

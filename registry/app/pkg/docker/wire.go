@@ -29,6 +29,7 @@ import (
 	"github.com/harness/gitness/registry/app/manifest/manifestlist"
 	"github.com/harness/gitness/registry/app/manifest/schema2"
 	"github.com/harness/gitness/registry/app/pkg"
+	"github.com/harness/gitness/registry/app/pkg/commons"
 	proxy2 "github.com/harness/gitness/registry/app/remote/controller/proxy"
 	registryrefcache "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/storage"
@@ -52,7 +53,7 @@ func LocalRegistryProvider(
 	bandwidthStatDao store.BandwidthStatRepository, downloadStatDao store.DownloadStatRepository,
 	gcService gc.Service, tx dbtx.Transactor, quarantineArtifactDao store.QuarantineArtifactRepository,
 	replicationReporter replication.Reporter,
-	bucketService BucketService,
+	bucketService commons.BucketService,
 ) *LocalRegistry {
 	registry, ok := NewLocalRegistry(
 		app, ms, manifestDao, registryDao, registryFinder, registryBlobDao, blobRepo,
@@ -165,7 +166,7 @@ func ProvideOciBlobStore(storageService *storage.Service) OciBlobStoreFactory {
 	return storageService.OciBlobsStore
 }
 
-func ProvideBucketService(_ OciBlobStoreFactory) BucketService {
+func ProvideBucketService(_ OciBlobStoreFactory) commons.BucketService {
 	return &noOpBucketService{}
 }
 
@@ -175,7 +176,7 @@ type noOpBucketService struct{}
 func (n *noOpBucketService) GetBlobStore(
 	_ context.Context, _ string, _ string,
 	_ any, _ string,
-) *BlobStore {
+) *commons.BlobStore {
 	return nil
 }
 

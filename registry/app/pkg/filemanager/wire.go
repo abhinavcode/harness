@@ -16,7 +16,7 @@ package filemanager
 
 import (
 	"github.com/harness/gitness/registry/app/events/replication"
-	"github.com/harness/gitness/registry/app/pkg/docker"
+	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/store/database/dbtx"
@@ -31,7 +31,7 @@ func Provider(
 	tx dbtx.Transactor,
 	config *gitnesstypes.Config,
 	storageService *storage.Service,
-	bucketService docker.BucketService,
+	bucketService commons.BucketService,
 	replicationReporter replication.Reporter,
 ) FileManager {
 	// Pass the BucketService to use the unified implementation
