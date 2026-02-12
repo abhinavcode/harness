@@ -121,7 +121,7 @@ func NewLocalRegistry(
 	tagDao store.TagRepository, imageDao store.ImageRepository, artifactDao store.ArtifactRepository,
 	bandwidthStatDao store.BandwidthStatRepository, downloadStatDao store.DownloadStatRepository,
 	gcService gc.Service, tx dbtx.Transactor, quarantineArtifactDao store.QuarantineArtifactRepository,
-	bucketService BucketService, replicationReporter replication.Reporter,
+	bucketService commons.BucketService, replicationReporter replication.Reporter,
 ) Registry {
 	return &LocalRegistry{
 		App:                   app,
@@ -162,7 +162,7 @@ type LocalRegistry struct {
 	gcService             gc.Service
 	tx                    dbtx.Transactor
 	quarantineArtifactDao store.QuarantineArtifactRepository
-	bucketService         BucketService
+	bucketService         commons.BucketService
 	replicationReporter   replication.Reporter
 }
 

@@ -26,6 +26,7 @@ import (
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
 	storagedriver "github.com/harness/gitness/registry/app/driver"
 	"github.com/harness/gitness/registry/app/pkg"
+	"github.com/harness/gitness/registry/app/pkg/commons"
 	registrystorage "github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/gc"
@@ -47,7 +48,7 @@ type App struct {
 
 	Config         *types.Config
 	storageService *registrystorage.Service
-	bucketService  BucketService
+	bucketService  commons.BucketService
 }
 
 // NewApp takes a configuration and returns a configured app.
@@ -56,7 +57,7 @@ func NewApp(
 	blobRepo store.BlobRepository, spaceStore corestore.SpaceStore,
 	cfg *types.Config, storageService *registrystorage.Service,
 	gcService gc.Service,
-	bucketService BucketService,
+	bucketService commons.BucketService,
 ) *App {
 	app := &App{
 		Context:        ctx,
