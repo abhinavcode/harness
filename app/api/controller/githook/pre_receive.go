@@ -36,7 +36,7 @@ import (
 
 type protectionChecks struct {
 	RulesSecretScanningEnabled   bool
-	RulesFileSizeLimit           int64
+	RulesFileSizeLimits          []int64
 	RulesPrincipalCommitterMatch bool
 
 	SettingsSecretScanningEnabled   bool
@@ -47,8 +47,9 @@ type protectionChecks struct {
 }
 
 type settingsViolations struct {
-	SecretsFound           bool
-	FileSizeLimitExceeded  bool
+	SecretsFound bool
+	// 0 means no file exceeded the limit; >0 is the exceeded size limit
+	ExceededFileSizeLimit  int64
 	CommitterMismatchFound bool
 	UnknownLFSObjectsFound bool
 }
@@ -180,7 +181,7 @@ func (c *Controller) populateProtectionChecks(
 ) (protectionChecks, error) {
 	var checks protectionChecks
 
-	checks.RulesFileSizeLimit = out.FileSizeLimit
+	checks.RulesFileSizeLimits = out.FileSizeLimits
 	checks.RulesPrincipalCommitterMatch = out.PrincipalCommitterMatch
 	checks.RulesSecretScanningEnabled = out.SecretScanningEnabled
 
@@ -269,7 +270,7 @@ func (c *Controller) processPushProtection(
 		Actor:                   principal,
 		IsRepoOwner:             isRepoOwner,
 		Protections:             out.Protections,
-		FileSizeLimit:           checks.RulesFileSizeLimit,
+		FileSizeLimits:          checks.RulesFileSizeLimits,
 		PrincipalCommitterMatch: checks.RulesPrincipalCommitterMatch,
 		SecretScanningEnabled:   checks.RulesSecretScanningEnabled,
 	}
@@ -432,10 +433,10 @@ func processViolations(
 			)
 			criticalViolation = true
 		}
-		if settingsViolations.FileSizeLimitExceeded {
+		if settingsViolations.ExceededFileSizeLimit > 0 {
 			output.Messages = append(
 				output.Messages,
-				repoSettingsBlockPrefix+"File size limit exceeded.",
+				repoSettingsBlockPrefix+fmt.Sprintf("File size limit of %d bytes exceeded.", settingsViolations.ExceededFileSizeLimit),
 			)
 			criticalViolation = true
 		}
