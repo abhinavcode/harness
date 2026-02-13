@@ -22,6 +22,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/generic"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/store/database/dbtx"
 
@@ -49,6 +50,7 @@ func ControllerProvider(
 	proxy generic.Proxy,
 	quarantineFinder quarantine.Finder,
 	dependencyFirewallChecker interfaces.DependencyFirewallChecker,
+	entityNodeService entitynode.Service,
 ) *Controller {
 	return NewController(
 		spaceStore,
@@ -61,6 +63,7 @@ func ControllerProvider(
 		proxy,
 		quarantineFinder,
 		dependencyFirewallChecker,
+		entityNodeService,
 	)
 }
 

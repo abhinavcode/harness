@@ -29,6 +29,7 @@ import (
 	"github.com/harness/gitness/app/services/refcache"
 	urlprovider "github.com/harness/gitness/app/url"
 	"github.com/harness/gitness/audit"
+	"github.com/harness/gitness/registry/app/api/interfaces"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/event"
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
@@ -39,6 +40,8 @@ import (
 	"github.com/harness/gitness/registry/app/pkg"
 	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/app/pkg/commons"
+	"github.com/harness/gitness/registry/app/pkg/filemanager"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/store/database/util"
 	"github.com/harness/gitness/registry/gc"
@@ -74,6 +77,9 @@ type manifestService struct {
 	urlProvider             urlprovider.Provider
 	untaggedImagesEnabled   func(ctx context.Context) bool
 	auditService            audit.Service
+	fileManager             filemanager.FileManager
+	packageWrapper          interfaces.PackageWrapper
+	entityNodeService       entitynode.Service
 }
 
 func NewManifestService(
@@ -85,6 +91,9 @@ func NewManifestService(
 	ociImageIndexMappingDao store.OCIImageIndexMappingRepository, artifactEventReporter registryevents.Reporter,
 	urlProvider urlprovider.Provider, untaggedImagesEnabled func(ctx context.Context) bool,
 	auditService audit.Service,
+	fileManager filemanager.FileManager,
+	packageWrapper interfaces.PackageWrapper,
+	entityNodeService entitynode.Service,
 ) ManifestService {
 	return &manifestService{
 		registryDao:             registryDao,
@@ -105,6 +114,9 @@ func NewManifestService(
 		urlProvider:             urlProvider,
 		untaggedImagesEnabled:   untaggedImagesEnabled,
 		auditService:            auditService,
+		fileManager:             fileManager,
+		packageWrapper:          packageWrapper,
+		entityNodeService:       entityNodeService,
 	}
 }
 
@@ -505,6 +517,18 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 		return err
 	}
 
+	// Link image entity to nodes
+	var artifactTypeStr *string
+	if info.ArtifactInfo.ArtifactType != nil {
+		str := string(*info.ArtifactInfo.ArtifactType)
+		artifactTypeStr = &str
+	}
+	if err := commons.LinkImageEntityToNodes(
+		ctx, l.entityNodeService, info.Image, dbRepo.ID, artifactTypeStr,
+	); err != nil {
+		return err
+	}
+
 	dgst, err := types.NewDigest(d)
 	if err != nil {
 		return err
@@ -518,11 +542,68 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 		return err
 	}
 
+	// Create nodes and link entities for OCI artifact
+	if err := l.createNodesForArtifact(ctx, dbRepo, info, dgst.String()); err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("failed to create nodes for artifact")
+		return fmt.Errorf("failed to create nodes for artifact: %w", err)
+	}
+
+	// Link image and artifact entities to nodes
+	if err := commons.LinkImageEntityToNodes(
+		ctx, l.entityNodeService, info.Image, dbRepo.ID, artifactTypeStr,
+	); err != nil {
+		return err
+	}
+	if err := commons.LinkArtifactEntityToNodes(
+		ctx, l.entityNodeService, info.Image, dgst.String(), dbRepo.ID, artifactTypeStr,
+	); err != nil {
+		return err
+	}
+
 	// Audit log for OCI/Docker/Helm artifact push
 	registryaudit.LogArtifactPush(
 		ctx, l.auditService, l.spaceFinder, *info.ArtifactInfo,
 		dgst.String(), dbImage.UUID, dbArtifact.UUID,
 	)
+
+	return nil
+}
+
+// createNodesForArtifact creates file system nodes for the OCI artifact.
+func (l *manifestService) createNodesForArtifact(
+	ctx context.Context,
+	dbRepo types.Registry,
+	info pkg.RegistryInfo,
+	digest string,
+) error {
+	if l.packageWrapper == nil || l.fileManager == nil {
+		return nil
+	}
+
+	packageType := string(dbRepo.PackageType)
+	var artifactTypeStr *string
+	if info.ArtifactInfo.ArtifactType != nil {
+		str := string(*info.ArtifactInfo.ArtifactType)
+		artifactTypeStr = &str
+	}
+
+	nodePaths, err := l.packageWrapper.GetNodePathsForArtifact(packageType, artifactTypeStr, info.Image, digest)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("failed to get node paths for OCI artifact")
+		return fmt.Errorf("failed to get node paths for OCI artifact: %w", err)
+	}
+
+	var principalID int64
+	if session, ok := request.AuthSessionFrom(ctx); ok && session != nil && session.Principal.ID > 0 {
+		principalID = session.Principal.ID
+	}
+
+	for _, nodePath := range nodePaths {
+		if err := l.fileManager.CreateNodesWithoutFileNode(ctx, nodePath, dbRepo.ID, principalID); err != nil {
+			log.Ctx(ctx).Error().Err(err).Str("node_path", nodePath).Msg("failed to create node")
+			return fmt.Errorf("failed to create node %s: %w", nodePath, err)
+		}
+	}
 
 	return nil
 }

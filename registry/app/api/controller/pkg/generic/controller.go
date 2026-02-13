@@ -38,6 +38,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/generic"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/types"
@@ -56,6 +57,7 @@ type Controller struct {
 	proxy                     generic.Proxy
 	quarantineFinder          quarantine.Finder
 	dependencyFirewallChecker interfaces.DependencyFirewallChecker
+	entityNodeService         entitynode.Service
 }
 
 type DBStore struct {
@@ -78,6 +80,7 @@ func NewController(
 	proxy generic.Proxy,
 	quarantineFinder quarantine.Finder,
 	dependencyFirewallChecker interfaces.DependencyFirewallChecker,
+	entityNodeService entitynode.Service,
 ) *Controller {
 	return &Controller{
 		SpaceStore:                spaceStore,
@@ -90,6 +93,7 @@ func NewController(
 		proxy:                     proxy,
 		quarantineFinder:          quarantineFinder,
 		dependencyFirewallChecker: dependencyFirewallChecker,
+		entityNodeService:         entityNodeService,
 	}
 }
 
@@ -150,6 +154,11 @@ func (c Controller) UploadArtifact(
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
 
+			// Link image entity to nodes
+			if err := commons.LinkImageEntityToNodes(ctx, c.entityNodeService, info.Image, info.RegistryID, nil); err != nil {
+				return err
+			}
+
 			dbArtifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
@@ -182,6 +191,14 @@ func (c Controller) UploadArtifact(
 				return fmt.Errorf("failed to create artifact : [%s] with "+
 					regNameFormat, info.Image, info.RegIdentifier)
 			}
+
+			// Link artifact entity to nodes
+			if err := commons.LinkArtifactEntityToNodes(
+				ctx, c.entityNodeService, info.Image, info.Version, info.RegistryID, nil,
+			); err != nil {
+				return err
+			}
+
 			return nil
 		})
 

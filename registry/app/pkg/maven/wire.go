@@ -23,6 +23,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/remote/controller/proxy/maven"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/secret"
 	"github.com/harness/gitness/store/database/dbtx"
@@ -35,12 +36,14 @@ func LocalRegistryProvider(
 	dBStore *DBStore,
 	tx dbtx.Transactor,
 	fileManager filemanager.FileManager,
+	entityNodeService entitynode.Service,
 ) *LocalRegistry {
 	//nolint:errcheck
 	return NewLocalRegistry(localBase,
 		dBStore,
 		tx,
 		fileManager,
+		entityNodeService,
 	).(*LocalRegistry)
 }
 
