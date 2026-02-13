@@ -24,8 +24,6 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
-	"github.com/harness/gitness/registry/app/api/utils"
-	"github.com/harness/gitness/registry/app/manifest/manifestlist"
 	"github.com/harness/gitness/registry/services/webhook"
 	registryTypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store"
@@ -33,7 +31,6 @@ import (
 	"github.com/harness/gitness/types/enum"
 
 	"github.com/opencontainers/go-digest"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rs/zerolog/log"
 )
 
@@ -188,67 +185,16 @@ func (c *APIController) deleteOciVersionWithAudit(
 	registryName string, principal types.Principal, artifactName string, versionName string,
 ) error {
 	var existingDigest digest.Digest
-	//nolint:nestif
-	if c.UntaggedImagesEnabled(ctx) {
-		err := c.tx.WithTx(
-			ctx, func(ctx context.Context) error {
-				d := digest.Digest(versionName)
-				dgst, _ := registryTypes.NewDigest(d)
-				existingManifest, err := c.ManifestStore.FindManifestByDigest(
-					ctx, regInfo.RegistryID, artifactName, dgst,
-				)
-				if err != nil {
-					return fmt.Errorf("failed to fing existing manifest for: %s, err: %w", versionName, err)
-				}
-				if existingManifest.MediaType == v1.MediaTypeImageIndex ||
-					existingManifest.MediaType == manifestlist.MediaTypeManifestList {
-					manifests, err := c.ManifestStore.References(ctx, existingManifest)
-					if err != nil {
-						return fmt.Errorf("failed to fing existing manifests referenced by: %s, err: %w",
-							versionName, err)
-					}
-					if len(manifests) > 0 {
-						return fmt.Errorf("cannot delete manifest: %s, as it references other manifests",
-							versionName)
-					}
-				}
-				err = c.ManifestStore.Delete(ctx, regInfo.RegistryID, existingManifest.ID)
-				if err != nil {
-					return err
-				}
-				existingDigest = d
-				_, err = c.TagStore.DeleteTagByManifestID(ctx, regInfo.RegistryID, existingManifest.ID)
-				if err != nil {
-					return fmt.Errorf("failed to delete tags for: %s, err: %w", versionName, err)
-				}
-				err = c.ArtifactStore.DeleteByVersionAndImageName(ctx, artifactName, versionName, regInfo.RegistryID)
-				if err != nil {
-					return err
-				}
 
-				count, err := c.ManifestStore.CountByImageName(ctx, regInfo.RegistryID, artifactName)
-				if err != nil {
-					return err
-				}
-				if count < 1 {
-					err = c.ImageStore.DeleteByImageNameAndRegID(
-						ctx, regInfo.RegistryID, artifactName,
-					)
-					if err != nil {
-						return err
-					}
-				}
-				return nil
-			})
-		if err != nil {
-			return fmt.Errorf("failed to delete artifact version: %w", err)
-		}
+	if c.UntaggedImagesEnabled(ctx) {
+		existingDigest = digest.Digest(versionName)
 	} else {
 		existingDigest = c.getTagDigest(ctx, regInfo.RegistryID, artifactName, versionName)
-		err := c.TagStore.DeleteTag(ctx, regInfo.RegistryID, artifactName, versionName)
-		if err != nil {
-			return err
-		}
+	}
+
+	err := c.DeletionService.DeleteOCIArtifact(ctx, regInfo.RegistryID, artifactName, versionName)
+	if err != nil {
+		return fmt.Errorf("failed to delete artifact version: %w", err)
 	}
 	if existingDigest != "" {
 		payload := webhook.GetArtifactDeletedPayload(ctx, principal.ID, regInfo.RegistryID,
@@ -272,42 +218,7 @@ func (c *APIController) deleteVersion(
 		return fmt.Errorf("version doesn't exist for image %v: %w", imageInfo.Name, err)
 	}
 
-	// get the file path based on package type
-	filePath, err := utils.GetFilePath(regInfo.PackageType, artifactName, versionName)
-	if err != nil {
-		return fmt.Errorf("failed to get file path: %w", err)
-	}
-
-	err = c.tx.WithTx(
-		ctx,
-		func(ctx context.Context) error {
-			// delete nodes from nodes store
-			err = c.fileManager.DeleteFile(ctx, regInfo.RegistryID, filePath)
-			if err != nil {
-				return err
-			}
-
-			// delete artifacts from artifacts store
-			err = c.ArtifactStore.DeleteByVersionAndImageName(ctx, artifactName, versionName, regInfo.RegistryID)
-			if err != nil {
-				return fmt.Errorf("failed to delete version: %w", err)
-			}
-
-			// delete image if no other artifacts linked
-			err = c.ImageStore.DeleteByImageNameIfNoLinkedArtifacts(ctx, regInfo.RegistryID, artifactName)
-			if err != nil {
-				return fmt.Errorf("failed to delete image: %w", err)
-			}
-
-			return nil
-		},
-	)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.DeletionService.DeleteGenericArtifact(ctx, regInfo.RegistryID, regInfo.PackageType, artifactName, versionName)
 }
 
 func (c *APIController) sendArtifactDeletedWebhookEvent(

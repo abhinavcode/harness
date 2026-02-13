@@ -268,6 +268,7 @@ func TestCreateRegistry(t *testing.T) {
 					nil, // registryBlobStore.
 					mockRegFinder,
 					nil, // PostProcessingReporter - not needed for this test.
+					nil, // reindexingService.
 					nil, // cargoRegistryHelper.
 					nil, // spaceController.
 					nil, // quarantineArtifactRepository.
@@ -278,6 +279,7 @@ func TestCreateRegistry(t *testing.T) {
 					},
 					mockPackageWrapper,
 					mockPublicAccessService,
+					nil, // deletionService.
 				)
 			},
 		},
@@ -359,6 +361,7 @@ func TestCreateRegistry(t *testing.T) {
 					nil, // registryBlobStore.
 					mockRegFinder,
 					nil, // PostProcessingReporter - not needed for this test.
+					nil, // reindexingService.
 					nil, // cargoRegistryHelper.
 					nil, // spaceController.
 					nil, // quarantineArtifactRepository.
@@ -369,6 +372,7 @@ func TestCreateRegistry(t *testing.T) {
 					},
 					mockPackageWrapper,
 					mockPublicAccessService,
+					nil, // deletionService.
 				)
 			},
 		},

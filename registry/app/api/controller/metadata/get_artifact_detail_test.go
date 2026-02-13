@@ -277,9 +277,9 @@ func setupBasicController(_ *testing.T) *metadata.APIController {
 		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, mockImageStore, nil,
 		mockSpaceFinder, nil, nil, nil, mockAuthorizer, nil, mockArtifactStore, nil, nil,
 		mockRegistryMetadataHelper, nil, eventReporter, mockDownloadStatRepo, "",
-		nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
+		nil, nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil, // packageWrapper, publicAccess, deletionService.
 	)
 }
 
@@ -321,12 +321,43 @@ func setupControllerWithError(_ *testing.T, errorType string) *metadata.APIContr
 	eventReporter := createEventReporter()
 
 	return metadata.NewAPIController(
-		nil, fileManager, nil, nil, nil, nil, nil, nil, nil, nil,
-		mockSpaceFinder, nil, nil, nil, mockAuthorizer, nil, nil, nil, nil,
-		mockRegistryMetadataHelper, nil, eventReporter, nil, "",
-		nil, nil, nil, nil, nil, nil, nil, nil,
-		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil,                       // repositoryStore
+		fileManager,               // fileManager
+		nil,                       // blobStore
+		nil,                       // genericBlobStore
+		nil,                       // upstreamProxyStore
+		nil,                       // tagStore
+		nil,                       // manifestStore
+		nil,                       // cleanupPolicyStore
+		nil,                       // imageStore
+		nil,                       // driver
+		mockSpaceFinder,           // spaceFinder
+		nil,                       // tx
+		nil,                       // db
+		nil,                       // urlProvider
+		mockAuthorizer,            // authorizer
+		nil,                       // auditService
+		nil,                       // artifactStore
+		nil,                       // webhooksRepository
+		nil,                       // webhooksExecutionRepository
+		mockRegistryMetadataHelper, // registryMetadataHelper
+		nil,                       // webhookService
+		eventReporter,             // artifactEventReporter
+		nil,                       // downloadStatRepository
+		"",                        // setupDetailsAuthHeaderPrefix
+		nil,                       // registryBlobStore
+		nil,                       // regFinder
+		nil,                       // postProcessingReporter
+		nil,                       // reindexingService
+		nil,                       // cargoRegistryHelper
+		nil,                       // spaceController
+		nil,                       // quarantineArtifactRepository
+		nil,                       // quarantineFinder
+		nil,                       // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		nil, // packageWrapper
+		nil, // publicAccess
+		nil, // deletionService
 	)
 }
 
@@ -483,9 +514,9 @@ func setupSnapshotController(_ *testing.T, packageType artifact.PackageType) *me
 		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, mockImageStore, nil,
 		mockSpaceFinder, nil, nil, nil, mockAuthorizer, nil, mockArtifactStore, nil, nil,
 		mockRegistryMetadataHelper, nil, eventReporter, mockDownloadStatRepo, "",
-		nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
+		nil, nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
 		func(_ context.Context) bool { return false },
-		nil, nil,
+		nil, nil, nil, // packageWrapper, publicAccess, deletionService.
 	)
 }
 

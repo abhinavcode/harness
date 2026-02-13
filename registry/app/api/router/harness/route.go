@@ -35,6 +35,7 @@ import (
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
+	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
@@ -96,6 +97,10 @@ func NewAPIHandler(
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.Service,
 	quarantineFinder quarantine.Finder,
+	untaggedImagesEnabled func(ctx context.Context) bool,
+	blobStore store.BlobRepository,
+	genericBlobStore store.GenericBlobRepository,
+	deletionService *deletion.Service,
 ) APIHandler {
 	r := chi.NewRouter()
 	r.Use(audit.Middleware())
@@ -105,8 +110,8 @@ func NewAPIHandler(
 	apiController := metadata.NewAPIController(
 		repoDao,
 		fileManager,
-		nil,
-		nil,
+		blobStore,
+		genericBlobStore,
 		upstreamproxyDao,
 		tagDao,
 		manifestDao,
@@ -135,11 +140,10 @@ func NewAPIHandler(
 		quarantineArtifactRepository,
 		quarantineFinder,
 		spaceStore,
-		func(_ context.Context) bool {
-			return true
-		},
+		untaggedImagesEnabled,
 		packageWrapper,
 		publicAccess,
+		deletionService,
 	)
 
 	handler := artifact.NewStrictHandler(apiController, []artifact.StrictMiddlewareFunc{})

@@ -15,6 +15,9 @@
 package router
 
 import (
+	"context"
+	"fmt"
+
 	spacecontroller "github.com/harness/gitness/app/api/controller/space"
 	"github.com/harness/gitness/app/auth/authn"
 	"github.com/harness/gitness/app/auth/authz"
@@ -45,8 +48,10 @@ import (
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
+	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/publicaccess"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
+	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/registry/app/store"
 	cargoutils "github.com/harness/gitness/registry/app/utils/cargo"
 	registrywebhook "github.com/harness/gitness/registry/services/webhook"
@@ -100,6 +105,10 @@ func APIHandlerProvider(
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.CacheService,
 	quarantineFinder quarantine.Finder,
+	untaggedImagesEnabled func(ctx context.Context) bool,
+	blobStore store.BlobRepository,
+	genericBlobStore store.GenericBlobRepository,
+	deletionService *deletion.Service,
 ) harness.APIHandler {
 	return harness.NewAPIHandler(
 		repoDao,
@@ -136,6 +145,10 @@ func APIHandlerProvider(
 		packageWrapper,
 		publicAccess,
 		quarantineFinder,
+		untaggedImagesEnabled,
+		blobStore,
+		genericBlobStore,
+		deletionService,
 	)
 }
 
@@ -181,5 +194,39 @@ func PackageHandlerProvider(
 	)
 }
 
-var WireSet = wire.NewSet(APIHandlerProvider, OCIHandlerProvider, AppRouterProvider,
-	MavenHandlerProvider, GenericHandlerProvider, PackageHandlerProvider)
+// ProvideUntaggedImagesEnabled provides a function for checking untagged images feature.
+// Gitness (standalone) doesn't have feature flags, so this defaults to false.
+// The harness-code registry-server uses a different provider that checks actual feature flags.
+func ProvideUntaggedImagesEnabled() func(ctx context.Context) bool {
+	return func(_ context.Context) bool {
+		return false // Gitness standalone defaults to tag-based mode
+	}
+}
+
+// noopPackageWrapper is a no-op implementation for gitness standalone.
+type noopPackageWrapper struct{}
+
+func (n *noopPackageWrapper) DeleteArtifact(
+	_ context.Context,
+	_ *registrytypes.RegistryRequestBaseInfo,
+	_ string,
+) error {
+	return fmt.Errorf("custom package types not supported in gitness standalone")
+}
+
+// ProvideNoOpPackageWrapper provides a no-op package wrapper for gitness standalone.
+func ProvideNoOpPackageWrapper() deletion.PackageWrapper {
+	return &noopPackageWrapper{}
+}
+
+var WireSet = wire.NewSet(
+	APIHandlerProvider,
+	OCIHandlerProvider,
+	AppRouterProvider,
+	MavenHandlerProvider,
+	GenericHandlerProvider,
+	PackageHandlerProvider,
+	ProvideUntaggedImagesEnabled,
+	ProvideNoOpPackageWrapper,
+	deletion.WireSet,
+)

@@ -30,6 +30,7 @@ import (
 	registrypostprocessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
+	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
@@ -79,6 +80,7 @@ type APIController struct {
 	UntaggedImagesEnabled        func(ctx context.Context) bool
 	PackageWrapper               interfaces.PackageWrapper
 	PublicAccess                 publicaccess.Service
+	DeletionService              *deletion.Service
 }
 
 func NewAPIController(
@@ -117,6 +119,7 @@ func NewAPIController(
 	untaggedImagesEnabled func(ctx context.Context) bool,
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.Service,
+	deletionService *deletion.Service,
 ) *APIController {
 	return &APIController{
 		fileManager:                  fileManager,
@@ -154,5 +157,6 @@ func NewAPIController(
 		UntaggedImagesEnabled:        untaggedImagesEnabled,
 		PackageWrapper:               packageWrapper,
 		PublicAccess:                 publicAccess,
+		DeletionService:              deletionService,
 	}
 }
