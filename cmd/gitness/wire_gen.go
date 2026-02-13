@@ -167,6 +167,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/python"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/pkg/rpm"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	publicaccess2 "github.com/harness/gitness/registry/app/services/publicaccess"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
 	cache2 "github.com/harness/gitness/registry/app/store/cache"
@@ -589,15 +590,29 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	manifestService := docker.ManifestServiceProvider(registryRepository, manifestRepository, blobRepository, mediaTypesRepository, manifestReferenceRepository, tagRepository, imageRepository, artifactRepository, layerRepository, gcService, transactor, eventReporter, spaceFinder, ociImageIndexMappingRepository, artifactReporter, provider, auditService)
-	registryBlobRepository := database2.ProvideRegistryBlobDao(db)
-	bandwidthStatRepository := database2.ProvideBandwidthStatDao(db)
-	downloadStatRepository := database2.ProvideDownloadStatDao(db)
-	quarantineArtifactRepository := database2.ProvideQuarantineArtifactDao(db)
+	genericBlobRepository := database2.ProvideGenericBlobDao(db)
+	nodesRepository := database2.ProvideNodeDao(db)
 	replicationReporter, err := replication.ProvideNoOpReplicationReporter()
 	if err != nil {
 		return nil, err
 	}
+	fileManager := filemanager.Provider(registryRepository, genericBlobRepository, nodesRepository, transactor, config, storageService, bucketService, replicationReporter)
+	taskRepository := database2.ProvideTaskRepository(db, transactor)
+	taskSourceRepository := database2.ProvideTaskSourceRepository(db, transactor)
+	taskEventRepository := database2.ProvideTaskEventRepository(db)
+	asyncprocessingReporter, err := asyncprocessing.ProvideAsyncProcessingReporter(transactor, eventsSystem, taskRepository, taskSourceRepository, taskEventRepository)
+	if err != nil {
+		return nil, err
+	}
+	registryHelper := helpers.ProvideRegistryHelper(artifactRepository, fileManager, imageRepository, artifactReporter, asyncprocessingReporter, transactor, provider, config)
+	cargoRegistryHelper := cargo.LocalRegistryHelperProvider(fileManager, artifactRepository, spaceFinder)
+	packageWrapper := helpers.ProvidePackageWrapperProvider(registryHelper, registryFinder, cargoRegistryHelper)
+	entitynodeService := entitynode.ProvideService()
+	manifestService := docker.ManifestServiceProvider(registryRepository, manifestRepository, blobRepository, mediaTypesRepository, manifestReferenceRepository, tagRepository, imageRepository, artifactRepository, layerRepository, gcService, transactor, eventReporter, spaceFinder, ociImageIndexMappingRepository, artifactReporter, provider, auditService, fileManager, packageWrapper, entitynodeService)
+	registryBlobRepository := database2.ProvideRegistryBlobDao(db)
+	bandwidthStatRepository := database2.ProvideBandwidthStatDao(db)
+	downloadStatRepository := database2.ProvideDownloadStatDao(db)
+	quarantineArtifactRepository := database2.ProvideQuarantineArtifactDao(db)
 	localRegistry := docker.LocalRegistryProvider(app, manifestService, blobRepository, registryRepository, registryFinder, manifestRepository, registryBlobRepository, mediaTypesRepository, tagRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, gcService, transactor, quarantineArtifactRepository, replicationReporter, bucketService)
 	proxyController := docker.ProvideProxyController(localRegistry, manifestService, secretService, spaceFinder)
 	remoteRegistry := docker.RemoteRegistryProvider(localRegistry, app, upstreamProxyConfigRepository, spaceFinder, secretService, proxyController)
@@ -613,9 +628,6 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	cacheService := publicaccess2.ProvideRegistryPublicAccess(publicaccessService, publicaccessCache, evictor5)
 	handler := api2.NewHandlerProvider(dockerController, spaceFinder, spaceStore, tokenStore, controller, authenticator, provider, authorizer, config, registryFinder, cacheService)
 	registryOCIHandler := router.OCIHandlerProvider(handler)
-	genericBlobRepository := database2.ProvideGenericBlobDao(db)
-	nodesRepository := database2.ProvideNodeDao(db)
-	fileManager := filemanager.Provider(registryRepository, genericBlobRepository, nodesRepository, transactor, config, storageService, bucketService, replicationReporter)
 	cleanupPolicyRepository := database2.ProvideCleanupPolicyDao(db, transactor)
 	accessor := dbtx.ProvideAccessor(accessorTx)
 	webhooksRepository := database2.ProvideWebhookDao(db)
@@ -628,21 +640,11 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	taskRepository := database2.ProvideTaskRepository(db, transactor)
-	taskSourceRepository := database2.ProvideTaskSourceRepository(db, transactor)
-	taskEventRepository := database2.ProvideTaskEventRepository(db)
-	asyncprocessingReporter, err := asyncprocessing.ProvideAsyncProcessingReporter(transactor, eventsSystem, taskRepository, taskSourceRepository, taskEventRepository)
-	if err != nil {
-		return nil, err
-	}
-	registryHelper := cargo.LocalRegistryHelperProvider(fileManager, artifactRepository, spaceFinder)
-	interfacesRegistryHelper := helpers.ProvideRegistryHelper(artifactRepository, fileManager, imageRepository, artifactReporter, asyncprocessingReporter, transactor, provider, config)
-	packageWrapper := helpers.ProvidePackageWrapperProvider(interfacesRegistryHelper, registryFinder, registryHelper)
-	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, storageDriver, spaceFinder, transactor, accessor, authenticator, provider, authorizer, auditService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, registryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder)
+	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, storageDriver, spaceFinder, transactor, accessor, authenticator, provider, authorizer, auditService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, cargoRegistryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder)
 	packageTagRepository := database2.ProvidePackageTagDao(db)
-	localBase := base.LocalBaseProvider(registryRepository, registryFinder, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService)
+	localBase := base.LocalBaseProvider(registryRepository, registryFinder, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService, entitynodeService)
 	mavenDBStore := maven.DBStoreProvider(registryRepository, imageRepository, artifactRepository, spaceStore, bandwidthStatRepository, downloadStatRepository, nodesRepository, upstreamProxyConfigRepository)
-	mavenLocalRegistry := maven.LocalRegistryProvider(localBase, mavenDBStore, transactor, fileManager)
+	mavenLocalRegistry := maven.LocalRegistryProvider(localBase, mavenDBStore, transactor, fileManager, entitynodeService)
 	mavenController := maven.ProvideProxyController(mavenLocalRegistry, secretService, spaceFinder)
 	mavenRemoteRegistry := maven.RemoteRegistryProvider(mavenDBStore, transactor, mavenLocalRegistry, mavenController)
 	dependencyFirewallChecker := helpers.NewNoopDependencyFirewallChecker()
@@ -653,7 +655,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	genericLocalRegistry := generic2.LocalRegistryProvider(localBase, fileManager, upstreamProxyConfigRepository, transactor, registryRepository, imageRepository, artifactRepository, provider)
 	localRegistryHelper := generic2.LocalRegistryHelperProvider(genericLocalRegistry, localBase)
 	proxy := generic2.ProxyProvider(upstreamProxyConfigRepository, registryRepository, imageRepository, artifactRepository, fileManager, transactor, provider, spaceFinder, secretService, localRegistryHelper)
-	genericController := generic.ControllerProvider(spaceStore, authorizer, fileManager, genericDBStore, transactor, spaceFinder, genericLocalRegistry, proxy, finder, dependencyFirewallChecker)
+	genericController := generic.ControllerProvider(spaceStore, authorizer, fileManager, genericDBStore, transactor, spaceFinder, genericLocalRegistry, proxy, finder, dependencyFirewallChecker, entitynodeService)
 	packagesHandler := api2.NewPackageHandlerProvider(registryRepository, downloadStatRepository, bandwidthStatRepository, spaceStore, tokenStore, controller, authenticator, provider, authorizer, spaceFinder, registryFinder, fileManager, finder, packageWrapper)
 	genericHandler := api2.NewGenericHandlerProvider(spaceStore, genericController, tokenStore, controller, authenticator, provider, authorizer, packagesHandler, spaceFinder, registryFinder)
 	handler3 := router.GenericHandlerProvider(genericHandler)
@@ -826,7 +828,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 		return nil, err
 	}
 	asyncprocessingConfig := asyncprocessing2.ProvideRegistryPostProcessingConfig(config)
-	asyncprocessingService, err := asyncprocessing2.ProvideService(ctx, transactor, rpmHelper, registryHelper, gopackageRegistryHelper, lockerLocker, readerFactory12, asyncprocessingConfig, registryRepository, taskRepository, taskSourceRepository, taskEventRepository, eventsSystem, asyncprocessingReporter, packageWrapper)
+	asyncprocessingService, err := asyncprocessing2.ProvideService(ctx, transactor, rpmHelper, cargoRegistryHelper, gopackageRegistryHelper, lockerLocker, readerFactory12, asyncprocessingConfig, registryRepository, taskRepository, taskSourceRepository, taskEventRepository, eventsSystem, asyncprocessingReporter, packageWrapper)
 	if err != nil {
 		return nil, err
 	}

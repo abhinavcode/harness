@@ -62,6 +62,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/python"
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	rpmregistry "github.com/harness/gitness/registry/app/pkg/rpm"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	publicaccess2 "github.com/harness/gitness/registry/app/services/publicaccess"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/store"
@@ -282,6 +283,7 @@ var WireSet = wire.NewSet(
 	hf2.WireSet,
 	hf3.WireSet,
 	publicaccess2.WireSet,
+	entitynode.WireSet,
 )
 
 func Wire(_ *types.Config) (RegistryApp, error) {

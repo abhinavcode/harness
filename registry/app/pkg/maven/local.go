@@ -33,6 +33,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/maven/utils"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/types"
 	gitnessstore "github.com/harness/gitness/store"
@@ -50,20 +51,23 @@ func NewLocalRegistry(
 	dBStore *DBStore,
 	tx dbtx.Transactor,
 	fileManager filemanager.FileManager,
+	entityNodeService entitynode.Service,
 ) Registry {
 	return &LocalRegistry{
-		localBase:   localBase,
-		DBStore:     dBStore,
-		tx:          tx,
-		fileManager: fileManager,
+		localBase:         localBase,
+		DBStore:           dBStore,
+		tx:                tx,
+		fileManager:       fileManager,
+		entityNodeService: entityNodeService,
 	}
 }
 
 type LocalRegistry struct {
-	localBase   base.LocalBase
-	DBStore     *DBStore
-	tx          dbtx.Transactor
-	fileManager filemanager.FileManager
+	localBase         base.LocalBase
+	DBStore           *DBStore
+	tx                dbtx.Transactor
+	fileManager       filemanager.FileManager
+	entityNodeService entitynode.Service
 }
 
 func (r *LocalRegistry) GetMavenArtifactType() string {
@@ -175,6 +179,11 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 			}
 			imageUUID = dbImage.UUID
 
+			// Link image entity to nodes
+			if err2 := commons.LinkImageEntityToNodes(ctx, r.entityNodeService, name, info.RegistryID, nil); err2 != nil {
+				return err2
+			}
+
 			if info.Version == "" {
 				return nil
 			}
@@ -206,6 +215,13 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 
 			_, err2 = r.DBStore.ArtifactDao.CreateOrUpdate(ctx, newArtifact)
 			if err2 != nil {
+				return err2
+			}
+
+			// Link artifact entity to nodes
+			if err2 := commons.LinkArtifactEntityToNodes(
+				ctx, r.entityNodeService, name, info.Version, info.RegistryID, nil,
+			); err2 != nil {
 				return err2
 			}
 
