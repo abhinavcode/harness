@@ -38,6 +38,7 @@ import (
 	registryaudit "github.com/harness/gitness/registry/app/pkg/audit"
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
+	"github.com/harness/gitness/registry/app/services/entitynode"
 	registryrefcache "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
@@ -122,17 +123,18 @@ type LocalBase interface {
 }
 
 type localBase struct {
-	registryDao    store.RegistryRepository
-	registryFinder registryrefcache.RegistryFinder
-	fileManager    filemanager.FileManager
-	tx             dbtx.Transactor
-	imageDao       store.ImageRepository
-	artifactDao    store.ArtifactRepository
-	nodesDao       store.NodesRepository
-	tagsDao        store.PackageTagRepository
-	authorizer     authz.Authorizer
-	spaceFinder    refcache.SpaceFinder
-	auditService   audit.Service
+	registryDao       store.RegistryRepository
+	registryFinder    registryrefcache.RegistryFinder
+	fileManager       filemanager.FileManager
+	tx                dbtx.Transactor
+	imageDao          store.ImageRepository
+	artifactDao       store.ArtifactRepository
+	nodesDao          store.NodesRepository
+	tagsDao           store.PackageTagRepository
+	authorizer        authz.Authorizer
+	spaceFinder       refcache.SpaceFinder
+	auditService      audit.Service
+	entityNodeService entitynode.Service
 }
 
 func NewLocalBase(
@@ -147,19 +149,21 @@ func NewLocalBase(
 	authorizer authz.Authorizer,
 	spaceFinder refcache.SpaceFinder,
 	auditService audit.Service,
+	entityNodeService entitynode.Service,
 ) LocalBase {
 	return &localBase{
-		registryDao:    registryDao,
-		registryFinder: registryFinder,
-		fileManager:    fileManager,
-		tx:             tx,
-		imageDao:       imageDao,
-		artifactDao:    artifactDao,
-		nodesDao:       nodesDao,
-		tagsDao:        tagsDao,
-		authorizer:     authorizer,
-		spaceFinder:    spaceFinder,
-		auditService:   auditService,
+		registryDao:       registryDao,
+		registryFinder:    registryFinder,
+		fileManager:       fileManager,
+		tx:                tx,
+		imageDao:          imageDao,
+		artifactDao:       artifactDao,
+		nodesDao:          nodesDao,
+		tagsDao:           tagsDao,
+		authorizer:        authorizer,
+		spaceFinder:       spaceFinder,
+		auditService:      auditService,
+		entityNodeService: entityNodeService,
 	}
 }
 
@@ -293,6 +297,18 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 			}
 			imageUUID = image.UUID
 
+			// Link image entity to nodes
+			var artifactTypeStr *string
+			if info.ArtifactType != nil {
+				str := string(*info.ArtifactType)
+				artifactTypeStr = &str
+			}
+			if err := commons.LinkImageEntityToNodes(
+				ctx, l.entityNodeService, info.Image, info.RegistryID, artifactTypeStr,
+			); err != nil {
+				return err
+			}
+
 			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
@@ -327,6 +343,13 @@ func (l *localBase) MoveMultipleTempFilesAndCreateArtifact(
 			if err != nil {
 				log.Ctx(ctx).Error().Msgf("Failed to create artifact : [%s] with error: %v", info.Image, err)
 				return fmt.Errorf("failed to create artifact : [%s] with error: %w", info.Image, err)
+			}
+
+			// Link artifact entity to nodes
+			if err := commons.LinkArtifactEntityToNodes(
+				ctx, l.entityNodeService, info.Image, version, info.RegistryID, artifactTypeStr,
+			); err != nil {
+				return err
 			}
 
 			// UUID is populated by CreateOrUpdate (generated in mapToInternalArtifact)
@@ -456,6 +479,18 @@ func (l *localBase) postUploadArtifact(
 
 			imageUUID = image.UUID
 
+			// Link image entity to nodes
+			var artifactTypeStr *string
+			if info.ArtifactType != nil {
+				str := string(*info.ArtifactType)
+				artifactTypeStr = &str
+			}
+			if err := commons.LinkImageEntityToNodes(
+				ctx, l.entityNodeService, info.Image, registry.ID, artifactTypeStr,
+			); err != nil {
+				return err
+			}
+
 			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
@@ -485,6 +520,13 @@ func (l *localBase) postUploadArtifact(
 			artifactID, err = l.artifactDao.CreateOrUpdate(ctx, newArtifact)
 			if err != nil {
 				return fmt.Errorf("failed to create artifact : [%s] with error: %w", info.Image, err)
+			}
+
+			// Link artifact entity to nodes
+			if err := commons.LinkArtifactEntityToNodes(
+				ctx, l.entityNodeService, info.Image, version, registry.ID, artifactTypeStr,
+			); err != nil {
+				return err
 			}
 
 			// Audit log for push/upload operation
