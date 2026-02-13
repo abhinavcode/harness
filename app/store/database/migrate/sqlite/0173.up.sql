@@ -1,2 +1,0 @@
-ALTER TABLE nodes 
-    ADD COLUMN total_downloads INTEGER NOT NULL DEFAULT 0;
