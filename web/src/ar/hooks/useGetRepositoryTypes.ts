@@ -99,6 +99,11 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
     icon: 'rust-logo'
   },
   {
+    label: 'repositoryTypes.swift' as keyof StringsMap,
+    value: 'SWIFT' as RepositoryPackageType,
+    icon: 'maven-repository-type'
+  },
+  {
     label: 'repositoryTypes.go',
     value: RepositoryPackageType.GO,
     icon: 'go-logo'
