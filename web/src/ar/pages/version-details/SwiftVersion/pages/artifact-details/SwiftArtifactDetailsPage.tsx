@@ -14,69 +14,69 @@
  * limitations under the License.
  */
 
-import React from 'react'
-import { Page } from '@harnessio/uicore'
-import { useGetArtifactFilesQuery } from '@harnessio/react-har-service-client'
+import React, { useCallback } from 'react'
+import { Layout } from '@harnessio/uicore'
 
-import { DEFAULT_PAGE_INDEX } from '@ar/constants'
-import { encodeRef } from '@ar/hooks/useGetSpaceRef'
-import type { VersionDetailsPathParams } from '@ar/routes/types'
-import { useDecodedParams, useGetSpaceRef, useParentHooks } from '@ar/hooks'
+import { useParentHooks } from '@ar/hooks'
+import { useStrings } from '@ar/frameworks/strings'
+import { ButtonTab, ButtonTabs } from '@ar/components/ButtonTabs/ButtonTabs'
+import VersionFilesProvider from '@ar/pages/version-details/context/VersionFilesProvider'
+import { useVersionOverview } from '@ar/pages/version-details/context/VersionOverviewProvider'
+import ReadmeFileContent from '@ar/pages/version-details/components/ReadmeFileContent/ReadmeFileContent'
+
+import SwiftVersionFilesContent from './SwiftVersionFilesContent'
+import SwiftVersionDependencyContent from './SwiftVersionDependencyContent'
 import {
-  type ArtifactFileListPageQueryParams,
-  useArtifactFileListQueryParamOptions
-} from '@ar/pages/version-details/components/ArtifactFileListTable/utils'
-import { LocalArtifactType } from '@ar/pages/repository-details/constants'
-import ArtifactFileListTable from '@ar/pages/version-details/components/ArtifactFileListTable/ArtifactFileListTable'
-import versionDetailsPageCss from '../../styles.module.scss'
+  SwiftArtifactDetails,
+  SwiftArtifactDetailsTabEnum,
+  type SwiftVersionDetailsQueryParams
+} from '../../types'
 
 export default function SwiftArtifactDetailsPage() {
-  const registryRef = useGetSpaceRef()
-  const { useQueryParams, useUpdateQueryParams } = useParentHooks()
-  const { updateQueryParams } = useUpdateQueryParams<Partial<ArtifactFileListPageQueryParams>>()
+  const { getString } = useStrings()
+  const { useUpdateQueryParams, useQueryParams } = useParentHooks()
+  const { updateQueryParams } = useUpdateQueryParams()
+  const { detailsTab = SwiftArtifactDetailsTabEnum.ReadMe } =
+    useQueryParams<SwiftVersionDetailsQueryParams>()
+  const { data } = useVersionOverview<SwiftArtifactDetails>()
+  const { metadata } = data
 
-  const pathParams = useDecodedParams<VersionDetailsPathParams>()
-  const queryParamOptions = useArtifactFileListQueryParamOptions()
-  const queryParams = useQueryParams<ArtifactFileListPageQueryParams>(queryParamOptions)
-  const { page, size, sort } = queryParams
-
-  const [sortField, sortOrder] = sort || []
-
-  const {
-    isFetching: loading,
-    error,
-    data,
-    refetch
-  } = useGetArtifactFilesQuery({
-    registry_ref: registryRef,
-    artifact: encodeRef(pathParams.artifactIdentifier),
-    version: pathParams.versionIdentifier,
-    queryParams: {
-      page,
-      size,
-      sort_field: sortField,
-      sort_order: sortOrder,
-      artifact_type: pathParams.artifactType === LocalArtifactType.ARTIFACTS ? undefined : pathParams.artifactType
-    }
-  })
-  const response = data?.content?.data
+  const handleTabChange = useCallback(
+    (nextTab: SwiftArtifactDetailsTabEnum): void => {
+      updateQueryParams({ detailsTab: nextTab })
+    },
+    [updateQueryParams]
+  )
 
   return (
-    <Page.Body
-      className={versionDetailsPageCss.pageBody}
-      loading={loading}
-      error={error?.message || error}
-      retryOnError={() => refetch()}>
-      {response && (
-        <ArtifactFileListTable
-          data={response}
-          gotoPage={pageNumber => updateQueryParams({ page: pageNumber })}
-          setSortBy={sortArr => {
-            updateQueryParams({ sort: sortArr, page: DEFAULT_PAGE_INDEX })
-          }}
-          sortBy={sort}
+    <Layout.Vertical padding="large" spacing="large">
+      <ButtonTabs small bold selectedTabId={detailsTab} onChange={handleTabChange}>
+        <ButtonTab
+          id={SwiftArtifactDetailsTabEnum.ReadMe}
+          icon="document"
+          iconProps={{ size: 12 }}
+          panel={<ReadmeFileContent source={metadata?.readme || getString('noReadme')} />}
+          title={getString('versionDetails.artifactDetails.tabs.readme')}
         />
-      )}
-    </Page.Body>
+        <ButtonTab
+          id={SwiftArtifactDetailsTabEnum.Files}
+          icon="document"
+          iconProps={{ size: 12 }}
+          panel={
+            <VersionFilesProvider>
+              <SwiftVersionFilesContent />
+            </VersionFilesProvider>
+          }
+          title={getString('versionDetails.artifactDetails.tabs.files')}
+        />
+        <ButtonTab
+          id={SwiftArtifactDetailsTabEnum.Dependencies}
+          icon="layers"
+          iconProps={{ size: 12 }}
+          panel={<SwiftVersionDependencyContent />}
+          title={getString('versionDetails.artifactDetails.tabs.dependencies')}
+        />
+      </ButtonTabs>
+    </Layout.Vertical>
   )
 }

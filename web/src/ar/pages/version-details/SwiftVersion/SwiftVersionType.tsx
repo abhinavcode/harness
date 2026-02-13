@@ -37,7 +37,9 @@ import ArtifactActions from '@ar/pages/artifact-details/components/ArtifactActio
 import ArtifactTreeNode from '@ar/pages/artifact-details/components/ArtifactTreeNode/ArtifactTreeNode'
 import ArtifactTreeNodeDetailsContent from '@ar/pages/artifact-details/components/ArtifactTreeNode/ArtifactTreeNodeDetailsContent'
 import { VersionDetailsTab } from '../components/VersionDetailsTabs/constants'
+import VersionOverviewProvider from '../context/VersionOverviewProvider'
 import SwiftOverviewPage from './pages/overview/SwiftOverviewPage'
+import SwiftArtifactDetailsPage from './pages/artifact-details/SwiftArtifactDetailsPage'
 import VersionTreeNode from '../components/VersionTreeNode/VersionTreeNode'
 import VersionDetailsTabs from '../components/VersionDetailsTabs/VersionDetailsTabs'
 import VersionDetailsHeaderContent from '../components/VersionDetailsHeaderContent/VersionDetailsHeaderContent'
@@ -55,11 +57,14 @@ export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
   ]
 
   versionListTableColumnConfig: CommonVersionListTableProps['columnConfigs'] = {
-    [VersionListColumnEnum.Name]: { width: '100%' },
+    [VersionListColumnEnum.Name]: { width: '150%' },
     [VersionListColumnEnum.Size]: { width: '100%' },
     [VersionListColumnEnum.FileCount]: { width: '100%' },
+    [VersionListColumnEnum.DownloadCount]: { width: '100%' },
+    [VersionListColumnEnum.PullCommand]: { width: '100%' },
     [VersionListColumnEnum.LastModified]: { width: '100%' },
-    [VersionListColumnEnum.Actions]: { width: '10%' }
+    [VersionListColumnEnum.Actions]: { width: '30%' }
+    
   }
 
   protected allowedActionsOnVersion = [
@@ -67,7 +72,8 @@ export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
     VersionAction.SetupClient,
     VersionAction.ViewVersionDetails,
     VersionAction.Quarantine,
-    VersionAction.Download
+    VersionAction.Download,
+    VersionAction.DownloadCommand,
   ]
   protected allowedActionsOnVersionDetailsPage = [
     VersionAction.Delete,
@@ -86,12 +92,16 @@ export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
   renderVersionDetailsTab(props: VersionDetailsTabProps): JSX.Element {
     switch (props.tab) {
       case VersionDetailsTab.OVERVIEW:
-        return <SwiftOverviewPage />
+        return (
+          <VersionOverviewProvider>
+            <SwiftOverviewPage />
+          </VersionOverviewProvider>
+        )
       case VersionDetailsTab.ARTIFACT_DETAILS:
         return (
-          <VersionFilesProvider>
-            <ArtifactFilesContent />
-          </VersionFilesProvider>
+          <VersionOverviewProvider>
+            <SwiftArtifactDetailsPage />
+          </VersionOverviewProvider>
         )
       default:
         return <String stringID="tabNotFound" />

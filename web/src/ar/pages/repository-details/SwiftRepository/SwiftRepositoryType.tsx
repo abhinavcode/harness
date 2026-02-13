@@ -17,7 +17,6 @@
 import React from 'react'
 import type { IconName } from '@harnessio/icons'
 
-import type { StringKeys } from '@ar/frameworks/strings'
 import { RepositoryConfigType, RepositoryPackageType } from '@ar/common/types'
 import {
   UpstreamProxyAuthenticationMode,
@@ -36,9 +35,6 @@ import {
 
 import RepositoryDetails from '../RepositoryDetails'
 import type { Repository, VirtualRegistryRequest } from '../types'
-
-// Backend does not support SWIFT in API client PackageType yet; cast for frontend compilation
-const SWIFT_PACKAGE_TYPE = 'SWIFT' as VirtualRegistryRequest['packageType']
 import RepositoryActions from '../components/Actions/RepositoryActions'
 import RedirectPageView from '../components/RedirectPageView/RedirectPageView'
 import RepositoryTreeNode from '../components/RepositoryTreeNode/RepositoryTreeNode'
@@ -48,17 +44,16 @@ import RepositoryCreateFormContent from '../components/FormContent/RepositoryCre
 import RepositoryDetailsHeader from '../components/RepositoryDetailsHeader/RepositoryDetailsHeader'
 
 export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> {
-  protected packageType = 'SWIFT' as RepositoryPackageType
+  protected packageType = RepositoryPackageType.SWIFT
   protected repositoryName = 'Swift Repository'
   protected repositoryIcon: IconName = 'maven-repository-type'
   protected supportedScanners = []
   protected supportsUpstreamProxy = false
   protected isWebhookSupported = false
-  enterpriseAdvancedOptionSubTitle: StringKeys =
-    'repositoryDetails.repositoryForm.enterpriseAdvancedWithoutUpstreamOptionsSubTitle'
+  
 
   protected defaultValues: VirtualRegistryRequest = {
-    packageType: SWIFT_PACKAGE_TYPE,
+    packageType: RepositoryPackageType.SWIFT as VirtualRegistryRequest['packageType'],
     identifier: '',
     config: {
       type: RepositoryConfigType.VIRTUAL
@@ -68,7 +63,7 @@ export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> 
   }
 
   protected defaultUpstreamProxyValues: UpstreamRegistryRequest = {
-    packageType: SWIFT_PACKAGE_TYPE,
+    packageType: RepositoryPackageType.SWIFT as UpstreamRegistryRequest['packageType'],
     identifier: '',
     config: {
       type: RepositoryConfigType.UPSTREAM,
@@ -101,7 +96,7 @@ export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> 
         artifactKey={artifactKey}
         versionKey={versionKey}
         onClose={onClose}
-        packageType={SWIFT_PACKAGE_TYPE}
+        packageType={RepositoryPackageType.SWIFT as Parameters<typeof SetupClientContent>[0]['packageType']}
       />
     )
   }

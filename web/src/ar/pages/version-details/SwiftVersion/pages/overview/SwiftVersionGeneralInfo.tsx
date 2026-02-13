@@ -15,7 +15,7 @@
  */
 
 import React from 'react'
-import { isEmpty } from 'lodash-es'
+import { defaultTo, isEmpty } from 'lodash-es'
 import { FontVariation } from '@harnessio/design-system'
 import { Card, Container, Layout, Text } from '@harnessio/uicore'
 
@@ -23,6 +23,7 @@ import { useStrings, type StringKeys } from '@ar/frameworks/strings'
 import { DEFAULT_DATE_TIME_FORMAT } from '@ar/constants'
 import { getReadableDateTime } from '@ar/common/dateUtils'
 import { LabelValueTypeEnum } from '@ar/pages/version-details/components/LabelValueContent/type'
+import { useVersionOverview } from '@ar/pages/version-details/context/VersionOverviewProvider'
 import { LabelValueContent } from '@ar/pages/version-details/components/LabelValueContent/LabelValueContent'
 
 import type { SwiftArtifactDetails } from '../../types'
@@ -30,13 +31,14 @@ import type { SwiftArtifactDetails } from '../../types'
 import css from './styles.module.scss'
 
 interface SwiftVersionGeneralInfoProps {
-  data: SwiftArtifactDetails
   className?: string
 }
 
 export default function SwiftVersionGeneralInfo(props: SwiftVersionGeneralInfoProps) {
-  const { data, className } = props
+  const { className } = props
+  const { data } = useVersionOverview<SwiftArtifactDetails>()
   const { getString } = useStrings()
+
   return (
     <Card
       data-testid="swift-general-information-card"
@@ -62,6 +64,16 @@ export default function SwiftVersionGeneralInfo(props: SwiftVersionGeneralInfoPr
             value={getString('packageTypes.swiftPackage' as StringKeys)}
             type={LabelValueTypeEnum.PackageType}
             icon="maven-repository-type"
+          />
+          <LabelValueContent
+            label={getString('versionDetails.overview.generalInformation.size')}
+            value={data.size}
+            type={LabelValueTypeEnum.Text}
+          />
+          <LabelValueContent
+            label={getString('versionDetails.overview.generalInformation.downloads')}
+            value={defaultTo(data.downloadCount?.toLocaleString(), 0)}
+            type={LabelValueTypeEnum.Text}
           />
           <LabelValueContent
             label={getString('versionDetails.overview.generalInformation.uploadedBy')}

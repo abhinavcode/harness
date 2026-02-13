@@ -10,10 +10,28 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import type { ArtifactDetail, GenericArtifactDetailConfig } from '@harnessio/react-har-service-client'
+import type { ArtifactDetail } from '@harnessio/react-har-service-client'
+import type { VersionDetailsQueryParams } from '../types'
 
-export type SwiftArtifactDetails = ArtifactDetail & GenericArtifactDetailConfig
+export enum SwiftArtifactDetailsTabEnum {
+  ReadMe = 'readme',
+  Files = 'files',
+  Dependencies = 'dependencies'
+}
+
+export interface SwiftVersionDetailsQueryParams extends VersionDetailsQueryParams {
+  detailsTab: SwiftArtifactDetailsTabEnum
+}
+
+export interface LocalSwiftArtifactDetailConfig {
+  description?: string
+  metadata?: {
+    readme?: string
+    dependencies?: Array<{ name: string; version: string }>
+  }
+}
+
+export type SwiftArtifactDetails = ArtifactDetail & LocalSwiftArtifactDetailConfig

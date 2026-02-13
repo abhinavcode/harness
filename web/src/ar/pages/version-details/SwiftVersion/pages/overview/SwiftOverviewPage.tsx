@@ -15,44 +15,11 @@
  */
 
 import React from 'react'
-import { Layout } from '@harnessio/uicore'
-import { useGetArtifactDetailsQuery } from '@harnessio/react-har-service-client'
 
-import { encodeRef } from '@ar/hooks/useGetSpaceRef'
-import { useDecodedParams, useGetSpaceRef } from '@ar/hooks'
-import type { VersionDetailsPathParams } from '@ar/routes/types'
-import PageContent from '@ar/components/PageContent/PageContent'
-
-import type { SwiftArtifactDetails } from '../../types'
 import SwiftVersionGeneralInfo from './SwiftVersionGeneralInfo'
 
 import genericStyles from '../../styles.module.scss'
 
 export default function SwiftOverviewPage() {
-  const pathParams = useDecodedParams<VersionDetailsPathParams>()
-  const spaceRef = useGetSpaceRef()
-
-  const {
-    data,
-    isFetching: loading,
-    error,
-    refetch
-  } = useGetArtifactDetailsQuery({
-    registry_ref: spaceRef,
-    artifact: encodeRef(pathParams.artifactIdentifier),
-    version: pathParams.versionIdentifier,
-    queryParams: {}
-  })
-
-  const response = data?.content?.data as SwiftArtifactDetails
-
-  return (
-    <PageContent loading={loading} error={error} refetch={refetch}>
-      {response && (
-        <Layout.Vertical className={genericStyles.cardContainer} spacing="medium">
-          <SwiftVersionGeneralInfo data={response} />
-        </Layout.Vertical>
-      )}
-    </PageContent>
-  )
+  return <SwiftVersionGeneralInfo className={genericStyles.cardContainer} />
 }
