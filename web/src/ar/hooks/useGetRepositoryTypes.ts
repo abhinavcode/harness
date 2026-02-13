@@ -99,8 +99,8 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
     icon: 'rust-logo'
   },
   {
-    label: 'repositoryTypes.swift' as keyof StringsMap,
-    value: 'SWIFT' as RepositoryPackageType,
+    label: 'repositoryTypes.swift',
+    value: RepositoryPackageType.SWIFT,
     icon: 'maven-repository-type'
   },
   {
@@ -148,3 +148,4 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
     tag: ThumbnailTagEnum.ComingSoon
   }
 ]
+
