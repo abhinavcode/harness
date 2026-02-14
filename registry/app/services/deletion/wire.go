@@ -15,10 +15,18 @@
 package deletion
 
 import (
+	"github.com/harness/gitness/registry/app/api/interfaces"
+
 	"github.com/google/wire"
 )
+
+// ProvidePackageWrapper converts interfaces.PackageWrapper to deletion.PackageWrapper.
+func ProvidePackageWrapper(pw interfaces.PackageWrapper) PackageWrapper {
+	return pw
+}
 
 // WireSet provides a wire set for this package.
 var WireSet = wire.NewSet(
 	NewService,
+	ProvidePackageWrapper,
 )

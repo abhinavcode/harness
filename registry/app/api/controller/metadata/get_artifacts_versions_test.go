@@ -295,43 +295,43 @@ func setupVersionsController(_ *testing.T, packageType artifact.PackageType) *me
 		Return((*artifact.ArtifactVersionMetadata)(nil))
 
 	return metadata.NewAPIController(
-		mockRegistryRepo,          // repositoryStore
-		fileManager,               // fileManager
-		nil,                       // blobStore
-		nil,                       // genericBlobStore
-		nil,                       // upstreamProxyStore
-		nil,                       // tagStore
-		nil,                       // manifestStore
-		nil,                       // cleanupPolicyStore
-		mockImageStore,            // imageStore
-		nil,                       // driver
-		mockSpaceFinder,           // spaceFinder
-		nil,                       // tx
-		nil,                       // db
-		mockURLProvider,           // urlProvider
-		mockAuthorizer,            // authorizer
-		nil,                       // auditService
-		mockArtifactStore,         // artifactStore
-		nil,                       // webhooksRepository
-		nil,                       // webhooksExecutionRepository
+		mockRegistryRepo,           // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // blobStore
+		nil,                        // genericBlobStore
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		mockImageStore,             // imageStore
+		nil,                        // driver
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		nil,                        // db
+		mockURLProvider,            // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		mockArtifactStore,          // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
-		nil,                       // webhookService
-		eventReporter,             // artifactEventReporter
-		nil,                       // downloadStatRepository
-		"",                        // setupDetailsAuthHeaderPrefix
-		nil,                       // registryBlobStore
-		nil,                       // regFinder
-		nil,                       // postProcessingReporter
-		nil,                       // reindexingService
-		nil,                       // cargoRegistryHelper
-		nil,                       // spaceController
-		nil,                       // quarantineArtifactRepository
-		nil,                       // quarantineFinder
-		nil,                       // spaceStore
+		nil,                        // webhookService
+		eventReporter,              // artifactEventReporter
+		nil,                        // downloadStatRepository
+		"",                         // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		nil,                        // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
 		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
-		mockPackageWrapper, // packageWrapper
-		nil,                // publicAccess
-		nil,                // deletionService
+		mockPackageWrapper,                            // packageWrapper
+		nil,                                           // publicAccess
+		nil,                                           // deletionService
+		nil,                                           // reindexingService
 	)
 }
 
@@ -379,43 +379,43 @@ func setupVersionsControllerWithError(_ *testing.T, errorType string) *metadata.
 	fileManager := createFileManager()
 
 	return metadata.NewAPIController(
-		nil,                       // repositoryStore
-		fileManager,               // fileManager
-		nil,                       // blobStore
-		nil,                       // genericBlobStore
-		nil,                       // upstreamProxyStore
-		nil,                       // tagStore
-		nil,                       // manifestStore
-		nil,                       // cleanupPolicyStore
-		nil,                       // imageStore
-		nil,                       // driver
-		mockSpaceFinder,           // spaceFinder
-		nil,                       // tx
-		nil,                       // db
-		nil,                       // urlProvider
-		mockAuthorizer,            // authorizer
-		nil,                       // auditService
-		nil,                       // artifactStore
-		nil,                       // webhooksRepository
-		nil,                       // webhooksExecutionRepository
+		nil,                        // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // blobStore
+		nil,                        // genericBlobStore
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		nil,                        // imageStore
+		nil,                        // driver
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		nil,                        // db
+		nil,                        // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		nil,                        // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
-		nil,                       // webhookService
-		eventReporter,             // artifactEventReporter
-		nil,                       // downloadStatRepository
-		"",                        // setupDetailsAuthHeaderPrefix
-		nil,                       // registryBlobStore
-		nil,                       // regFinder
-		nil,                       // postProcessingReporter
-		nil,                       // reindexingService
-		nil,                       // cargoRegistryHelper
-		nil,                       // spaceController
-		nil,                       // quarantineArtifactRepository
-		nil,                       // quarantineFinder
-		nil,                       // spaceStore
+		nil,                        // webhookService
+		eventReporter,              // artifactEventReporter
+		nil,                        // downloadStatRepository
+		"",                         // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		nil,                        // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
 		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // deletionService
+		nil, // reindexingService
 	)
 }
 

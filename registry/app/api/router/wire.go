@@ -16,7 +16,6 @@ package router
 
 import (
 	"context"
-	"fmt"
 
 	spacecontroller "github.com/harness/gitness/app/api/controller/space"
 	"github.com/harness/gitness/app/auth/authn"
@@ -51,7 +50,6 @@ import (
 	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/publicaccess"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
-	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/registry/app/store"
 	cargoutils "github.com/harness/gitness/registry/app/utils/cargo"
 	registrywebhook "github.com/harness/gitness/registry/services/webhook"
@@ -132,7 +130,7 @@ func APIHandlerProvider(
 		webhooksExecutionRepository,
 		*webhookService,
 		spacePathStore,
-		*artifactEventReporter,
+		artifactEventReporter,
 		downloadStatRepository,
 		gitnessConfig,
 		registryBlobsDao,
@@ -203,22 +201,6 @@ func ProvideUntaggedImagesEnabled() func(ctx context.Context) bool {
 	}
 }
 
-// noopPackageWrapper is a no-op implementation for gitness standalone.
-type noopPackageWrapper struct{}
-
-func (n *noopPackageWrapper) DeleteArtifact(
-	_ context.Context,
-	_ *registrytypes.RegistryRequestBaseInfo,
-	_ string,
-) error {
-	return fmt.Errorf("custom package types not supported in gitness standalone")
-}
-
-// ProvideNoOpPackageWrapper provides a no-op package wrapper for gitness standalone.
-func ProvideNoOpPackageWrapper() deletion.PackageWrapper {
-	return &noopPackageWrapper{}
-}
-
 var WireSet = wire.NewSet(
 	APIHandlerProvider,
 	OCIHandlerProvider,
@@ -227,6 +209,5 @@ var WireSet = wire.NewSet(
 	GenericHandlerProvider,
 	PackageHandlerProvider,
 	ProvideUntaggedImagesEnabled,
-	ProvideNoOpPackageWrapper,
 	deletion.WireSet,
 )

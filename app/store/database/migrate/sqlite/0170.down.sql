@@ -1,7 +1,7 @@
 -- Drop indexes first
-DROP INDEX IF EXISTS idx_registries_deleted_at;
-DROP INDEX IF EXISTS idx_images_deleted_at;
-DROP INDEX IF EXISTS idx_artifacts_deleted_at;
+DROP INDEX IF EXISTS idx_registries_root_parent_id_deleted_at;
+DROP INDEX IF EXISTS idx_images_registry_id_deleted_at;
+DROP INDEX IF EXISTS idx_artifacts_image_id_deleted_at;
 
 -- Drop columns from registries table
 ALTER TABLE registries DROP COLUMN registry_deleted_at;

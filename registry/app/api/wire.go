@@ -48,6 +48,7 @@ import (
 	"github.com/harness/gitness/registry/app/driver/factory"
 	"github.com/harness/gitness/registry/app/driver/filesystem"
 	"github.com/harness/gitness/registry/app/driver/s3-aws"
+	"github.com/harness/gitness/registry/app/helpers"
 	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/base"
 	cargoregistry "github.com/harness/gitness/registry/app/pkg/cargo"
@@ -282,6 +283,7 @@ var WireSet = wire.NewSet(
 	hf2.WireSet,
 	hf3.WireSet,
 	publicaccess2.WireSet,
+	helpers.WireSet,
 )
 
 func Wire(_ *types.Config) (RegistryApp, error) {

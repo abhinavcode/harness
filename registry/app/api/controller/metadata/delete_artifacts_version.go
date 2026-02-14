@@ -24,13 +24,9 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
-	"github.com/harness/gitness/registry/services/webhook"
-	registryTypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store"
-	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
 
-	"github.com/opencontainers/go-digest"
 	"github.com/rs/zerolog/log"
 )
 
@@ -99,7 +95,7 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	versionName := string(r.Version)
 	registryName := repoEntity.Name
 
-	imageInfo, err := c.ImageStore.GetByName(ctx, repoEntity.ID, artifactName)
+	_, err = c.ImageStore.GetByName(ctx, repoEntity.ID, artifactName)
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifactVersion404JSONResponse{
@@ -109,44 +105,10 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 		}, nil
 	}
 
-	//nolint: exhaustive
-	switch regInfo.PackageType {
-	case artifact.PackageTypeDOCKER:
-		err = c.deleteOciVersionWithAudit(ctx, regInfo, registryName, session.Principal, artifactName,
-			versionName)
-	case artifact.PackageTypeHELM:
-		err = c.deleteOciVersionWithAudit(ctx, regInfo, registryName, session.Principal, artifactName,
-			versionName)
-	case artifact.PackageTypeNPM:
-		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-	case artifact.PackageTypeMAVEN:
-		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-	case artifact.PackageTypePYTHON:
-		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-	case artifact.PackageTypeGENERIC:
-		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-	case artifact.PackageTypeNUGET:
-		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-	case artifact.PackageTypeRPM:
-		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-		if err != nil {
-			break
-		}
-		c.PostProcessingReporter.BuildRegistryIndex(ctx, regInfo.RegistryID, make([]registryTypes.SourceRef, 0))
-	case artifact.PackageTypeGO:
-		err = c.deleteVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-		if err != nil {
-			break
-		}
-		c.sendArtifactDeletedWebhookEvent(
-			ctx, session.Principal.ID, regInfo.RegistryID, regInfo.PackageType,
-			artifactName, versionName,
-		)
-		c.PostProcessingReporter.BuildPackageIndex(ctx, regInfo.RegistryID, artifactName)
-	default:
-		err = c.PackageWrapper.DeleteArtifactVersion(ctx, regInfo, imageInfo, artifactName, versionName)
-	}
-
+	// Delete artifact version.
+	err = c.DeletionService.DeleteArtifactVersionByPackageType(
+		ctx, regInfo, artifactName, versionName, &session.Principal.ID, registryName,
+	)
 	if err != nil {
 		if errors.Is(err, store.ErrResourceNotFound) {
 			return artifact.DeleteArtifactVersion404JSONResponse{
@@ -180,82 +142,11 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	}, nil
 }
 
-func (c *APIController) deleteOciVersionWithAudit(
-	ctx context.Context, regInfo *registryTypes.RegistryRequestBaseInfo,
-	registryName string, principal types.Principal, artifactName string, versionName string,
-) error {
-	var existingDigest digest.Digest
-
-	if c.UntaggedImagesEnabled(ctx) {
-		existingDigest = digest.Digest(versionName)
-	} else {
-		existingDigest = c.getTagDigest(ctx, regInfo.RegistryID, artifactName, versionName)
-	}
-
-	err := c.DeletionService.DeleteOCIArtifact(ctx, regInfo.RegistryID, artifactName, versionName)
-	if err != nil {
-		return fmt.Errorf("failed to delete artifact version: %w", err)
-	}
-	if existingDigest != "" {
-		payload := webhook.GetArtifactDeletedPayload(ctx, principal.ID, regInfo.RegistryID,
-			registryName, versionName, existingDigest.String(), regInfo.RootIdentifier,
-			regInfo.PackageType, artifactName, c.URLProvider, c.UntaggedImagesEnabled(ctx))
-		c.ArtifactEventReporter.ArtifactDeleted(ctx, &payload)
-	}
-
-	return nil
-}
-
-func (c *APIController) deleteVersion(
-	ctx context.Context,
-	regInfo *registryTypes.RegistryRequestBaseInfo,
-	imageInfo *registryTypes.Image,
-	artifactName string,
-	versionName string,
-) error {
-	_, err := c.ArtifactStore.GetByName(ctx, imageInfo.ID, versionName)
-	if err != nil {
-		return fmt.Errorf("version doesn't exist for image %v: %w", imageInfo.Name, err)
-	}
-
-	return c.DeletionService.DeleteGenericArtifact(ctx, regInfo.RegistryID, regInfo.PackageType, artifactName, versionName)
-}
-
-func (c *APIController) sendArtifactDeletedWebhookEvent(
-	ctx context.Context, principalID int64,
-	registryID int64, packageType artifact.PackageType,
-	artifact string, version string,
-) {
-	payload := webhook.GetArtifactDeletedPayloadForCommonArtifacts(
-		principalID,
-		registryID,
-		packageType,
-		artifact,
-		version,
-	)
-	c.ArtifactEventReporter.ArtifactDeleted(ctx, &payload)
-}
-
-func throwDeleteArtifactVersion500Error(err error) artifact.DeleteArtifactVersion500JSONResponse {
+func throwDeleteArtifactVersion500Error(err error,
+) artifact.DeleteArtifactVersion500JSONResponse {
 	return artifact.DeleteArtifactVersion500JSONResponse{
 		InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 			*GetErrorResponse(http.StatusInternalServerError, err.Error()),
 		),
 	}
-}
-
-func (c *APIController) getTagDigest(
-	ctx context.Context,
-	registryID int64,
-	imageName string,
-	tag string,
-) digest.Digest {
-	existingTag, findTagErr := c.TagStore.FindTag(ctx, registryID, imageName, tag)
-	if findTagErr == nil && existingTag != nil {
-		existingTaggedManifest, getManifestErr := c.ManifestStore.Get(ctx, existingTag.ManifestID)
-		if getManifestErr == nil {
-			return existingTaggedManifest.Digest
-		}
-	}
-	return ""
 }
