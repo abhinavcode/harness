@@ -37,6 +37,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/refcache"
+	"github.com/harness/gitness/registry/app/services/reindexing"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
 	registrywebhook "github.com/harness/gitness/registry/services/webhook"
@@ -84,7 +85,7 @@ func NewAPIHandler(
 	webhooksExecutionRepository store.WebhooksExecutionRepository,
 	webhookService registrywebhook.Service,
 	spacePathStore corestore.SpacePathStore,
-	artifactEventReporter registryevents.Reporter,
+	artifactEventReporter *registryevents.Reporter,
 	downloadStatRepository store.DownloadStatRepository,
 	gitnessConfig *types.Config,
 	registryBlobsDao store.RegistryBlobRepository,
@@ -129,7 +130,7 @@ func NewAPIHandler(
 		webhooksExecutionRepository,
 		registryMetadataHelper,
 		&webhookService,
-		artifactEventReporter,
+		*artifactEventReporter,
 		downloadStatRepository,
 		gitnessConfig.Registry.SetupDetailsAuthHeaderPrefix,
 		registryBlobsDao,
@@ -144,6 +145,7 @@ func NewAPIHandler(
 		packageWrapper,
 		publicAccess,
 		deletionService,
+		reindexing.NewService(postProcessingReporter, *artifactEventReporter),
 	)
 
 	handler := artifact.NewStrictHandler(apiController, []artifact.StrictMiddlewareFunc{})

@@ -147,8 +147,8 @@ import (
 	"github.com/harness/gitness/pubsub"
 	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	registrypostporcessingevents "github.com/harness/gitness/registry/app/events/asyncprocessing"
+	"github.com/harness/gitness/registry/app/services/reindexing"
 	replicationevents "github.com/harness/gitness/registry/app/events/replication"
-	registryhelpers "github.com/harness/gitness/registry/app/helpers"
 	"github.com/harness/gitness/registry/app/pkg/docker"
 	cargoutils "github.com/harness/gitness/registry/app/utils/cargo"
 	gopackageutils "github.com/harness/gitness/registry/app/utils/gopackage"
@@ -211,6 +211,8 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		pipelineevents.WireSet,
 		infraproviderCtrl.WireSet,
 		gitspaceCtrl.WireSet,
+		registryevents.WireSet,
+		reindexing.NewService,
 		gitevents.WireSet,
 		pullreqevents.WireSet,
 		repoevents.WireSet,
@@ -320,7 +322,6 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		runarg.WireSet,
 		lfs.WireSet,
 		usage.WireSet,
-		registryevents.WireSet,
 		registrywebhooks.WireSet,
 		gitspacedeleteevents.WireSet,
 		gitspacedeleteeventservice.WireSet,
@@ -334,7 +335,6 @@ func initSystem(ctx context.Context, config *types.Config) (*cliserver.System, e
 		registrypostporcessingevents.ProvideAsyncProcessingReporter,
 		registrypostporcessingevents.ProvideReaderFactory,
 		checkevents.WireSet,
-		registryhelpers.WireSet,
 		replicationevents.ProvideNoOpReplicationReporter,
 		registryhandlers.WireSet,
 	)

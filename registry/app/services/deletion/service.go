@@ -18,11 +18,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/harness/gitness/app/url"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/api/utils"
+	registryevents "github.com/harness/gitness/registry/app/events/artifact"
 	"github.com/harness/gitness/registry/app/manifest/manifestlist"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
+	"github.com/harness/gitness/registry/app/services/reindexing"
 	"github.com/harness/gitness/registry/app/store"
+	"github.com/harness/gitness/registry/services/webhook"
 	registrytypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store/database/dbtx"
 
@@ -33,6 +37,13 @@ import (
 // PackageWrapper defines the interface for handling custom package types.
 // This matches the interfaces.PackageWrapper interface from the API layer.
 type PackageWrapper interface {
+	DeleteArtifactVersion(
+		ctx context.Context,
+		regInfo *registrytypes.RegistryRequestBaseInfo,
+		imageInfo *registrytypes.Image,
+		artifactName string,
+		versionName string,
+	) error
 	DeleteArtifact(ctx context.Context, regInfo *registrytypes.RegistryRequestBaseInfo, artifactName string) error
 }
 
@@ -48,6 +59,9 @@ type Service struct {
 	tx                    dbtx.Transactor
 	untaggedImagesEnabled func(ctx context.Context) bool
 	packageWrapper        PackageWrapper
+	reindexingService     *reindexing.Service
+	artifactEventReporter *registryevents.Reporter
+	urlProvider           url.Provider
 }
 
 // NewService creates a new deletion service.
@@ -61,6 +75,9 @@ func NewService(
 	tx dbtx.Transactor,
 	untaggedImagesEnabled func(ctx context.Context) bool,
 	packageWrapper PackageWrapper,
+	reindexingService *reindexing.Service,
+	artifactEventReporter *registryevents.Reporter,
+	urlProvider url.Provider,
 ) *Service {
 	return &Service{
 		artifactStore:         artifactStore,
@@ -72,33 +89,13 @@ func NewService(
 		tx:                    tx,
 		untaggedImagesEnabled: untaggedImagesEnabled,
 		packageWrapper:        packageWrapper,
+		reindexingService:     reindexingService,
+		artifactEventReporter: artifactEventReporter,
+		urlProvider:           urlProvider,
 	}
 }
 
-// DeleteArtifactVersion deletes an artifact version using package-type-specific logic.
-func (s *Service) DeleteArtifactVersion(
-	ctx context.Context,
-	registryID int64,
-	packageType artifact.PackageType,
-	artifactName string,
-	versionName string,
-) error {
-	//nolint:exhaustive
-	switch packageType {
-	case artifact.PackageTypeDOCKER, artifact.PackageTypeHELM:
-		return s.DeleteOCIArtifact(ctx, registryID, artifactName, versionName)
-	case artifact.PackageTypeNPM, artifact.PackageTypeMAVEN, artifact.PackageTypePYTHON,
-		artifact.PackageTypeGENERIC, artifact.PackageTypeNUGET, artifact.PackageTypeRPM,
-		artifact.PackageTypeGO:
-		return s.DeleteGenericArtifact(ctx, registryID, packageType, artifactName, versionName)
-	default:
-		// For unknown types, return error so caller can try PackageWrapper
-		return fmt.Errorf("unsupported package type: %s", packageType)
-	}
-}
-
-// DeleteImageByPackageType deletes an image using package-type-specific logic.
-// This is used by delete_artifact.go to route image deletion based on package type.
+// DeleteImageByPackageType deletes a package.
 func (s *Service) DeleteImageByPackageType(
 	ctx context.Context,
 	regInfo *registrytypes.RegistryRequestBaseInfo,
@@ -123,120 +120,148 @@ func (s *Service) DeleteImageByPackageType(
 	}
 }
 
-// DeleteOCIArtifact handles Docker/Helm artifact deletion.
-func (s *Service) DeleteOCIArtifact(
+// DeleteArtifactVersionByPackageType deletes an artifact version and triggers reindexing.
+// This is the unified method used by both controllers and cleanup jobs.
+// For OCI types (Docker/Helm), fires webhook if principalID is non-nil.
+// For non-OCI types, reindexing is handled internally.
+// principalID is nullable - pass nil for cleanup jobs, non-nil for user-initiated deletions.
+// registryName is only needed for webhooks (can be empty for cleanup jobs).
+func (s *Service) DeleteArtifactVersionByPackageType(
 	ctx context.Context,
-	registryID int64,
+	regInfo *registrytypes.RegistryRequestBaseInfo,
 	imageName string,
-	version string,
+	versionName string,
+	principalID *int64,
+	registryName string,
 ) error {
-	if !s.untaggedImagesEnabled(ctx) {
-		// Non-untagged mode: just delete the tag
-		return s.tagStore.DeleteTag(ctx, registryID, imageName, version)
-	}
+	registryID := regInfo.RegistryID
+	packageType := regInfo.PackageType
+	var err error
 
-	return s.deleteOCIArtifactUntaggedMode(ctx, registryID, imageName, version)
-}
-
-// deleteOCIArtifactUntaggedMode handles deletion in untagged images mode.
-func (s *Service) deleteOCIArtifactUntaggedMode(
-	ctx context.Context,
-	registryID int64,
-	imageName string,
-	version string,
-) error {
-	return s.tx.WithTx(ctx, func(ctx context.Context) error {
-		existingManifest, err := s.findManifestByVersion(ctx, registryID, imageName, version)
+	// Perform deletion based on package type
+	//nolint:exhaustive
+	switch packageType {
+	case artifact.PackageTypeDOCKER, artifact.PackageTypeHELM:
+		// OCI types: deletion and webhook handled in DeleteOCIArtifactVersion
+		err = s.DeleteOCIArtifactVersion(ctx, regInfo, imageName, versionName, principalID, registryName)
 		if err != nil {
 			return err
 		}
-
-		if err := s.validateManifestReferences(ctx, existingManifest, version); err != nil {
+	case artifact.PackageTypeNPM, artifact.PackageTypeMAVEN, artifact.PackageTypePYTHON,
+		artifact.PackageTypeGENERIC, artifact.PackageTypeNUGET, artifact.PackageTypeRPM,
+		artifact.PackageTypeGO:
+		// Non-OCI types: delete + trigger reindexing
+		err = s.DeleteGenericArtifact(ctx, registryID, packageType, imageName, versionName)
+		if err != nil {
 			return err
 		}
-
-		if err := s.deleteManifestAndTags(ctx, registryID, existingManifest, version); err != nil {
+	default:
+		// Unknown types: delegate to package wrapper
+		imageInfo, err := s.imageStore.GetByName(ctx, registryID, imageName)
+		if err != nil {
 			return err
 		}
-
-		if err := s.artifactStore.DeleteByVersionAndImageName(ctx, imageName, version, registryID); err != nil {
+		if err := s.packageWrapper.DeleteArtifactVersion(ctx, regInfo, imageInfo, imageName, versionName); err != nil {
 			return err
 		}
-
-		return s.deleteImageIfNoManifests(ctx, registryID, imageName)
-	})
-}
-
-// findManifestByVersion finds a manifest by its version digest.
-func (s *Service) findManifestByVersion(
-	ctx context.Context,
-	registryID int64,
-	imageName string,
-	version string,
-) (*registrytypes.Manifest, error) {
-	d := digest.Digest(version)
-	dgst, _ := registrytypes.NewDigest(d)
-	manifest, err := s.manifestStore.FindManifestByDigest(ctx, registryID, imageName, dgst)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find existing manifest for: %s, err: %w", version, err)
-	}
-	return manifest, nil
-}
-
-// validateManifestReferences checks if a manifest list references other manifests.
-func (s *Service) validateManifestReferences(
-	ctx context.Context,
-	manifest *registrytypes.Manifest,
-	version string,
-) error {
-	if manifest.MediaType != v1.MediaTypeImageIndex &&
-		manifest.MediaType != manifestlist.MediaTypeManifestList {
-		return nil
 	}
 
-	manifests, err := s.manifestStore.References(ctx, manifest)
-	if err != nil {
-		return fmt.Errorf("failed to find existing manifests referenced by: %s, err: %w", version, err)
+	// Trigger package-specific reindexing
+	var principalIDValue int64
+	if principalID != nil {
+		principalIDValue = *principalID
 	}
-
-	if len(manifests) > 0 {
-		return fmt.Errorf("cannot delete manifest: %s, as it references other manifests", version)
-	}
+	s.reindexingService.TriggerArtifactVersionReindexing(
+		ctx, packageType, registryID, imageName, versionName, principalIDValue,
+	)
 
 	return nil
 }
 
-// deleteManifestAndTags deletes a manifest and its associated tags.
-func (s *Service) deleteManifestAndTags(
+// DeleteOCIArtifactVersion handles Docker/Helm artifact version deletion with webhook support.
+// Similar to original deleteOciVersionWithAudit but moved to service layer.
+func (s *Service) DeleteOCIArtifactVersion(
 	ctx context.Context,
-	registryID int64,
-	manifest *registrytypes.Manifest,
-	version string,
-) error {
-	if err := s.manifestStore.Delete(ctx, registryID, manifest.ID); err != nil {
-		return err
-	}
-
-	if _, err := s.tagStore.DeleteTagByManifestID(ctx, registryID, manifest.ID); err != nil {
-		return fmt.Errorf("failed to delete tags for: %s, err: %w", version, err)
-	}
-
-	return nil
-}
-
-// deleteImageIfNoManifests deletes an image if it has no remaining manifests.
-func (s *Service) deleteImageIfNoManifests(
-	ctx context.Context,
-	registryID int64,
+	regInfo *registrytypes.RegistryRequestBaseInfo,
 	imageName string,
+	versionName string,
+	principalID *int64,
+	registryName string,
 ) error {
-	count, err := s.manifestStore.CountByImageName(ctx, registryID, imageName)
-	if err != nil {
-		return err
+	var existingDigest digest.Digest
+	//nolint:nestif
+	if s.untaggedImagesEnabled(ctx) {
+		err := s.tx.WithTx(ctx, func(ctx context.Context) error {
+			d := digest.Digest(versionName)
+			dgst, _ := registrytypes.NewDigest(d)
+			existingManifest, err := s.manifestStore.FindManifestByDigest(
+				ctx, regInfo.RegistryID, imageName, dgst,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to find existing manifest for: %s, err: %w", versionName, err)
+			}
+			if existingManifest.MediaType == v1.MediaTypeImageIndex ||
+				existingManifest.MediaType == manifestlist.MediaTypeManifestList {
+				manifests, err := s.manifestStore.References(ctx, existingManifest)
+				if err != nil {
+					return fmt.Errorf("failed to find existing manifests referenced by: %s, err: %w",
+						versionName, err)
+				}
+				if len(manifests) > 0 {
+					return fmt.Errorf("cannot delete manifest: %s, as it references other manifests",
+						versionName)
+				}
+			}
+			err = s.manifestStore.Delete(ctx, regInfo.RegistryID, existingManifest.ID)
+			if err != nil {
+				return err
+			}
+			existingDigest = d
+			_, err = s.tagStore.DeleteTagByManifestID(ctx, regInfo.RegistryID, existingManifest.ID)
+			if err != nil {
+				return fmt.Errorf("failed to delete tags for: %s, err: %w", versionName, err)
+			}
+			err = s.artifactStore.DeleteByVersionAndImageName(ctx, imageName, versionName, regInfo.RegistryID)
+			if err != nil {
+				return err
+			}
+
+			count, err := s.manifestStore.CountByImageName(ctx, regInfo.RegistryID, imageName)
+			if err != nil {
+				return err
+			}
+			if count < 1 {
+				err = s.imageStore.DeleteByImageNameAndRegID(
+					ctx, regInfo.RegistryID, imageName,
+				)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete artifact version: %w", err)
+		}
+	} else {
+		// Non-untagged mode: capture digest before deleting tag
+		if tag, err := s.tagStore.FindTag(ctx, regInfo.RegistryID, imageName, versionName); err == nil && tag != nil {
+			if manifest, err := s.manifestStore.Get(ctx, tag.ManifestID); err == nil && manifest != nil {
+				existingDigest = manifest.Digest
+			}
+		}
+		err := s.tagStore.DeleteTag(ctx, regInfo.RegistryID, imageName, versionName)
+		if err != nil {
+			return err
+		}
 	}
 
-	if count < 1 {
-		return s.imageStore.DeleteByImageNameAndRegID(ctx, registryID, imageName)
+	// Fire webhook if principalID provided (user-initiated deletion)
+	if principalID != nil && existingDigest != "" {
+		payload := webhook.GetArtifactDeletedPayload(ctx, *principalID, regInfo.RegistryID,
+			registryName, versionName, existingDigest.String(), regInfo.RootIdentifier,
+			regInfo.PackageType, imageName, s.urlProvider, s.untaggedImagesEnabled(ctx))
+		s.artifactEventReporter.ArtifactDeleted(ctx, &payload)
 	}
 
 	return nil

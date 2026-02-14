@@ -32,6 +32,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/refcache"
+	"github.com/harness/gitness/registry/app/services/reindexing"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
 	webhook "github.com/harness/gitness/registry/services/webhook"
@@ -72,6 +73,7 @@ type APIController struct {
 	RegistryBlobStore            store.RegistryBlobRepository
 	RegFinder                    refcache.RegistryFinder
 	PostProcessingReporter       *registrypostprocessingevents.Reporter
+	ReindexingService            *reindexing.Service
 	CargoRegistryHelper          cargo.RegistryHelper
 	SpaceController              *spacecontroller.Controller
 	QuarantineArtifactRepository store.QuarantineArtifactRepository
@@ -120,6 +122,7 @@ func NewAPIController(
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.Service,
 	deletionService *deletion.Service,
+	reindexingService *reindexing.Service,
 ) *APIController {
 	return &APIController{
 		fileManager:                  fileManager,
@@ -149,6 +152,7 @@ func NewAPIController(
 		RegistryBlobStore:            registryBlobStore,
 		RegFinder:                    regFinder,
 		PostProcessingReporter:       postProcessingReporter,
+		ReindexingService:            reindexingService,
 		CargoRegistryHelper:          cargoRegistryHelper,
 		SpaceController:              spaceController,
 		QuarantineArtifactRepository: quarantineArtifactRepository,
