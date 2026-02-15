@@ -266,7 +266,9 @@ func (m *mockImageDAO) Get(context.Context, int64, ...types.QueryOption) (*types
 	return nil, nil //nolint:nilnil
 }
 
-func (m *mockImageDAO) GetByName(ctx context.Context, regID int64, name string, _ ...types.QueryOption) (*types.Image, error) {
+func (m *mockImageDAO) GetByName(
+	ctx context.Context, regID int64, name string, _ ...types.QueryOption,
+) (*types.Image, error) {
 	if m.getByName != nil {
 		return m.getByName(ctx, regID, name)
 	}
