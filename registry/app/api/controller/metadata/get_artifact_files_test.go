@@ -259,10 +259,11 @@ func setupFilesController(_ *testing.T, packageType artifact.PackageType) *metad
 		mockGenericBlobRepo,
 		nil, // nodesRepo - TODO: Create NodesRepository mock
 		mockTransactor,
-		nil, // reporter
 		nil, // config
 		nil, // storageService
 		nil, // bucketService
+		nil, // replicationReporter
+		nil, // blobActionHook
 	)
 
 	// TODO: Once NodesRepository mock is created, add these mocks:
@@ -341,17 +342,13 @@ func setupFilesController(_ *testing.T, packageType artifact.PackageType) *metad
 	return metadata.NewAPIController(
 		mockRegistryRepo,           // repositoryStore
 		mockFileManager,            // fileManager
-		nil,                        // blobStore
-		mockGenericBlobRepo,        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		mockImageStore,             // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		mockURLProvider,            // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -360,7 +357,7 @@ func setupFilesController(_ *testing.T, packageType artifact.PackageType) *metad
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -376,6 +373,8 @@ func setupFilesController(_ *testing.T, packageType artifact.PackageType) *metad
 		nil,                                           // publicAccess
 		nil,                                           // deletionService
 		nil,                                           // reindexingService
+		nil,                                           // storageService
+		nil,                                           // app
 	)
 }
 
@@ -419,17 +418,13 @@ func setupFilesControllerWithError(_ *testing.T, errorType string) *metadata.API
 	return metadata.NewAPIController(
 		nil,                        // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		nil,                        // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		nil,                        // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -438,7 +433,7 @@ func setupFilesControllerWithError(_ *testing.T, errorType string) *metadata.API
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -454,6 +449,8 @@ func setupFilesControllerWithError(_ *testing.T, errorType string) *metadata.API
 		nil, // publicAccess
 		nil, // deletionService
 		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 

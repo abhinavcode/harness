@@ -556,17 +556,13 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 			controller := metadata.NewAPIController(
 				nil,             // repositoryStore
 				fileManager,     // fileManager
-				nil,             // blobStore
-				nil,             // genericBlobStore
 				nil,             // upstreamProxyStore
 				nil,             // tagStore
 				nil,             // manifestStore
 				nil,             // cleanupPolicyStore
 				nil,             // imageStore
-				nil,             // driver
 				nil,             // spaceFinder
 				nil,             // tx
-				nil,             // db
 				mockURLProvider, // urlProvider
 				nil,             // authorizer
 				nil,             // auditService
@@ -575,7 +571,7 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 				nil,             // webhooksExecutionRepository
 				nil,             // registryMetadataHelper
 				nil,             // webhookService
-				eventReporter,   // artifactEventReporter
+				&eventReporter,  // artifactEventReporter
 				nil,             // downloadStatRepository
 				"",              // setupDetailsAuthHeaderPrefix
 				nil,             // registryBlobStore
@@ -593,6 +589,8 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 				nil, // publicAccess
 				nil, // deletionService
 				nil, // reindexingService
+				nil, // storageService
+				nil, // app
 			)
 
 			ctx := context.Background()
@@ -636,17 +634,13 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 	controller := metadata.NewAPIController(
 		nil,             // repositoryStore
 		fileManager,     // fileManager
-		nil,             // blobStore
-		nil,             // genericBlobStore
 		nil,             // upstreamProxyStore
 		nil,             // tagStore
 		nil,             // manifestStore
 		nil,             // cleanupPolicyStore
 		nil,             // imageStore
-		nil,             // driver
 		nil,             // spaceFinder
 		nil,             // tx
-		nil,             // db
 		mockURLProvider, // urlProvider
 		nil,             // authorizer
 		nil,             // auditService
@@ -655,7 +649,7 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 		nil,             // webhooksExecutionRepository
 		nil,             // registryMetadataHelper
 		nil,             // webhookService
-		eventReporter,   // artifactEventReporter
+		&eventReporter,  // artifactEventReporter
 		nil,             // downloadStatRepository
 		"",              // setupDetailsAuthHeaderPrefix
 		nil,             // registryBlobStore
@@ -671,6 +665,8 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 		nil, // publicAccess
 		nil, // deletionService
 		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 
 	ctx := context.Background()
@@ -708,10 +704,11 @@ func createFileManager() filemanager.FileManager {
 		mockGenericBlobRepo,
 		nil, // nodesRepo
 		mockTransactor,
-		nil, // reporter
 		nil, // config
 		nil, // storageService
 		nil, // bucketService
+		nil, // replicationReporter
+		nil, // blobActionHook
 	)
 }
 
@@ -774,17 +771,13 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 	return metadata.NewAPIController(
 		mockRegistryRepo,           // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		nil,                        // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		mockURLProvider,            // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -793,7 +786,7 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"Authorization: Bearer",    // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -809,6 +802,8 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 		nil, // publicAccess
 		nil, // deletionService
 		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -868,17 +863,13 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 	return metadata.NewAPIController(
 		mockRegistryRepo,           // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		nil,                        // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		nil,                        // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -887,7 +878,7 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -903,11 +894,11 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 		nil, // publicAccess
 		nil, // deletionService
 		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 
-// TestGenerateClientSetupDetailsSnapshot tests that the generated client setup details
-// match the expected snapshots for all package types. This ensures consistency across runs.
 func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 	artifactParam := artifact.ArtifactParam("test-artifact")
 	versionParam := artifact.VersionParam("v1.0.0")
@@ -1026,17 +1017,13 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 			controller := metadata.NewAPIController(
 				nil,                     // repositoryStore
 				fileManager,             // fileManager
-				nil,                     // blobStore
-				nil,                     // genericBlobStore
 				nil,                     // upstreamProxyStore
 				nil,                     // tagStore
 				nil,                     // manifestStore
 				nil,                     // cleanupPolicyStore
 				nil,                     // imageStore
-				nil,                     // driver
 				nil,                     // spaceFinder
 				nil,                     // tx
-				nil,                     // db
 				mockURLProvider,         // urlProvider
 				nil,                     // authorizer
 				nil,                     // auditService
@@ -1045,7 +1032,7 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 				nil,                     // webhooksExecutionRepository
 				nil,                     // registryMetadataHelper
 				nil,                     // webhookService
-				eventReporter,           // artifactEventReporter
+				&eventReporter,          // artifactEventReporter
 				nil,                     // downloadStatRepository
 				"Authorization: Bearer", // setupDetailsAuthHeaderPrefix
 				nil,                     // registryBlobStore
@@ -1061,6 +1048,8 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 				nil, // publicAccess
 				nil, // deletionService
 				nil, // reindexingService
+				nil, // storageService
+				nil, // app
 			)
 
 			ctx := context.Background()

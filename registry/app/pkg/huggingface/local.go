@@ -306,7 +306,7 @@ func (c *localRegistry) LfsUpload(
 	info.Image = info.Repo
 
 	fileInfo, err := c.fileManager.UploadFileNoDBUpdate(ctx, info.RootIdentifier, nil,
-		body)
+		body, info.RootParentID, info.RegistryID)
 	if err != nil {
 		log.Ctx(ctx).Info().Msgf("Upload failed for file with sha256: %s, %v", info.SHA256, err)
 		headers.Code = http.StatusInternalServerError
@@ -504,7 +504,7 @@ func (c *localRegistry) DownloadFile(ctx context.Context, info huggingfacetype.A
 func (c *localRegistry) FileExists(ctx context.Context, info huggingfacetype.ArtifactInfo) bool {
 	file := types.FileInfo{Sha256: info.SHA256}
 	info.Image = info.Repo
-	exists, _, err := c.fileManager.HeadByDigest(ctx, info.RootIdentifier, file)
+	exists, _, err := c.fileManager.HeadByDigest(ctx, info.RootIdentifier, file, info.RootParentID, info.RegistryID)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msgf("Failed to check if file exists with sha256: %s", info.SHA256)
 	}
@@ -523,7 +523,8 @@ func (c *localRegistry) readme(
 	for _, lfsFile := range *lfsFiles {
 		file := types.FileInfo{Sha256: lfsFile.Oid}
 		if strings.ToLower(lfsFile.Path) == "readme.md" {
-			reader, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, file)
+			reader, err := c.fileManager.DownloadFileByDigest(ctx, info.RootIdentifier, file, info.RootParentID,
+				info.RegistryID)
 			if err != nil {
 				log.Ctx(ctx).Warn().Msgf("Failed to download readme file %v", err)
 				return ""

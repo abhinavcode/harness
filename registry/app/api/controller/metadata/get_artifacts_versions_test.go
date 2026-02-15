@@ -297,17 +297,13 @@ func setupVersionsController(_ *testing.T, packageType artifact.PackageType) *me
 	return metadata.NewAPIController(
 		mockRegistryRepo,           // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		mockImageStore,             // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		mockURLProvider,            // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -316,7 +312,7 @@ func setupVersionsController(_ *testing.T, packageType artifact.PackageType) *me
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -332,6 +328,8 @@ func setupVersionsController(_ *testing.T, packageType artifact.PackageType) *me
 		nil,                                           // publicAccess
 		nil,                                           // deletionService
 		nil,                                           // reindexingService
+		nil,                                           // storageService
+		nil,                                           // app
 	)
 }
 
@@ -381,17 +379,13 @@ func setupVersionsControllerWithError(_ *testing.T, errorType string) *metadata.
 	return metadata.NewAPIController(
 		nil,                        // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		nil,                        // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		nil,                        // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -400,7 +394,7 @@ func setupVersionsControllerWithError(_ *testing.T, errorType string) *metadata.
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -416,6 +410,8 @@ func setupVersionsControllerWithError(_ *testing.T, errorType string) *metadata.
 		nil, // publicAccess
 		nil, // deletionService
 		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 

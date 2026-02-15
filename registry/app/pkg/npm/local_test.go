@@ -34,6 +34,7 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/commons"
 	"github.com/harness/gitness/registry/app/pkg/filemanager"
 	"github.com/harness/gitness/registry/app/pkg/types/npm"
+	"github.com/harness/gitness/registry/app/services/hook"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/types"
@@ -78,11 +79,11 @@ func TestParseAndUploadNPMPackage_WithAttachment_UploadsData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("filesystem driver init failed: %v", err)
 	}
-	svc, err := storage.NewStorageService(drv)
+	svc, err := storage.NewStorageService(&storage.StaticStorageResolver{Driver: drv})
 	if err != nil {
 		t.Fatalf("storage service init failed: %v", err)
 	}
-	fm := filemanager.NewFileManager(nil, nil, nil, nil, nil, svc, nil, nil)
+	fm := filemanager.NewFileManager(nil, nil, nil, nil, nil, svc, nil, nil, hook.NewNoOpBlobActionHook())
 
 	// Wire local registry with a real file manager
 	lr := newLocalForTests(&mockLocalBase{}, nil, nil, nil, nil)
@@ -130,7 +131,7 @@ func TestParseAndUploadNPMPackage_WithAttachment_UploadsData(t *testing.T) {
 	assert.Equal(t, "pkg", meta.Name)
 	assert.Equal(t, "1.0.0", meta.Versions["1.0.0"].Version)
 
-	// File info should be populated
+	// Upload should have occurred - verify file info has content
 	assert.Greater(t, fi.Size, int64(0))
 }
 
@@ -157,6 +158,14 @@ func (m *mockLocalBase) MoveTempFileAndCreateArtifact(
 	version, p string, md metadata.Metadata, fi types.FileInfo, foC bool,
 ) (*commons.ResponseHeaders, string, int64, bool, error) {
 	return m.moveTempAndCreate(ctx, info, tmp, version, p, md, fi, foC)
+}
+
+func (m *mockLocalBase) UpdateFileManagerAndCreateArtifact(
+	ctx context.Context,
+	info pkg.ArtifactInfo,
+	version, p string, md metadata.Metadata, fi types.FileInfo, foC bool,
+) (*commons.ResponseHeaders, string, int64, bool, error) {
+	return m.moveTempAndCreate(ctx, info, "", version, p, md, fi, foC)
 }
 
 func (m *mockLocalBase) Download(
@@ -200,14 +209,6 @@ func (m *mockLocalBase) MoveMultipleTempFilesAndCreateArtifact(
 	return nil
 }
 
-func (m *mockLocalBase) UpdateFileManagerAndCreateArtifact(
-	context.Context,
-	pkg.ArtifactInfo, string, string,
-	metadata.Metadata, types.FileInfo, bool,
-) (*commons.ResponseHeaders, string, int64, bool, error) {
-	return nil, "", 0, false, nil
-}
-
 func (m *mockLocalBase) AuditPush(
 	ctx context.Context, info pkg.ArtifactInfo, version string,
 	imageUUID string, artifactUUID string,
@@ -218,8 +219,12 @@ func (m *mockLocalBase) AuditPush(
 }
 
 type mockTagsDAO struct {
-	findByImageNameAndRegID func(ctx context.Context,
-		image string, regID int64, imageType *string) ([]*types.PackageTagMetadata, error)
+	findByImageNameAndRegID func(
+		ctx context.Context,
+		image string,
+		regID int64,
+		imageType *string,
+	) ([]*types.PackageTagMetadata, error)
 	create                  func(ctx context.Context, tag *types.PackageTag) (string, error)
 	deleteByTagAndImageName func(ctx context.Context, tag string, image string, regID int64) error
 }
@@ -261,7 +266,10 @@ func (m *mockImageDAO) Get(context.Context, int64, ...types.QueryOption) (*types
 	return nil, nil //nolint:nilnil
 }
 
-func (m *mockImageDAO) GetByName(context.Context, int64, string, ...types.QueryOption) (*types.Image, error) {
+func (m *mockImageDAO) GetByName(ctx context.Context, regID int64, name string, _ ...types.QueryOption) (*types.Image, error) {
+	if m.getByName != nil {
+		return m.getByName(ctx, regID, name)
+	}
 	return nil, nil //nolint:nilnil
 }
 
@@ -289,18 +297,6 @@ func (m *mockImageDAO) Update(context.Context, *types.Image) error              
 func (m *mockImageDAO) UpdateStatus(context.Context, *types.Image) error               { return nil }
 func (m *mockImageDAO) DeleteByImageNameAndRegID(context.Context, int64, string) error { return nil }
 func (m *mockImageDAO) DeleteByImageNameIfNoLinkedArtifacts(context.Context, int64, string) error {
-	return nil
-}
-func (m *mockImageDAO) RestoreByImageNameAndRegID(context.Context, int64, string) error {
-	return nil
-}
-func (m *mockImageDAO) SoftDeleteByImageNameAndRegID(context.Context, int64, string) error {
-	return nil
-}
-func (m *mockImageDAO) Purge(context.Context, string, int64) (int64, error) {
-	return 0, nil
-}
-func (m *mockImageDAO) RestoreByUUID(context.Context, string) error {
 	return nil
 }
 
@@ -407,18 +403,6 @@ func (m *mockArtifactDAO) DeleteByImageNameAndRegistryID(context.Context, int64,
 }
 func (m *mockArtifactDAO) DeleteByVersionAndImageName(context.Context, string, string, int64) error {
 	return nil //nolint:nilnil
-}
-func (m *mockArtifactDAO) RestoreByImageNameAndRegistryID(context.Context, int64, string) error {
-	return nil
-}
-func (m *mockArtifactDAO) RestoreByVersionAndImageName(context.Context, string, string, int64) error {
-	return nil
-}
-func (m *mockArtifactDAO) SoftDeleteByImageNameAndRegistryID(context.Context, int64, string) error {
-	return nil
-}
-func (m *mockArtifactDAO) SoftDeleteByVersionAndImageName(context.Context, string, string, int64) error {
-	return nil
 }
 func (m *mockArtifactDAO) GetLatestByImageID(context.Context, int64, ...types.QueryOption) (*types.Artifact, error) {
 	return nil, nil //nolint:nilnil

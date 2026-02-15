@@ -274,12 +274,41 @@ func setupBasicController(_ *testing.T) *metadata.APIController {
 	eventReporter := createEventReporter()
 
 	return metadata.NewAPIController(
-		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, mockImageStore, nil,
-		mockSpaceFinder, nil, nil, nil, mockAuthorizer, nil, mockArtifactStore, nil, nil,
-		mockRegistryMetadataHelper, nil, eventReporter, mockDownloadStatRepo, "",
-		nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
-		func(_ context.Context) bool { return false },
-		nil, nil, nil, nil, // packageWrapper, publicAccess, deletionService, reindexingService.
+		mockRegistryRepo,           // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		mockImageStore,             // imageStore
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		nil,                        // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		mockArtifactStore,          // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
+		mockRegistryMetadataHelper, // registryMetadataHelper
+		nil,                        // webhookService
+		&eventReporter,             // artifactEventReporter
+		mockDownloadStatRepo,       // downloadStatRepository
+		"",                         // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		mockQuarantineRepo,         // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		nil, // packageWrapper
+		nil, // publicAccess
+		nil, // deletionService
+		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -323,17 +352,13 @@ func setupControllerWithError(_ *testing.T, errorType string) *metadata.APIContr
 	return metadata.NewAPIController(
 		nil,                        // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		nil,                        // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		nil,                        // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -342,7 +367,7 @@ func setupControllerWithError(_ *testing.T, errorType string) *metadata.APIContr
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -358,6 +383,8 @@ func setupControllerWithError(_ *testing.T, errorType string) *metadata.APIContr
 		nil, // publicAccess
 		nil, // deletionService
 		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -511,12 +538,41 @@ func setupSnapshotController(_ *testing.T, packageType artifact.PackageType) *me
 	eventReporter := createEventReporter()
 
 	return metadata.NewAPIController(
-		mockRegistryRepo, fileManager, nil, nil, nil, nil, nil, nil, mockImageStore, nil,
-		mockSpaceFinder, nil, nil, nil, mockAuthorizer, nil, mockArtifactStore, nil, nil,
-		mockRegistryMetadataHelper, nil, eventReporter, mockDownloadStatRepo, "",
-		nil, nil, nil, nil, nil, mockQuarantineRepo, nil, nil,
-		func(_ context.Context) bool { return false },
-		nil, nil, nil, nil, // packageWrapper, publicAccess, deletionService, reindexingService.
+		mockRegistryRepo,           // repositoryStore
+		fileManager,                // fileManager
+		nil,                        // upstreamProxyStore
+		nil,                        // tagStore
+		nil,                        // manifestStore
+		nil,                        // cleanupPolicyStore
+		mockImageStore,             // imageStore
+		mockSpaceFinder,            // spaceFinder
+		nil,                        // tx
+		nil,                        // urlProvider
+		mockAuthorizer,             // authorizer
+		nil,                        // auditService
+		mockArtifactStore,          // artifactStore
+		nil,                        // webhooksRepository
+		nil,                        // webhooksExecutionRepository
+		mockRegistryMetadataHelper, // registryMetadataHelper
+		nil,                        // webhookService
+		&eventReporter,             // artifactEventReporter
+		mockDownloadStatRepo,       // downloadStatRepository
+		"",                         // setupDetailsAuthHeaderPrefix
+		nil,                        // registryBlobStore
+		nil,                        // regFinder
+		nil,                        // postProcessingReporter
+		nil,                        // cargoRegistryHelper
+		nil,                        // spaceController
+		mockQuarantineRepo,         // quarantineArtifactRepository
+		nil,                        // quarantineFinder
+		nil,                        // spaceStore
+		func(_ context.Context) bool { return false }, // untaggedImagesEnabled
+		nil, // packageWrapper
+		nil, // publicAccess
+		nil, // deletionService
+		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 

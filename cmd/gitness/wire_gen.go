@@ -168,9 +168,11 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/pkg/rpm"
 	"github.com/harness/gitness/registry/app/services/deletion"
+	"github.com/harness/gitness/registry/app/services/hook"
 	publicaccess2 "github.com/harness/gitness/registry/app/services/publicaccess"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/app/services/reindexing"
+	storage2 "github.com/harness/gitness/registry/app/storage"
 	cache2 "github.com/harness/gitness/registry/app/store/cache"
 	database2 "github.com/harness/gitness/registry/app/store/database"
 	"github.com/harness/gitness/registry/app/utils/cargo"
@@ -568,17 +570,17 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	migrateLabel := migrate.ProvideLabelImporter(transactor, labelStore, labelValueStore, spaceStore)
 	migrateController := migrate2.ProvideController(authorizer, publicaccessService, gitInterface, provider, pullReq, rule, migrateWebhook, migrateLabel, resourceLimiter, auditService, repoIdentifier, transactor, spaceStore, repoStore, spaceFinder, repoFinder, eventsReporter)
 	openapiService := openapi.ProvideOpenAPIService()
-	storageDriver, err := api2.BlobStorageProvider(ctx, config)
+	blobRepository := database2.ProvideBlobDao(db, mediaTypesRepository)
+	storageDriver, err := api2.DefaultStorageProvider(ctx, config)
 	if err != nil {
 		return nil, err
 	}
-	storageDeleter := gc.StorageDeleterProvider(storageDriver)
-	blobRepository := database2.ProvideBlobDao(db, mediaTypesRepository)
-	storageService := docker.StorageServiceProvider(config, storageDriver)
+	storageResolver := storage2.NewStaticStorageResolver(storageDriver)
+	storageService := docker.StorageServiceProvider(config, storageResolver)
 	gcService := gc.ServiceProvider()
 	ociBlobStoreFactory := docker.ProvideOciBlobStore(storageService)
 	bucketService := docker.ProvideBucketService(ociBlobStoreFactory)
-	app := docker.NewApp(ctx, storageDeleter, blobRepository, spaceStore, config, storageService, gcService, bucketService)
+	app := docker.NewApp(ctx, blobRepository, spaceStore, config, storageService, storageResolver, gcService, bucketService)
 	manifestRepository := database2.ProvideManifestDao(db, mediaTypesRepository)
 	manifestReferenceRepository := database2.ProvideManifestRefDao(db)
 	tagRepository := database2.ProvideTagDao(db)
@@ -600,7 +602,8 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	if err != nil {
 		return nil, err
 	}
-	localRegistry := docker.LocalRegistryProvider(app, manifestService, blobRepository, registryRepository, registryFinder, manifestRepository, registryBlobRepository, mediaTypesRepository, tagRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, gcService, transactor, quarantineArtifactRepository, replicationReporter, bucketService)
+	blobActionHook := hook.ProvideBlobCommitHook()
+	localRegistry := docker.LocalRegistryProvider(app, manifestService, blobRepository, registryRepository, registryFinder, manifestRepository, registryBlobRepository, mediaTypesRepository, tagRepository, imageRepository, artifactRepository, bandwidthStatRepository, downloadStatRepository, gcService, transactor, quarantineArtifactRepository, replicationReporter, blobActionHook)
 	proxyController := docker.ProvideProxyController(localRegistry, manifestService, secretService, spaceFinder)
 	remoteRegistry := docker.RemoteRegistryProvider(localRegistry, app, upstreamProxyConfigRepository, spaceFinder, secretService, proxyController)
 	quarantineService := quarantine.ProvideService(quarantineArtifactRepository, manifestRepository)
@@ -617,7 +620,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	registryOCIHandler := router.OCIHandlerProvider(handler)
 	genericBlobRepository := database2.ProvideGenericBlobDao(db)
 	nodesRepository := database2.ProvideNodeDao(db)
-	fileManager := filemanager.Provider(registryRepository, genericBlobRepository, nodesRepository, transactor, config, storageService, bucketService, replicationReporter)
+	fileManager := filemanager.Provider(registryRepository, genericBlobRepository, nodesRepository, transactor, config, storageService, bucketService, replicationReporter, blobActionHook)
 	cleanupPolicyRepository := database2.ProvideCleanupPolicyDao(db, transactor)
 	accessor := dbtx.ProvideAccessor(accessorTx)
 	webhooksRepository := database2.ProvideWebhookDao(db)
@@ -645,7 +648,7 @@ func initSystem(ctx context.Context, config *types.Config) (*server.System, erro
 	reporter11 := artifact.ProvideArtifactReporterValue(artifactReporter)
 	reindexingService := reindexing.NewService(asyncprocessingReporter, reporter11)
 	deletionService := deletion.NewService(artifactRepository, imageRepository, manifestRepository, tagRepository, registryBlobRepository, fileManager, transactor, v3, deletionPackageWrapper, reindexingService, artifactReporter, provider)
-	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, storageDriver, spaceFinder, transactor, accessor, authenticator, provider, authorizer, auditService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, registryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder, v3, blobRepository, genericBlobRepository, deletionService)
+	apiHandler := router.APIHandlerProvider(registryRepository, upstreamProxyConfigRepository, fileManager, tagRepository, manifestRepository, cleanupPolicyRepository, imageRepository, spaceFinder, transactor, accessor, authenticator, provider, authorizer, auditService, artifactRepository, webhooksRepository, webhooksExecutionRepository, service3, spacePathStore, artifactReporter, downloadStatRepository, config, registryBlobRepository, registryFinder, asyncprocessingReporter, registryHelper, spaceController, quarantineArtifactRepository, spaceStore, packageWrapper, cacheService, finder, v3, deletionService, storageService, app)
 	packageTagRepository := database2.ProvidePackageTagDao(db)
 	localBase := base.LocalBaseProvider(registryRepository, registryFinder, fileManager, transactor, imageRepository, artifactRepository, nodesRepository, packageTagRepository, authorizer, spaceFinder, auditService)
 	mavenDBStore := maven.DBStoreProvider(registryRepository, imageRepository, artifactRepository, spaceStore, bandwidthStatRepository, downloadStatRepository, nodesRepository, upstreamProxyConfigRepository)

@@ -221,17 +221,13 @@ func setupArtifactsControllerWithError(_ *testing.T, errorType string) *metadata
 	return metadata.NewAPIController(
 		nil,                        // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		nil,                        // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		nil,                        // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		nil,                        // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -240,7 +236,7 @@ func setupArtifactsControllerWithError(_ *testing.T, errorType string) *metadata
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -256,6 +252,8 @@ func setupArtifactsControllerWithError(_ *testing.T, errorType string) *metadata
 		nil, // publicAccess
 		nil, // deletionService
 		nil, // reindexingService
+		nil, // storageService
+		nil, // app
 	)
 }
 
@@ -390,17 +388,13 @@ func setupArtifactsSnapshotController(
 	return metadata.NewAPIController(
 		mockRegistryRepo,           // repositoryStore
 		fileManager,                // fileManager
-		nil,                        // blobStore
-		nil,                        // genericBlobStore
 		nil,                        // upstreamProxyStore
 		mockTagStore,               // tagStore
 		nil,                        // manifestStore
 		nil,                        // cleanupPolicyStore
 		nil,                        // imageStore
-		nil,                        // driver
 		mockSpaceFinder,            // spaceFinder
 		nil,                        // tx
-		nil,                        // db
 		mockURLProvider,            // urlProvider
 		mockAuthorizer,             // authorizer
 		nil,                        // auditService
@@ -409,7 +403,7 @@ func setupArtifactsSnapshotController(
 		nil,                        // webhooksExecutionRepository
 		mockRegistryMetadataHelper, // registryMetadataHelper
 		nil,                        // webhookService
-		eventReporter,              // artifactEventReporter
+		&eventReporter,             // artifactEventReporter
 		nil,                        // downloadStatRepository
 		"",                         // setupDetailsAuthHeaderPrefix
 		nil,                        // registryBlobStore
@@ -425,6 +419,8 @@ func setupArtifactsSnapshotController(
 		nil,                // publicAccess
 		nil,                // deletionService
 		nil,                // reindexingService
+		nil,                // storageService
+		nil,                // app
 	)
 }
 
