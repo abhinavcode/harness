@@ -16,7 +16,7 @@
 
 import React from 'react'
 import { useToaster } from '@harnessio/uicore'
-import { evaluateArtifactScan, type V3Error } from '@harnessio/react-har-service-client'
+import { evaluateArtifactScanV3, type V3Error } from '@harnessio/react-har-service-client'
 
 import { useAppStore, useParentComponents } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
@@ -42,7 +42,7 @@ function ReEvaluateMenuItem(props: VersionActionProps) {
   }
 
   const handleReEvaluate = async () => {
-    return evaluateArtifactScan({
+    return evaluateArtifactScanV3({
       queryParams: { account_identifier: accountId || '' },
       body: { versionId: data.uuid }
     })
