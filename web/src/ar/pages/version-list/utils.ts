@@ -22,7 +22,7 @@ import {
   DEFAULT_ARTIFACT_LIST_TABLE_SORT,
   DEFAULT_PAGE_INDEX,
   DEFAULT_PAGE_SIZE,
-  SoftDeleteFilterEnum
+  DeleteFilterEnum
 } from '@ar/constants'
 
 import type { UseQueryParamsOptions } from '@ar/__mocks__/hooks'
@@ -39,7 +39,7 @@ type GetVersionListQueryParams = {
   isDeployedArtifacts: boolean
   packageTypes: RepositoryPackageType[]
   repositoryKey: string
-  softDeleteFilter?: SoftDeleteFilterEnum
+  deleteFilter?: DeleteFilterEnum
 }
 
 export type VersionListPageQueryParams = Omit<
@@ -58,7 +58,7 @@ export const useVersionListQueryParamOptions = (): UseQueryParamsOptions<Version
       packageTypes: [],
       repositoryKey: '',
       searchTerm: '',
-      softDeleteFilter: SoftDeleteFilterEnum.EXCLUDE
+      deleteFilter: DeleteFilterEnum.EXCLUDE
     },
     { ignoreEmptyString: false }
   )

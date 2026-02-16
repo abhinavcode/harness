@@ -51,7 +51,7 @@ export default function useLocalGetAllArtifactsByRegistryQuery(props: UseLocalGe
 
   const { useQueryParams } = useParentHooks()
   const queryParams = useQueryParams<RegistryArtifactListPageQueryParams>(useRegistryArtifactListQueryParamOptions())
-  const { softDeleteFilter } = queryParams
+  const { deleteFilter } = queryParams
 
   const v1Response = useGetAllArtifactsByRegistryQuery(
     {
@@ -81,7 +81,7 @@ export default function useLocalGetAllArtifactsByRegistryQuery(props: UseLocalGe
         registry_identifier: [repositoryIdentifier],
         sort_order: props.sort_order as ListPackagesQueryQueryParams['sort_order'],
         metadata: getValueForAPI(),
-        deleted: softDeleteFilter as ListPackagesQueryQueryParams['deleted']
+        deleted: deleteFilter as ListPackagesQueryQueryParams['deleted']
       },
       stringifyQueryParamsOptions: {
         arrayFormat: 'repeat'

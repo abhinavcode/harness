@@ -22,7 +22,7 @@ import {
   DEFAULT_PACKAGE_LIST_TABLE_SORT,
   DEFAULT_PAGE_INDEX,
   DEFAULT_PAGE_SIZE,
-  SoftDeleteFilterEnum
+  DeleteFilterEnum
 } from '@ar/constants'
 import type { UseQueryParamsOptions } from '@ar/__mocks__/hooks'
 
@@ -36,7 +36,7 @@ export type RegistryArtifactListPageQueryParams = {
   packageTypes: RepositoryPackageType[]
   repositoryKey?: string
   labels: string[]
-  softDeleteFilter?: SoftDeleteFilterEnum
+  deleteFilter?: DeleteFilterEnum
 }
 
 export const useRegistryArtifactListQueryParamOptions =
@@ -50,7 +50,7 @@ export const useRegistryArtifactListQueryParamOptions =
         isDeployedArtifacts: false,
         packageTypes: [],
         labels: [],
-        softDeleteFilter: SoftDeleteFilterEnum.EXCLUDE
+        deleteFilter: DeleteFilterEnum.EXCLUDE
       },
       { ignoreEmptyString: false }
     )

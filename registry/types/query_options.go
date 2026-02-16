@@ -16,7 +16,7 @@ package types
 
 // QueryOptions holds configuration options for database queries.
 type QueryOptions struct {
-	SoftDeleteFilter SoftDeleteFilter
+	DeleteFilter DeleteFilter
 }
 
 // QueryOption is a function that modifies QueryOptions.
@@ -25,7 +25,7 @@ type QueryOption func(o *QueryOptions)
 // MakeQueryOptions creates QueryOptions with defaults and applies any provided options.
 func MakeQueryOptions(opts ...QueryOption) QueryOptions {
 	opt := QueryOptions{
-		SoftDeleteFilter: SoftDeleteFilterExclude, // Default: exclude soft-deleted entities
+		DeleteFilter: DeleteFilterExcludeDeleted, // Default: exclude soft-deleted entities
 	}
 
 	for _, o := range opts {
@@ -35,30 +35,30 @@ func MakeQueryOptions(opts ...QueryOption) QueryOptions {
 	return opt
 }
 
-// WithSoftDeleteFilter sets the soft delete filter option.
-func WithSoftDeleteFilter(filter SoftDeleteFilter) QueryOption {
+// WithDeleteFilter sets the soft delete filter option.
+func WithDeleteFilter(filter DeleteFilter) QueryOption {
 	return func(o *QueryOptions) {
-		o.SoftDeleteFilter = filter
+		o.DeleteFilter = filter
 	}
 }
 
 // WithAllDeleted is a convenience function to include all entities (including soft-deleted).
 func WithAllDeleted() QueryOption {
-	return WithSoftDeleteFilter(SoftDeleteFilterInclude)
+	return WithDeleteFilter(DeleteFilterIncludeDeleted)
 }
 
 // WithOnlyDeleted is a convenience function to only include soft-deleted entities.
 func WithOnlyDeleted() QueryOption {
-	return WithSoftDeleteFilter(SoftDeleteFilterOnly)
+	return WithDeleteFilter(DeleteFilterOnlyDeleted)
 }
 
 // WithExcludeDeleted is a convenience function to exclude soft-deleted entities (default behavior).
 func WithExcludeDeleted() QueryOption {
-	return WithSoftDeleteFilter(SoftDeleteFilterExclude)
+	return WithDeleteFilter(DeleteFilterExcludeDeleted)
 }
 
-// ExtractSoftDeleteFilter extracts the SoftDeleteFilter from QueryOptions.
-func ExtractSoftDeleteFilter(opts ...QueryOption) SoftDeleteFilter {
+// ExtractDeleteFilter extracts the DeleteFilter from QueryOptions.
+func ExtractDeleteFilter(opts ...QueryOption) DeleteFilter {
 	qo := MakeQueryOptions(opts...)
-	return qo.SoftDeleteFilter
+	return qo.DeleteFilter
 }

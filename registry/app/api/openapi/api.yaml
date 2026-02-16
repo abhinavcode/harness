@@ -630,7 +630,7 @@ paths:
         - $ref: "#/components/parameters/sortOrder"
         - $ref: "#/components/parameters/sortField"
         - $ref: "#/components/parameters/searchTerm"
-        - $ref: "#/components/parameters/softDeleteFilterParam"
+        - $ref: "#/components/parameters/deleteFilterParam"
       responses:
         200:
           $ref: "#/components/responses/ListArtifactVersionResponse"
@@ -3613,7 +3613,7 @@ components:
       description: Date. Format - MM/DD/YYYY
       schema:
         type: string
-    softDeleteFilterParam:
+    deleteFilterParam:
       name: deleted
       in: query
       required: false

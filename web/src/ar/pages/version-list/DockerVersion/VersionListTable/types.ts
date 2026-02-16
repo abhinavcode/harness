@@ -18,7 +18,7 @@ import type { PaginationProps } from '@harnessio/uicore'
 import type { ListVersion } from '@harnessio/react-har-service-client'
 
 import type { SortByType } from '@ar/frameworks/Version/Version'
-import type { SoftDeleteFilterEnum } from '@ar/constants'
+import type { DeleteFilterEnum } from '@ar/constants'
 
 export interface DockerVersionListTableProps {
   data: ListVersion
@@ -27,5 +27,5 @@ export interface DockerVersionListTableProps {
   setSortBy: (sortBy: SortByType) => void
   sortBy: SortByType
   minimal?: boolean
-  softDeleteFilter?: SoftDeleteFilterEnum
+  deleteFilter?: DeleteFilterEnum
 }

@@ -21,7 +21,7 @@ import {
   DEFAULT_GLOBAL_ARTIFACT_LIST_TABLE_SORT,
   DEFAULT_PAGE_INDEX,
   DEFAULT_PAGE_SIZE,
-  SoftDeleteFilterEnum
+  DeleteFilterEnum
 } from '@ar/constants'
 import type { RepositoryPackageType } from '@ar/common/types'
 import type { UseQueryParamsOptions } from '@ar/__mocks__/hooks'
@@ -36,7 +36,7 @@ export type ArtifactListPageQueryParams = {
   isDeployedArtifacts: boolean
   searchTerm?: string
   repositoryKey?: string[]
-  softDeleteFilter?: SoftDeleteFilterEnum
+  deleteFilter?: DeleteFilterEnum
 }
 
 export const useArtifactListQueryParamOptions = (): UseQueryParamsOptions<ArtifactListPageQueryParams> => {
@@ -51,7 +51,7 @@ export const useArtifactListQueryParamOptions = (): UseQueryParamsOptions<Artifa
       packageTypes: [],
       labels: [],
       repositoryKey: [],
-      softDeleteFilter: SoftDeleteFilterEnum.EXCLUDE
+      deleteFilter: DeleteFilterEnum.EXCLUDE
     },
     { ignoreEmptyString: true }
   )

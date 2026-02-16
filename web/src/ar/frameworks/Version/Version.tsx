@@ -28,7 +28,7 @@ import type { PackageMetadata } from '@harnessio/react-har-service-client'
 import type { PageType, Parent, RepositoryConfigType, RepositoryPackageType } from '@ar/common/types'
 import type { VersionDetailsTab } from '@ar/pages/version-details/components/VersionDetailsTabs/constants'
 import { ArtifactDetailsTab } from '@ar/pages/artifact-details/constants'
-import type { SoftDeleteFilterEnum } from '@ar/constants'
+import type { DeleteFilterEnum } from '@ar/constants'
 
 export interface VersionDetailsHeaderProps<T> {
   data: T
@@ -48,7 +48,7 @@ export interface VersionListTableProps {
   sortBy: SortByType
   minimal?: boolean
   parent: Parent
-  softDeleteFilter?: SoftDeleteFilterEnum
+  deleteFilter?: DeleteFilterEnum
 }
 
 export interface ArtifactActionProps {

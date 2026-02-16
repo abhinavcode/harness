@@ -44,7 +44,7 @@ export default function useLocalGetRegistriesQuery(
 
   const queryParamOptions = useArtifactRepositoriesQueryParamOptions()
   const queryParams = useQueryParams<ArtifactRepositoryListPageQueryParams>(queryParamOptions)
-  const { softDeleteFilter } = queryParams
+  const { deleteFilter } = queryParams
 
   const v1Response = useGetAllRegistriesQuery(
     {
@@ -71,7 +71,7 @@ export default function useLocalGetRegistriesQuery(
         org_identifier: scope.orgIdentifier,
         project_identifier: scope.projectIdentifier,
         metadata: getValueForAPI(),
-        deleted: softDeleteFilter as ListRegistriesQueryQueryParams['deleted']
+        deleted: deleteFilter as ListRegistriesQueryQueryParams['deleted']
       },
       stringifyQueryParamsOptions: {
         arrayFormat: 'repeat'

@@ -138,18 +138,18 @@ const (
 	Model   ArtifactTypeParam = "model"
 )
 
+// Defines values for DeleteFilterParam.
+const (
+	Exclude DeleteFilterParam = "exclude"
+	Include DeleteFilterParam = "include"
+	Only    DeleteFilterParam = "only"
+)
+
 // Defines values for ScopeParam.
 const (
 	Ancestors   ScopeParam = "ancestors"
 	Descendants ScopeParam = "descendants"
 	None        ScopeParam = "none"
-)
-
-// Defines values for SoftDeleteFilterParam.
-const (
-	Exclude SoftDeleteFilterParam = "exclude"
-	Include SoftDeleteFilterParam = "include"
-	Only    SoftDeleteFilterParam = "only"
 )
 
 // Defines values for VersionTypeParam.
@@ -1171,6 +1171,9 @@ type ArtifactTypeParam string
 // ChildVersionParam defines model for childVersionParam.
 type ChildVersionParam string
 
+// DeleteFilterParam defines model for deleteFilterParam.
+type DeleteFilterParam string
+
 // DigestOptParam defines model for digestOptParam.
 type DigestOptParam string
 
@@ -1212,9 +1215,6 @@ type ScopeParam string
 
 // SearchTerm defines model for searchTerm.
 type SearchTerm string
-
-// SoftDeleteFilterParam defines model for softDeleteFilterParam.
-type SoftDeleteFilterParam string
 
 // SortField defines model for sortField.
 type SortField string

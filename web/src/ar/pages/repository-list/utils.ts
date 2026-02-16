@@ -21,7 +21,7 @@ import {
   DEFAULT_PAGE_INDEX,
   DEFAULT_PAGE_SIZE,
   DEFAULT_REPOSITORY_LIST_TABLE_SORT,
-  SoftDeleteFilterEnum
+  DeleteFilterEnum
 } from '@ar/constants'
 import { RepositoryConfigType, RepositoryPackageType, RepositoryScopeType } from '@ar/common/types'
 import type { UseQueryParamsOptions } from '@ar/__mocks__/hooks'
@@ -40,7 +40,7 @@ type GetArtifactRepositoryQueryParams = {
   repositoryTypes: RepositoryPackageType[]
   configType?: RepositoryConfigType
   treeSort?: string
-  softDeleteFilter?: SoftDeleteFilterEnum
+  deleteFilter?: DeleteFilterEnum
 }
 
 export type ArtifactRepositoryListPageQueryParams = Omit<
@@ -59,7 +59,7 @@ export const useArtifactRepositoriesQueryParamOptions =
         scope: RepositoryScopeType.NONE,
         repositoryTypes: [],
         compact: false,
-        softDeleteFilter: SoftDeleteFilterEnum.EXCLUDE
+        deleteFilter: DeleteFilterEnum.EXCLUDE
       },
       { ignoreEmptyString: false }
     )

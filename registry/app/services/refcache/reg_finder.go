@@ -112,17 +112,17 @@ func (r registryFinder) FindByRootParentID(
 	}
 
 	// Apply soft delete filter based on opts
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	deleteFilter := types.ExtractDeleteFilter(opts...)
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		if reg.DeletedAt != nil {
 			return nil, fmt.Errorf("registry is soft deleted")
 		}
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		if reg.DeletedAt == nil {
 			return nil, fmt.Errorf("registry is not soft deleted")
 		}
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filtering - return all registries
 	}
 

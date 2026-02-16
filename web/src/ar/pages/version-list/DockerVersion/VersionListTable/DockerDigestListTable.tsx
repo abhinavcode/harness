@@ -29,7 +29,7 @@ import type { ArtifactDetailsPathParams } from '@ar/routes/types'
 import DigestListPage from '@ar/pages/digest-list/DigestListPage'
 import { handleToggleExpandableRow } from '@ar/components/TableCells/utils'
 
-import { SoftDeleteFilterEnum } from '@ar/constants'
+import { DeleteFilterEnum } from '@ar/constants'
 import {
   DigestNameCell,
   OCITagsCell,
@@ -47,7 +47,7 @@ import { DockerDigestToggleAccordionCell } from './DockerVersionListCell'
 import css from './DockerVersionListTable.module.scss'
 
 function DockerDigestListTable(props: DockerVersionListTableProps): JSX.Element {
-  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, softDeleteFilter } = props
+  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, deleteFilter } = props
   const pathParams = useDecodedParams<ArtifactDetailsPathParams>()
   const { parent } = useAppStore()
   const history = useHistory()
@@ -144,15 +144,15 @@ function DockerDigestListTable(props: DockerVersionListTableProps): JSX.Element 
       },
       {
         Header: getString(
-          softDeleteFilter === SoftDeleteFilterEnum.ONLY
+          deleteFilter === DeleteFilterEnum.ONLY
             ? 'versionList.table.columns.archivedAt'
             : 'versionList.table.columns.publishedByAt'
         ),
         width: '100%',
-        accessor: softDeleteFilter === SoftDeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified',
+        accessor: deleteFilter === DeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified',
         Cell: VersionPublishedAtCell,
         serverSortProps: getServerSortProps(
-          softDeleteFilter === SoftDeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified'
+          deleteFilter === DeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified'
         )
       },
       {
@@ -172,7 +172,7 @@ function DockerDigestListTable(props: DockerVersionListTableProps): JSX.Element 
     ]
       .filter(Boolean)
       .filter(each => !each.hidden) as unknown as Column<VersionMetadata>[]
-  }, [currentOrder, currentSort, getString, expandedRows, softDeleteFilter])
+  }, [currentOrder, currentSort, getString, expandedRows, deleteFilter])
 
   const renderRowSubComponent = React.useCallback(
     ({ row }: { row: Row<VersionMetadata> }) => (

@@ -14,14 +14,14 @@
 
 package types
 
-// SoftDeleteFilter defines the filtering behavior for soft-deleted entities.
-type SoftDeleteFilter string
+// DeleteFilter defines the filtering behavior for soft-deleted entities.
+type DeleteFilter string
 
 const (
-	// SoftDeleteFilterExclude excludes soft-deleted entities (default behavior).
-	SoftDeleteFilterExclude SoftDeleteFilter = "EXCLUDE"
-	// SoftDeleteFilterOnly returns only soft-deleted entities.
-	SoftDeleteFilterOnly SoftDeleteFilter = "ONLY"
-	// SoftDeleteFilterInclude returns all entities regardless of soft-delete status.
-	SoftDeleteFilterInclude SoftDeleteFilter = "INCLUDE"
+	// DeleteFilterExcludeDeleted excludes soft-deleted entities (default behavior).
+	DeleteFilterExcludeDeleted DeleteFilter = "EXCLUDE"
+	// DeleteFilterOnlyDeleted returns only soft-deleted entities.
+	DeleteFilterOnlyDeleted DeleteFilter = "ONLY"
+	// DeleteFilterIncludeDeleted returns all entities regardless of soft-delete status.
+	DeleteFilterIncludeDeleted DeleteFilter = "INCLUDE"
 )

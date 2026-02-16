@@ -88,18 +88,18 @@ type registryNameID struct {
 func (r registryDao) Get(
 	ctx context.Context, id int64, opts ...types.QueryOption,
 ) (*types.Registry, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_id = ?", id)
 
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filter
 	}
 
@@ -122,19 +122,19 @@ func (r registryDao) GetByParentIDAndName(
 	ctx context.Context, parentID int64,
 	name string, opts ...types.QueryOption,
 ) (*types.Registry, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	log.Ctx(ctx).Info().Msgf("GetByParentIDAndName: parentID: %d, name: %s", parentID, name)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_parent_id = ? AND registry_name = ?", parentID, name)
 
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filtering
 	}
 
@@ -157,18 +157,18 @@ func (r registryDao) GetByRootParentIDAndName(
 	ctx context.Context, parentID int64,
 	name string, opts ...types.QueryOption,
 ) (*types.Registry, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where("registry_root_parent_id = ? AND registry_name = ?", parentID, name)
 
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filtering
 	}
 
@@ -188,16 +188,16 @@ func (r registryDao) GetByRootParentIDAndName(
 }
 
 func (r registryDao) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("registries")
 
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filtering
 	}
 
@@ -224,17 +224,17 @@ func (r registryDao) CountAll(
 	repoType string,
 	opts ...types.QueryOption,
 ) (count int64, err error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("registries").
 		Where(sq.Eq{"registry_parent_id": parentIDs})
 
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filtering
 	}
 
@@ -314,18 +314,18 @@ func (r registryDao) FetchUpstreamProxyKeys(
 func (r registryDao) GetByIDIn(
 	ctx context.Context, ids []int64, opts ...types.QueryOption,
 ) (*[]types.Registry, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(registryDB{}), ",")).
 		From("registries").
 		Where(sq.Eq{"registry_id": ids})
 
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filtering
 	}
 
@@ -374,7 +374,7 @@ func (r registryDao) GetAll(
 	repoType string,
 	opts ...types.QueryOption,
 ) (repos *[]store.RegistryMetadata, err error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	if limit < 0 || offset < 0 {
 		return nil, fmt.Errorf("limit and offset must be non-negative")
 	}
@@ -403,12 +403,12 @@ func (r registryDao) GetAll(
 		Where(sq.Eq{"r.registry_parent_id": parentIDs})
 
 	// Apply soft delete filter for registries
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		query = query.Where("r.registry_deleted_at IS NULL")
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		query = query.Where("r.registry_deleted_at IS NOT NULL")
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filter - include all
 	}
 
@@ -521,19 +521,19 @@ func (r registryDao) GetAll(
 func (r registryDao) fetchArtifactCounts(
 	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
 ) (map[int64]int64, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
 	// Build soft delete filter clause
 	var softDeleteClause string
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		softDeleteClause = " AND image_deleted_at IS NULL"
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		softDeleteClause = " AND image_deleted_at IS NOT NULL"
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		softDeleteClause = ""
 	}
 
@@ -572,7 +572,7 @@ func (r registryDao) fetchArtifactCounts(
 func (r registryDao) fetchOCIBlobSizes(
 	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
 ) (map[int64]int64, error) {
-	softDeleteFilter := types.ExtractSoftDeleteFilter(opts...)
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
@@ -588,12 +588,12 @@ func (r registryDao) fetchOCIBlobSizes(
 			WHERE rb.rblob_registry_id IN (?)`
 
 	var filterCondition string
-	switch softDeleteFilter {
-	case types.SoftDeleteFilterExclude:
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
 		filterCondition = " AND (i.image_id IS NULL OR i.image_deleted_at IS NULL)"
-	case types.SoftDeleteFilterOnly:
+	case types.DeleteFilterOnlyDeleted:
 		filterCondition = " AND (i.image_id IS NOT NULL AND i.image_deleted_at IS NOT NULL)"
-	case types.SoftDeleteFilterInclude:
+	case types.DeleteFilterIncludeDeleted:
 		// No filter - include all
 		filterCondition = ""
 	}

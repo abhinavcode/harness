@@ -27,7 +27,7 @@ import type { RepositoryPackageType } from '@ar/common/types'
 import versionFactory from '@ar/frameworks/Version/VersionFactory'
 import { handleToggleExpandableRow } from '@ar/components/TableCells/utils'
 import ArtifactRowSubComponentWidget from '@ar/frameworks/Version/ArtifactRowSubComponentWidget'
-import { SoftDeleteFilterEnum } from '@ar/constants'
+import { DeleteFilterEnum } from '@ar/constants'
 
 import {
   ArtifactDeploymentsCell,
@@ -53,11 +53,11 @@ export interface ArtifactListTableProps extends ArtifactListColumnActions {
   setSortBy: (sortBy: string[]) => void
   sortBy: string[]
   minimal?: boolean
-  softDeleteFilter?: SoftDeleteFilterEnum
+  deleteFilter?: DeleteFilterEnum
 }
 
 export default function ArtifactListTable(props: ArtifactListTableProps): JSX.Element {
-  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, softDeleteFilter } = props
+  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, deleteFilter } = props
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set())
   const { HAR_DEPENDENCY_FIREWALL } = useFeatureFlags()
 
@@ -164,14 +164,14 @@ export default function ArtifactListTable(props: ArtifactListTableProps): JSX.El
       },
       {
         Header: getString(
-          softDeleteFilter === SoftDeleteFilterEnum.ONLY
+          deleteFilter === DeleteFilterEnum.ONLY
             ? 'artifactList.table.columns.archivedAt'
             : 'artifactList.table.columns.lastUpdated'
         ),
         accessor: 'lastModified',
         Cell: LatestArtifactCell,
         serverSortProps: getServerSortProps(
-          softDeleteFilter === SoftDeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified'
+          deleteFilter === DeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified'
         ),
         width: '100%'
       },
@@ -183,7 +183,7 @@ export default function ArtifactListTable(props: ArtifactListTableProps): JSX.El
         width: '30%'
       }
     ].filter(Boolean) as unknown as Column<VersionMetadata>[]
-  }, [currentOrder, currentSort, getString, expandedRows, setExpandedRows, softDeleteFilter])
+  }, [currentOrder, currentSort, getString, expandedRows, setExpandedRows, deleteFilter])
 
   const renderRowSubComponent = useCallback(
     ({ row }: { row: Row<VersionMetadata> }) => (
