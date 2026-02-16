@@ -21,7 +21,7 @@ import type { ListVersion, VersionMetadata } from '@harnessio/react-har-service-
 
 import { useAppStore, useFeatureFlags, useParentHooks } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
-import type { DeleteFilterEnum } from '@ar/constants'
+import type { SoftDeleteFilterEnum } from '@ar/constants'
 import type { RepositoryConfigType } from '@ar/common/types'
 import type { SortByType } from '@ar/frameworks/Version/Version'
 import { RepositoryProviderContext } from '@ar/pages/repository-details/context/RepositoryProvider'
@@ -42,11 +42,11 @@ export interface CommonVersionListTableProps extends ArtifactVersionListColumnAc
   sortBy: SortByType
   minimal?: boolean
   columnConfigs: Partial<Record<VersionListColumnEnum, Partial<IVersionListTableColumnConfigType>>>
-  deleteFilter?: DeleteFilterEnum
+  softDeleteFilter?: SoftDeleteFilterEnum
 }
 
 function VersionListTable(props: CommonVersionListTableProps): JSX.Element {
-  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, columnConfigs, deleteFilter } = props
+  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, columnConfigs, softDeleteFilter } = props
   const { useDefaultPaginationProps } = useParentHooks()
   const { getString } = useStrings()
   const featureFlags = useFeatureFlags()
@@ -85,12 +85,12 @@ function VersionListTable(props: CommonVersionListTableProps): JSX.Element {
       columnConfigs,
       getServerSortProps,
       getString,
-      deleteFilter,
+      softDeleteFilter,
       parent,
       featureFlags,
       type as RepositoryConfigType
     ) as Column<VersionMetadata>[]
-  }, [getServerSortProps, columnConfigs, getString, deleteFilter, parent, featureFlags, type])
+  }, [getServerSortProps, columnConfigs, getString, softDeleteFilter, parent, featureFlags, type])
 
   return (
     <TableV2<VersionMetadata>

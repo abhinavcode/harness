@@ -45,7 +45,7 @@ export enum PreferenceScope {
 export const DEFAULT_ORG = 'default'
 export const DEFAULT_PROJECT = 'default_project'
 
-export enum DeleteFilterEnum {
+export enum SoftDeleteFilterEnum {
   EXCLUDE = 'EXCLUDE',
   INCLUDE = 'INCLUDE',
   ONLY = 'ONLY'

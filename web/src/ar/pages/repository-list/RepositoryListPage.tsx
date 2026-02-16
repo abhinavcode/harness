@@ -30,7 +30,7 @@ import {
 import type { ExpandingSearchInputHandle } from '@harnessio/uicore'
 
 import { useStrings } from '@ar/frameworks/strings'
-import { DEFAULT_PAGE_INDEX, PreferenceScope, DeleteFilterEnum } from '@ar/constants'
+import { DEFAULT_PAGE_INDEX, PreferenceScope, SoftDeleteFilterEnum } from '@ar/constants'
 import { RepositoryListViewTypeEnum } from '@ar/contexts/AppStoreContext'
 import { EntityScope, Parent, RepositoryScopeType } from '@ar/common/types'
 import useGetPageScope from '@ar/hooks/useGetPageScope'
@@ -71,7 +71,7 @@ function RepositoryListPage(): JSX.Element {
 
   const queryParamOptions = useArtifactRepositoriesQueryParamOptions()
   const queryParams = useQueryParams<ArtifactRepositoryListPageQueryParams>(queryParamOptions)
-  const { searchTerm, page, size, repositoryTypes, configType, scope, deleteFilter } = queryParams
+  const { searchTerm, page, size, repositoryTypes, configType, scope, softDeleteFilter } = queryParams
 
   const pageScope = useGetPageScope()
   const allowSoftDelete = useAllowSoftDelete()
@@ -106,7 +106,7 @@ function RepositoryListPage(): JSX.Element {
   const handleClearFilters = (): void => {
     flushSync(searchRef.current.clear)
     replaceQueryParams({
-      deleteFilter
+      softDeleteFilter
     })
   }
 
@@ -190,14 +190,14 @@ function RepositoryListPage(): JSX.Element {
           <ButtonTabs
             small
             bold
-            selectedTabId={deleteFilter}
-            onChange={newTab => updateQueryParams({ deleteFilter: newTab, page: DEFAULT_PAGE_INDEX })}>
+            selectedTabId={softDeleteFilter}
+            onChange={newTab => updateQueryParams({ softDeleteFilter: newTab, page: DEFAULT_PAGE_INDEX })}>
             <ButtonTab
-              id={DeleteFilterEnum.EXCLUDE}
+              id={SoftDeleteFilterEnum.EXCLUDE}
               title={getString('available', { count: responseData?.meta?.activeCount ?? 0 })}
             />
             <ButtonTab
-              id={DeleteFilterEnum.ONLY}
+              id={SoftDeleteFilterEnum.ONLY}
               title={getString('archived', { count: responseData?.meta?.deletedCount ?? 0 })}
             />
           </ButtonTabs>
@@ -215,13 +215,13 @@ function RepositoryListPage(): JSX.Element {
           messageTitle: hasFilter
             ? getString('noResultsFound')
             : getString(
-                deleteFilter === DeleteFilterEnum.ONLY
+                softDeleteFilter === SoftDeleteFilterEnum.ONLY
                   ? 'repositoryList.table.noArchivedRepositoriesTitle'
                   : 'repositoryList.table.noRepositoriesTitle'
               ),
           button: hasFilter ? (
             <Button text={getString('clearFilters')} variation={ButtonVariation.LINK} onClick={handleClearFilters} />
-          ) : deleteFilter === DeleteFilterEnum.ONLY ? (
+          ) : softDeleteFilter === SoftDeleteFilterEnum.ONLY ? (
             <></>
           ) : (
             <CreateRepository />
@@ -239,7 +239,7 @@ function RepositoryListPage(): JSX.Element {
             }}
             sortBy={sort}
             showScope={scope !== RepositoryScopeType.NONE}
-            deleteFilter={deleteFilter}
+            softDeleteFilter={softDeleteFilter}
           />
         )}
       </Page.Body>

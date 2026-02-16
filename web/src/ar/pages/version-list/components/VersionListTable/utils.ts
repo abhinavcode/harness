@@ -18,16 +18,16 @@ import type { Column } from 'react-table'
 import type { Parent, RepositoryConfigType } from '@ar/common/types'
 import type { FeatureFlags } from '@ar/MFEAppTypes'
 import type { StringsMap } from '@ar/strings/types'
-import { DeleteFilterEnum } from '@ar/constants'
+import { SoftDeleteFilterEnum } from '@ar/constants'
 import { VERSION_LIST_TABLE_CELL_CONFIG } from './constants'
 import { VersionListColumnEnum } from './types'
 import type { CommonVersionListTableProps } from './VersionListTable'
 
-const getColumnConfigBasedOnDeleteFilter = (
+const getColumnConfigBasedOnSoftDeleteFilter = (
   key: VersionListColumnEnum,
-  deleteFilter?: DeleteFilterEnum
+  softDeleteFilter?: SoftDeleteFilterEnum
 ): VersionListColumnEnum => {
-  if (deleteFilter === DeleteFilterEnum.ONLY) {
+  if (softDeleteFilter === SoftDeleteFilterEnum.ONLY) {
     switch (key) {
       case VersionListColumnEnum.LastModified:
         return VersionListColumnEnum.DeletedAt
@@ -42,7 +42,7 @@ export const getVersionListTableCellConfigs = (
   columnConfigs: CommonVersionListTableProps['columnConfigs'],
   getServerSortProps: (id: string) => void,
   getString: (key: keyof StringsMap) => string,
-  deleteFilter?: DeleteFilterEnum,
+  softDeleteFilter?: SoftDeleteFilterEnum,
   parent?: Parent,
   featureFlags?: Partial<Record<FeatureFlags, boolean>>,
   registryType?: RepositoryConfigType
@@ -50,7 +50,7 @@ export const getVersionListTableCellConfigs = (
   return Object.keys(columnConfigs)
     .map(key => ({
       ...VERSION_LIST_TABLE_CELL_CONFIG[
-        getColumnConfigBasedOnDeleteFilter(key as VersionListColumnEnum, deleteFilter)
+        getColumnConfigBasedOnSoftDeleteFilter(key as VersionListColumnEnum, softDeleteFilter)
       ],
       ...columnConfigs[key as VersionListColumnEnum]
     }))

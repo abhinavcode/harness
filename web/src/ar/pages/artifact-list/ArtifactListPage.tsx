@@ -31,7 +31,7 @@ import {
 import { Parent } from '@ar/common/types'
 import { useStrings } from '@ar/frameworks/strings'
 import Breadcrumbs from '@ar/components/Breadcrumbs/Breadcrumbs'
-import { DEFAULT_PAGE_INDEX, PreferenceScope, DeleteFilterEnum } from '@ar/constants'
+import { DEFAULT_PAGE_INDEX, PreferenceScope, SoftDeleteFilterEnum } from '@ar/constants'
 import { ButtonTab, ButtonTabs } from '@ar/components/ButtonTabs/ButtonTabs'
 import { useAllowSoftDelete, useAppStore, useFeatureFlags, useParentHooks } from '@ar/hooks'
 import PackageTypeSelector from '@ar/components/PackageTypeSelector/PackageTypeSelector'
@@ -53,7 +53,7 @@ function ArtifactListPage(): JSX.Element {
   const { useQueryParams, useUpdateQueryParams, usePreferenceStore } = useParentHooks()
   const { updateQueryParams, replaceQueryParams } = useUpdateQueryParams<Partial<ArtifactListPageQueryParams>>()
   const queryParams = useQueryParams<ArtifactListPageQueryParams>(useArtifactListQueryParamOptions())
-  const { searchTerm, isDeployedArtifacts, repositoryKey, page, size, latestVersion, packageTypes, deleteFilter } =
+  const { searchTerm, isDeployedArtifacts, repositoryKey, page, size, latestVersion, packageTypes, softDeleteFilter } =
     queryParams
   const searchRef = useRef({} as ExpandingSearchInputHandle)
 
@@ -92,7 +92,7 @@ function ArtifactListPage(): JSX.Element {
   const handleClearAllFilters = (): void => {
     flushSync(searchRef.current.clear)
     replaceQueryParams({
-      deleteFilter
+      softDeleteFilter
     })
   }
 
@@ -198,14 +198,14 @@ function ArtifactListPage(): JSX.Element {
           <ButtonTabs
             small
             bold
-            selectedTabId={deleteFilter}
-            onChange={newTab => updateQueryParams({ deleteFilter: newTab, page: DEFAULT_PAGE_INDEX })}>
+            selectedTabId={softDeleteFilter}
+            onChange={newTab => updateQueryParams({ softDeleteFilter: newTab, page: DEFAULT_PAGE_INDEX })}>
             <ButtonTab
-              id={DeleteFilterEnum.EXCLUDE}
+              id={SoftDeleteFilterEnum.EXCLUDE}
               title={getString('available', { count: responseData?.meta?.activeCount ?? 0 })}
             />
             <ButtonTab
-              id={DeleteFilterEnum.ONLY}
+              id={SoftDeleteFilterEnum.ONLY}
               title={getString('archived', { count: responseData?.meta?.deletedCount ?? 0 })}
             />
           </ButtonTabs>
@@ -223,7 +223,7 @@ function ArtifactListPage(): JSX.Element {
           messageTitle: hasFilter
             ? getString('noResultsFound')
             : getString(
-                deleteFilter === DeleteFilterEnum.ONLY
+                softDeleteFilter === SoftDeleteFilterEnum.ONLY
                   ? 'artifactList.table.noArchivedArtifactsTitle'
                   : 'artifactList.table.noArtifactsTitle'
               ),
@@ -244,7 +244,7 @@ function ArtifactListPage(): JSX.Element {
               updateQueryParams({ sort: sortArray })
             }}
             sortBy={sort}
-            deleteFilter={deleteFilter}
+            softDeleteFilter={softDeleteFilter}
           />
         )}
       </Page.Body>

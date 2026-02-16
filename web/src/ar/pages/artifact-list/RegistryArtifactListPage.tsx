@@ -24,7 +24,7 @@ import type { ArtifactType } from '@harnessio/react-har-service-client'
 import { Parent } from '@ar/common/types'
 import { useStrings } from '@ar/frameworks/strings'
 import { ButtonTab, ButtonTabs } from '@ar/components/ButtonTabs/ButtonTabs'
-import { DEFAULT_PAGE_INDEX, PreferenceScope, DeleteFilterEnum } from '@ar/constants'
+import { DEFAULT_PAGE_INDEX, PreferenceScope, SoftDeleteFilterEnum } from '@ar/constants'
 import { useAllowSoftDelete, useAppStore, useFeatureFlags, useParentHooks } from '@ar/hooks'
 import MetadataFilterSelector from '@ar/components/MetadataFilterSelector/MetadataFilterSelector'
 import useMetadatadataFilterFromQuery from '@ar/components/MetadataFilterSelector/useMetadataFilterFromQuery'
@@ -51,7 +51,7 @@ function RegistryArtifactListPage({ pageBodyClassName, artifactType }: RegistryA
   const searchRef = useRef({} as ExpandingSearchInputHandle)
   const { updateQueryParams, replaceQueryParams } = useUpdateQueryParams<Partial<RegistryArtifactListPageQueryParams>>()
   const queryParams = useQueryParams<RegistryArtifactListPageQueryParams>(useRegistryArtifactListQueryParamOptions())
-  const { searchTerm, isDeployedArtifacts, packageTypes, page, size, labels, deleteFilter } = queryParams
+  const { searchTerm, isDeployedArtifacts, packageTypes, page, size, labels, softDeleteFilter } = queryParams
 
   const { getValue, updateValue } = useMetadatadataFilterFromQuery()
   const metadataFilter = getValue()
@@ -85,7 +85,7 @@ function RegistryArtifactListPage({ pageBodyClassName, artifactType }: RegistryA
   const handleClearAllFilters = (): void => {
     flushSync(searchRef.current.clear)
     replaceQueryParams({
-      deleteFilter
+      softDeleteFilter
     })
   }
 
@@ -111,14 +111,14 @@ function RegistryArtifactListPage({ pageBodyClassName, artifactType }: RegistryA
             <ButtonTabs
               small
               bold
-              selectedTabId={deleteFilter}
-              onChange={newTab => updateQueryParams({ deleteFilter: newTab, page: DEFAULT_PAGE_INDEX })}>
+              selectedTabId={softDeleteFilter}
+              onChange={newTab => updateQueryParams({ softDeleteFilter: newTab, page: DEFAULT_PAGE_INDEX })}>
               <ButtonTab
-                id={DeleteFilterEnum.EXCLUDE}
+                id={SoftDeleteFilterEnum.EXCLUDE}
                 title={getString('available', { count: responseData?.meta?.activeCount ?? 0 })}
               />
               <ButtonTab
-                id={DeleteFilterEnum.ONLY}
+                id={SoftDeleteFilterEnum.ONLY}
                 title={getString('archived', { count: responseData?.meta?.deletedCount ?? 0 })}
               />
             </ButtonTabs>
@@ -159,7 +159,7 @@ function RegistryArtifactListPage({ pageBodyClassName, artifactType }: RegistryA
           messageTitle: hasFilter
             ? getString('noResultsFound')
             : getString(
-                deleteFilter === DeleteFilterEnum.ONLY
+                softDeleteFilter === SoftDeleteFilterEnum.ONLY
                   ? 'artifactList.table.noArchivedArtifactsTitle'
                   : 'artifactList.table.noArtifactsTitle'
               ),
@@ -181,7 +181,7 @@ function RegistryArtifactListPage({ pageBodyClassName, artifactType }: RegistryA
             }}
             onClickLabel={handleClickLabel}
             sortBy={sort}
-            deleteFilter={deleteFilter}
+            softDeleteFilter={softDeleteFilter}
           />
         )}
       </Page.Body>

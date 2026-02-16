@@ -21,7 +21,7 @@ import { PaginationProps, TableV2 } from '@harnessio/uicore'
 import type { ListPackage, PackageMetadata } from '@harnessio/react-har-service-client'
 
 import { useStrings } from '@ar/frameworks/strings'
-import { DeleteFilterEnum } from '@ar/constants'
+import { SoftDeleteFilterEnum } from '@ar/constants'
 import { useParentHooks } from '@ar/hooks'
 
 import {
@@ -44,11 +44,11 @@ export interface RegistryArtifactListTableProps extends RegistryArtifactListColu
   sortBy: string[]
   minimal?: boolean
   onClickLabel: (val: string) => void
-  deleteFilter?: DeleteFilterEnum
+  softDeleteFilter?: SoftDeleteFilterEnum
 }
 
 export default function RegistryArtifactListTable(props: RegistryArtifactListTableProps): JSX.Element {
-  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, onClickLabel, deleteFilter } = props
+  const { data, gotoPage, onPageSizeChange, sortBy, setSortBy, onClickLabel, softDeleteFilter } = props
   const { useDefaultPaginationProps } = useParentHooks()
   const { getString } = useStrings()
 
@@ -96,10 +96,10 @@ export default function RegistryArtifactListTable(props: RegistryArtifactListTab
       },
       {
         Header: getString('artifactList.table.columns.latestVersion'),
-        accessor: deleteFilter === DeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified',
+        accessor: softDeleteFilter === SoftDeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified',
         Cell: RegistryArtifactLatestUpdatedCell,
         serverSortProps: getServerSortProps(
-          deleteFilter === DeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified'
+          softDeleteFilter === SoftDeleteFilterEnum.ONLY ? 'deletedAt' : 'lastModified'
         )
       },
       {
@@ -109,7 +109,7 @@ export default function RegistryArtifactListTable(props: RegistryArtifactListTab
         disableSortBy: true
       }
     ].filter(Boolean) as unknown as Column<PackageMetadata>[]
-  }, [currentOrder, currentSort, getString, onClickLabel, deleteFilter])
+  }, [currentOrder, currentSort, getString, onClickLabel, softDeleteFilter])
 
   return (
     <TableV2<PackageMetadata>

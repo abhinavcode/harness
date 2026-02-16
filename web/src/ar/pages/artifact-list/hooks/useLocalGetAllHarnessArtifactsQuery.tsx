@@ -44,7 +44,7 @@ export default function useLocalGetAllHarnessArtifactsQuery(props: UseLocalGetAl
   const { getValueForAPI } = useMetadatadataFilterFromQuery()
   const { useQueryParams } = useParentHooks()
   const queryParams = useQueryParams<ArtifactListPageQueryParams>(useArtifactListQueryParamOptions())
-  const { deleteFilter } = queryParams
+  const { softDeleteFilter } = queryParams
 
   const v1Response = useGetAllHarnessArtifactsQuery(
     {
@@ -74,7 +74,7 @@ export default function useLocalGetAllHarnessArtifactsQuery(props: UseLocalGetAl
         registry_identifier: props.reg_identifier,
         sort_order: props.sort_order as ListVersionsQueryQueryParams['sort_order'],
         metadata: getValueForAPI(),
-        deleted: deleteFilter as ListVersionsQueryQueryParams['deleted']
+        deleted: softDeleteFilter as ListVersionsQueryQueryParams['deleted']
       },
       stringifyQueryParamsOptions: {
         arrayFormat: 'repeat'
