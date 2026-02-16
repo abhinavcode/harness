@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+
 	usercontroller "github.com/harness/gitness/app/api/controller/user"
 	"github.com/harness/gitness/app/api/usererror"
 	"github.com/harness/gitness/app/auth/authn"

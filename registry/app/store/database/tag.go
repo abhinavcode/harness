@@ -652,8 +652,8 @@ func (t tagDao) getCoreArtifactsQuery(
 	}
 
 	return query.OrderBy(fmt.Sprintf("%s %s", sortField, sortByOrder)).
-		Limit(uint64(limit)). // nolint:gosec
-		Offset(uint64(offset)) // nolint:gosec
+		Limit(uint64(limit)).   //nolint:gosec
+		Offset(uint64(offset))  //nolint:gosec
 }
 
 type enrichmentData struct {
