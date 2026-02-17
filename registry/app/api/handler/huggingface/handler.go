@@ -109,7 +109,6 @@ func (h *handler) GetPackageArtifactInfo(r *http.Request) (pkg.PackageArtifactIn
 		rev = "main"
 	}
 	info.Image = repo
-	// Set artifact type in the base ArtifactInfo for audit logging
 	info.ArtifactType = artifactType
 
 	return &hftype.ArtifactInfo{
