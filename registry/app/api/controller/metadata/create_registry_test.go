@@ -276,7 +276,6 @@ func TestCreateRegistry(t *testing.T) {
 					mockPackageWrapper,
 					mockPublicAccessService,
 					nil, // deletionService.
-					nil, // reindexingService.
 					nil, // storageService.
 					nil, // app.
 				)
@@ -368,7 +367,6 @@ func TestCreateRegistry(t *testing.T) {
 					mockPackageWrapper,
 					mockPublicAccessService,
 					nil, // deletionService.
-					nil, // reindexingService.
 					nil, // storageService.
 					nil, // app.
 				)

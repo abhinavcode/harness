@@ -37,7 +37,6 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/refcache"
-	"github.com/harness/gitness/registry/app/services/reindexing"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
@@ -140,7 +139,6 @@ func NewAPIHandler(
 		packageWrapper,
 		publicAccess,
 		deletionService,
-		reindexing.NewService(postProcessingReporter, *artifactEventReporter),
 		storageService,
 		app,
 	)

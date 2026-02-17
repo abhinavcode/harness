@@ -32,7 +32,6 @@ import (
 	"github.com/harness/gitness/registry/app/pkg/quarantine"
 	"github.com/harness/gitness/registry/app/services/deletion"
 	"github.com/harness/gitness/registry/app/services/refcache"
-	"github.com/harness/gitness/registry/app/services/reindexing"
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/app/utils/cargo"
@@ -81,7 +80,6 @@ type APIController struct {
 	PackageWrapper               interfaces.PackageWrapper
 	PublicAccess                 publicaccess.Service
 	DeletionService              *deletion.Service
-	ReindexingService            *reindexing.Service
 	StorageService               *storage.Service
 	app                          *docker.App
 }
@@ -119,7 +117,6 @@ func NewAPIController(
 	packageWrapper interfaces.PackageWrapper,
 	publicAccess publicaccess.Service,
 	deletionService *deletion.Service,
-	reindexingService *reindexing.Service,
 	storageService *storage.Service,
 	app *docker.App,
 ) *APIController {
@@ -156,7 +153,6 @@ func NewAPIController(
 		PackageWrapper:               packageWrapper,
 		PublicAccess:                 publicAccess,
 		DeletionService:              deletionService,
-		ReindexingService:            reindexingService,
 		StorageService:               storageService,
 		app:                          app,
 	}

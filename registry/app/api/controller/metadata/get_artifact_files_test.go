@@ -372,7 +372,6 @@ func setupFilesController(_ *testing.T, packageType artifact.PackageType) *metad
 		mockPackageWrapper,                            // packageWrapper
 		nil,                                           // publicAccess
 		nil,                                           // deletionService
-		nil,                                           // reindexingService
 		nil,                                           // storageService
 		nil,                                           // app
 	)
@@ -448,7 +447,6 @@ func setupFilesControllerWithError(_ *testing.T, errorType string) *metadata.API
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // deletionService
-		nil, // reindexingService
 		nil, // storageService
 		nil, // app
 	)

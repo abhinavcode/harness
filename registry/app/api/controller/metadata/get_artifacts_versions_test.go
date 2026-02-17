@@ -327,7 +327,6 @@ func setupVersionsController(_ *testing.T, packageType artifact.PackageType) *me
 		mockPackageWrapper,                            // packageWrapper
 		nil,                                           // publicAccess
 		nil,                                           // deletionService
-		nil,                                           // reindexingService
 		nil,                                           // storageService
 		nil,                                           // app
 	)
@@ -409,7 +408,6 @@ func setupVersionsControllerWithError(_ *testing.T, errorType string) *metadata.
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // deletionService
-		nil, // reindexingService
 		nil, // storageService
 		nil, // app
 	)

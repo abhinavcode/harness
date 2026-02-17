@@ -588,7 +588,6 @@ func TestGenerateClientSetupDetails_WithUntaggedImages(t *testing.T) {
 				nil, // packageWrapper
 				nil, // publicAccess
 				nil, // deletionService
-				nil, // reindexingService
 				nil, // storageService
 				nil, // app
 			)
@@ -664,7 +663,6 @@ func TestGenerateClientSetupDetails_MavenWithGroupID(t *testing.T) {
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // deletionService
-		nil, // reindexingService
 		nil, // storageService
 		nil, // app
 	)
@@ -801,7 +799,6 @@ func setupControllerForPackageType(_ *testing.T, packageType artifact.PackageTyp
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // deletionService
-		nil, // reindexingService
 		nil, // storageService
 		nil, // app
 	)
@@ -893,7 +890,6 @@ func setupControllerForError(_ *testing.T, errorType string) *metadata.APIContro
 		nil, // packageWrapper
 		nil, // publicAccess
 		nil, // deletionService
-		nil, // reindexingService
 		nil, // storageService
 		nil, // app
 	)
@@ -1047,7 +1043,6 @@ func TestGenerateClientSetupDetailsSnapshot(t *testing.T) {
 				nil, // packageWrapper
 				nil, // publicAccess
 				nil, // deletionService
-				nil, // reindexingService
 				nil, // storageService
 				nil, // app
 			)
