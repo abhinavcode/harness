@@ -75,7 +75,7 @@ func TrackDownloadStat(h *oci.Handler) func(http.Handler) http.Handler {
 					return
 				}
 
-				err = dbDownloadStatForDockerOrOCIArtifact(ctx, h.Controller, info, h.AuditService, h.SpaceFinder)
+				err = dbDownloadStat(ctx, h.Controller, info, h.AuditService, h.SpaceFinder)
 				if err != nil {
 					log.Ctx(ctx).Error().Stack().Str("middleware",
 						"TrackDownloadStat").Err(err).Msgf("error while putting download stat of artifact, %v",
@@ -87,7 +87,7 @@ func TrackDownloadStat(h *oci.Handler) func(http.Handler) http.Handler {
 	}
 }
 
-func dbDownloadStatForDockerOrOCIArtifact(
+func dbDownloadStat(
 	ctx context.Context,
 	c *docker.Controller,
 	info pkg.RegistryInfo,
