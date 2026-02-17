@@ -66,10 +66,10 @@ func LogArtifactUpload(
 		artifactIdentifier = packageName
 	}
 
-	// Get package type string
-	packageType := ""
+	// Get package kind
+	packageKind := ""
 	if info.ArtifactType != nil {
-		packageType = string(*info.ArtifactType)
+		packageKind = string(*info.ArtifactType)
 	}
 
 	// Operational metadata
@@ -89,7 +89,7 @@ func LogArtifactUpload(
 			AuditKeyArtifactUUID, artifactUUID,
 			AuditKeyRegistryName, info.RegIdentifier,
 			AuditKeyPackageName, packageName,
-			AuditKeyPackageType, packageType,
+			AuditKeyPackageType, packageKind,
 			AuditKeyVersionName, version,
 		),
 		audit.ActionUploaded,
@@ -130,10 +130,10 @@ func LogArtifactDownload(
 		artifactIdentifier = packageName
 	}
 
-	// Get package type string
-	packageType := ""
+	// Get package kind
+	packageKind := ""
 	if info.ArtifactType != nil {
-		packageType = string(*info.ArtifactType)
+		packageKind = string(*info.ArtifactType)
 	}
 
 	err = auditService.Log(
@@ -145,7 +145,7 @@ func LogArtifactDownload(
 			AuditKeyResourceName, artifactIdentifier,
 			AuditKeyRegistryName, info.RegIdentifier,
 			AuditKeyPackageName, packageName,
-			AuditKeyPackageType, packageType,
+			AuditKeyPackageType, packageKind,
 			AuditKeyVersionName, version,
 		),
 		audit.ActionDownloaded,
