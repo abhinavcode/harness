@@ -21,6 +21,7 @@ import {
   ExpandingSearchInputHandle,
   Layout,
   Page,
+  PageSpinner,
   Button,
   ButtonVariation
 } from '@harnessio/uicore'
@@ -59,6 +60,9 @@ export default function ArtifactFilesContent(props: ArtifactFilesContentProps): 
   ) : null
 
   if (minimal) {
+    if (loading) {
+      return <PageSpinner />
+    }
     return table ?? <></>
   }
 
