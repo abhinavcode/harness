@@ -159,14 +159,16 @@ func (h *handler) TrackDownloadStats(
 	r *http.Request,
 ) error {
 	info := request.ArtifactInfoFrom(r.Context()) //nolint:contextcheck
+
+	// Audit log for download operation
+	h.logArtifactDownloadAudit(ctx, info.BaseArtifactInfo(), info.GetVersion())
+
 	if err := h.DownloadStatDao.CreateByRegistryIDImageAndArtifactName(ctx,
 		info.BaseArtifactInfo().RegistryID, info.BaseArtifactInfo().Image, info.GetVersion()); err != nil {
 		log.Ctx(ctx).Error().Msgf("failed to create download stat: %v", err.Error())
 		return usererror.ErrInternal
 	}
 
-	// Audit log for download operation
-	h.logArtifactDownloadAudit(ctx, info.BaseArtifactInfo(), info.GetVersion())
 	return nil
 }
 

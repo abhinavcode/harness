@@ -39,6 +39,7 @@ import (
 	"github.com/harness/gitness/registry/request"
 	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store"
+
 	"github.com/opencontainers/go-digest"
 	"github.com/rs/zerolog/log"
 )
@@ -74,7 +75,7 @@ func TrackDownloadStat(h *oci.Handler) func(http.Handler) http.Handler {
 					return
 				}
 
-				err = dbDownloadStat(ctx, h.Controller, info, h.AuditService, h.SpaceFinder)
+				err = dbDownloadStatForDockerOrOCIArtifact(ctx, h.Controller, info, h.AuditService, h.SpaceFinder)
 				if err != nil {
 					log.Ctx(ctx).Error().Stack().Str("middleware",
 						"TrackDownloadStat").Err(err).Msgf("error while putting download stat of artifact, %v",
@@ -86,7 +87,7 @@ func TrackDownloadStat(h *oci.Handler) func(http.Handler) http.Handler {
 	}
 }
 
-func dbDownloadStat(
+func dbDownloadStatForDockerOrOCIArtifact(
 	ctx context.Context,
 	c *docker.Controller,
 	info pkg.RegistryInfo,
@@ -95,36 +96,12 @@ func dbDownloadStat(
 ) error {
 	registry := info.Registry
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
-	if errors.Is(err, store.ErrResourceNotFound) {
-		image, err = getImageFromUpstreamProxy(ctx, c, info)
-	}
-	if err != nil {
-		return err
-	}
-
 	dgst, err := types.NewDigest(digest.Digest(info.Digest))
 	if err != nil {
 		return err
 	}
 
-	// Try to get artifact - may not exist for upstream proxy first downloads
-	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, dgst.String())
-	if err != nil {
-		log.Ctx(ctx).Debug().Err(err).Msgf(
-			"artifact not yet cached in DB for download stats (upstream proxy first download): image=%s, digest=%s",
-			info.Image, dgst.String(),
-		)
-	} else {
-		// Only create download stat if artifact exists in DB (preserves existing behavior)
-		downloadStat := &types.DownloadStat{
-			ArtifactID: artifact.ID,
-		}
-		if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
-			log.Ctx(ctx).Warn().Err(err).Msgf("failed to create download stat")
-		}
-	}
-
+	// Log audit
 	artifactInfo := pkg.ArtifactInfo{
 		BaseInfo: &pkg.BaseInfo{
 			ParentID: info.ParentID,
@@ -142,6 +119,26 @@ func dbDownloadStat(
 		dgst.String(),
 	)
 
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
+	if errors.Is(err, store.ErrResourceNotFound) {
+		image, err = getImageFromUpstreamProxy(ctx, c, info)
+	}
+	if err != nil {
+		return err
+	}
+
+	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, dgst.String())
+	if err != nil {
+		return err
+	}
+
+	downloadStat := &types.DownloadStat{
+		ArtifactID: artifact.ID,
+	}
+
+	if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -239,20 +236,7 @@ func dbDownloadStatForGenericArtifact(
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
-	if err != nil {
-		log.Ctx(ctx).Debug().Err(err).Msg("image not found for download stats")
-	} else if artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version); err != nil {
-		log.Ctx(ctx).Debug().Err(err).Msg("artifact not found for download stats")
-	} else {
-		downloadStat := &types.DownloadStat{
-			ArtifactID: artifact.ID,
-		}
-		if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
-			log.Ctx(ctx).Warn().Err(err).Msg("failed to create download stat")
-		}
-	}
-
+	// Log audit
 	artifactInfo := pkg.ArtifactInfo{
 		BaseInfo: &pkg.BaseInfo{
 			ParentID: info.ParentID,
@@ -270,6 +254,23 @@ func dbDownloadStatForGenericArtifact(
 		info.Version,
 	)
 
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, info.Image)
+	if err != nil {
+		return errcode.ErrCodeInvalidRequest.WithDetail(err)
+	}
+
+	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
+	if err != nil {
+		return errcode.ErrCodeInvalidRequest.WithDetail(err)
+	}
+
+	downloadStat := &types.DownloadStat{
+		ArtifactID: artifact.ID,
+	}
+
+	if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
+		return errcode.ErrCodeNameUnknown.WithDetail(err)
+	}
 	return errcode.Error{}
 }
 
@@ -286,23 +287,7 @@ func dbDownloadStatForMavenArtifact(
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, imageName)
-	if errors.Is(err, store.ErrResourceNotFound) {
-		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
-	}
-	if err != nil {
-		log.Ctx(ctx).Debug().Err(err).Msg("image not found for download stats")
-	} else if artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version); err != nil {
-		log.Ctx(ctx).Debug().Err(err).Msg("artifact not found for download stats")
-	} else {
-		downloadStat := &types.DownloadStat{
-			ArtifactID: artifact.ID,
-		}
-		if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
-			log.Ctx(ctx).Warn().Err(err).Msg("failed to create download stat")
-		}
-	}
-
+	// Log audit
 	artifactInfo := pkg.ArtifactInfo{
 		BaseInfo: &pkg.BaseInfo{
 			ParentID: info.ParentID,
@@ -320,6 +305,26 @@ func dbDownloadStatForMavenArtifact(
 		info.Version,
 	)
 
+	image, err := c.DBStore.ImageDao.GetByName(ctx, registry.ID, imageName)
+	if errors.Is(err, store.ErrResourceNotFound) {
+		image, err = getMavenArtifactFromUpstreamProxy(ctx, c, info)
+	}
+	if err != nil {
+		return errcode.ErrCodeInvalidRequest.WithDetail(err)
+	}
+
+	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
+	if err != nil {
+		return errcode.ErrCodeInvalidRequest.WithDetail(err)
+	}
+
+	downloadStat := &types.DownloadStat{
+		ArtifactID: artifact.ID,
+	}
+
+	if err := c.DBStore.DownloadStatDao.Create(ctx, downloadStat); err != nil {
+		return errcode.ErrCodeNameUnknown.WithDetail(err)
+	}
 	return errcode.Error{}
 }
 

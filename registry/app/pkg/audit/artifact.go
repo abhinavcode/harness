@@ -22,6 +22,7 @@ import (
 	"github.com/harness/gitness/app/services/refcache"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/pkg"
+
 	"github.com/rs/zerolog/log"
 )
 
