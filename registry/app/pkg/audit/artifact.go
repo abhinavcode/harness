@@ -33,7 +33,7 @@ const (
 	AuditKeyImageUUID    = "imageUuid"
 	AuditKeyRegistryName = "registryName"
 	AuditKeyPackageName  = "packageName"
-	AuditKeyPackageType  = "packageType"
+	AuditKeyPackageKind  = "packageKind"
 	AuditKeyVersionName  = "versionName"
 )
 
@@ -66,7 +66,7 @@ func LogArtifactUpload(
 		artifactIdentifier = packageName
 	}
 
-	// Get package kind
+	// Get package kind -
 	packageKind := ""
 	if info.ArtifactType != nil {
 		packageKind = string(*info.ArtifactType)
@@ -89,7 +89,7 @@ func LogArtifactUpload(
 			AuditKeyArtifactUUID, artifactUUID,
 			AuditKeyRegistryName, info.RegIdentifier,
 			AuditKeyPackageName, packageName,
-			AuditKeyPackageType, packageKind,
+			AuditKeyPackageKind, packageKind,
 			AuditKeyVersionName, version,
 		),
 		audit.ActionUploaded,
@@ -145,7 +145,7 @@ func LogArtifactDownload(
 			AuditKeyResourceName, artifactIdentifier,
 			AuditKeyRegistryName, info.RegIdentifier,
 			AuditKeyPackageName, packageName,
-			AuditKeyPackageType, packageKind,
+			AuditKeyPackageKind, packageKind,
 			AuditKeyVersionName, version,
 		),
 		audit.ActionDownloaded,
