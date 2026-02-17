@@ -112,9 +112,8 @@ func (c *command) run(*kingpin.ParseContext) error {
 	gHTTP, shutdownHTTP := system.server.ListenAndServe()
 	g.Go(gHTTP.Wait)
 
-	gMetric, shutdownMetric := system.metricServer.ListenAndServe()
+	gMetric, shutdownMetricServerFn := system.metricServer.ListenAndServe()
 	g.Go(gMetric.Wait)
-	shutdownMetricServerFn := shutdownMetric
 
 	if c.enableCI {
 		// start populating plugins
