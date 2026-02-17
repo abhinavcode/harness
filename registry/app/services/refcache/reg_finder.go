@@ -27,7 +27,7 @@ import (
 type RegistryFinder interface {
 	MarkChanged(ctx context.Context, reg *types.Registry)
 	FindByID(ctx context.Context, repoID int64) (*types.Registry, error)
-	FindByRootRef(ctx context.Context, rootParentRef string, regIdentifier string) (
+	FindByRootRef(ctx context.Context, rootParentRef string, regIdentifier string, opts ...types.QueryOption) (
 		*types.Registry,
 		error,
 	)
@@ -82,7 +82,7 @@ func (r registryFinder) FindByID(ctx context.Context, repoID int64) (*types.Regi
 	return r.regIDCache.Get(ctx, repoID)
 }
 
-func (r registryFinder) FindByRootRef(ctx context.Context, rootParentRef string, regIdentifier string) (
+func (r registryFinder) FindByRootRef(ctx context.Context, rootParentRef string, regIdentifier string, opts ...types.QueryOption) (
 	*types.Registry,
 	error,
 ) {
@@ -90,7 +90,7 @@ func (r registryFinder) FindByRootRef(ctx context.Context, rootParentRef string,
 	if err != nil {
 		return nil, fmt.Errorf("error finding space by root-ref: %w", err)
 	}
-	return r.FindByRootParentID(ctx, space.ID, regIdentifier)
+	return r.FindByRootParentID(ctx, space.ID, regIdentifier, opts...)
 }
 
 func (r registryFinder) FindByRootParentID(
