@@ -400,9 +400,11 @@ func (l *manifestService) reportEventAsync(
 	spacePath string,
 	manifestID int64,
 ) {
-	// Use @ separator for digest-based references, : for tag-based references
+	// Use @ separator for digest-based references (algorithm:hash format), : for tag-based references.
+	// Digests follow the format "algorithm:hash" (e.g., sha256:abc123, sha384:def456, sha512:ghi789).
+	// Tags cannot contain colons per OCI spec, so presence of a colon indicates a digest.
 	separator := ":"
-	if strings.HasPrefix(version, "sha256:") {
+	if strings.Contains(version, ":") {
 		separator = "@"
 	}
 
