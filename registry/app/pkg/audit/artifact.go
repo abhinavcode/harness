@@ -22,19 +22,18 @@ import (
 	"github.com/harness/gitness/app/services/refcache"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/pkg"
-
 	"github.com/rs/zerolog/log"
 )
 
 const (
 	// Audit metadata keys.
-	AuditKeyResourceName   = "resourceName"
-	AuditKeyArtifactUUID   = "artifactId"
-	AuditKeyImageUUID      = "imageUuid"
-	AuditKeyRegistryName   = "registryName"
-	AuditKeyPackageName    = "packageName"
-	AuditKeyPackageType    = "packageType"
-	AuditKeyVersionName    = "versionName"
+	AuditKeyResourceName = "resourceName"
+	AuditKeyArtifactUUID = "artifactId"
+	AuditKeyImageUUID    = "imageUuid"
+	AuditKeyRegistryName = "registryName"
+	AuditKeyPackageName  = "packageName"
+	AuditKeyPackageType  = "packageType"
+	AuditKeyVersionName  = "versionName"
 )
 
 // LogArtifactUpload logs audit trail for artifact push/upload operations.

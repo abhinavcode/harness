@@ -39,7 +39,6 @@ import (
 	"github.com/harness/gitness/registry/request"
 	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store"
-
 	"github.com/opencontainers/go-digest"
 	"github.com/rs/zerolog/log"
 )
@@ -130,10 +129,10 @@ func dbDownloadStat(
 		BaseInfo: &pkg.BaseInfo{
 			ParentID: info.ParentID,
 		},
-		RegistryID:     registry.ID,
-		RegIdentifier:  registry.Name,
-		Image:          info.Image,
-		ArtifactType:   info.ArtifactType,
+		RegistryID:    registry.ID,
+		RegIdentifier: registry.Name,
+		Image:         info.Image,
+		ArtifactType:  info.ArtifactType,
 	}
 	pkgaudit.LogArtifactDownload(
 		ctx,
@@ -258,10 +257,10 @@ func dbDownloadStatForGenericArtifact(
 		BaseInfo: &pkg.BaseInfo{
 			ParentID: info.ParentID,
 		},
-		RegistryID:     registry.ID,
-		RegIdentifier:  registry.Name,
-		Image:          info.Image,
-		ArtifactType:   info.ArtifactType,
+		RegistryID:    registry.ID,
+		RegIdentifier: registry.Name,
+		Image:         info.Image,
+		ArtifactType:  info.ArtifactType,
 	}
 	pkgaudit.LogArtifactDownload(
 		ctx,
@@ -308,10 +307,10 @@ func dbDownloadStatForMavenArtifact(
 		BaseInfo: &pkg.BaseInfo{
 			ParentID: info.ParentID,
 		},
-		RegistryID:     registry.ID,
-		RegIdentifier:  registry.Name,
-		Image:          imageName,
-		ArtifactType:   info.ArtifactType,
+		RegistryID:    registry.ID,
+		RegIdentifier: registry.Name,
+		Image:         imageName,
+		ArtifactType:  info.ArtifactType,
 	}
 	pkgaudit.LogArtifactDownload(
 		ctx,
