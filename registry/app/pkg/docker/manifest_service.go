@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/harness/gitness/app/api/request"
@@ -399,19 +400,19 @@ func (l *manifestService) reportEventAsync(
 	spacePath string,
 	manifestID int64,
 ) {
+	// Use @ separator for digest-based references, : for tag-based references
+	separator := ":"
+	if strings.HasPrefix(version, "sha256:") {
+		separator = "@"
+	}
+
 	artifactDetails := &event.ArtifactDetails{
 		RegistryID:   regID,
 		RegistryName: regName,
 		PackageType:  packageType,
 		ManifestID:   manifestID,
-		ImagePath:    imageName + ":" + version,
+		ImagePath:    imageName + separator + version,
 	}
-	//Todo: update this to include digest instead of tag after STO step fix
-	// if l.untaggedImagesEnabled(ctx) {
-	//	artifactDetails.ImagePath = imageName + "@" + version
-	// } else {
-	//	artifactDetails.ImagePath = imageName + ":" + version
-	// }
 
 	go l.reporter.ReportEvent(ctx, artifactDetails, spacePath)
 }
@@ -442,8 +443,13 @@ func (l *manifestService) DBPut(
 		if err != nil {
 			return err
 		}
+		// Use digest as version if tag is empty (e.g., for upstream proxy cached manifests)
+		version := info.Tag
+		if version == "" {
+			version = dgst.String()
+		}
 		l.reportEventAsync(
-			ctx, info.Registry.ID, info.RegIdentifier, info.Image, info.Tag, packageType,
+			ctx, info.Registry.ID, info.RegIdentifier, info.Image, version, packageType,
 			spacePath, dbManifest.ID,
 		)
 	}
