@@ -538,7 +538,7 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 	}
 
 	// Audit log for OCI/Docker/Helm artifact push
-	registryaudit.LogArtifactPush(
+	registryaudit.LogArtifactUpload(
 		ctx, l.auditService, l.spaceFinder, *info.ArtifactInfo,
 		dgst.String(), dbImage.UUID, dbArtifact.UUID,
 	)
@@ -1329,6 +1329,20 @@ func (l *manifestService) DeleteManifest(
 					ids, time.Now().Add(manifestDeleteGCReviewWindow),
 				); err != nil {
 					return err
+				}
+			default:
+				manifests, err := l.manifestDao.ReferencedBy(ctx, m)
+				if err != nil {
+					return fmt.Errorf("failed to find existing manifests referencing : %s, err: %w",
+						d.String(), err)
+				}
+				if len(manifests) > 0 {
+					var parentsDigests []string
+					for _, m := range manifests {
+						parentsDigests = append(parentsDigests, m.Digest.String())
+					}
+					return fmt.Errorf("cannot delete manifest: %s, as it is referenced by: %s",
+						d.String(), parentsDigests)
 				}
 			}
 

@@ -142,8 +142,7 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	}, nil
 }
 
-func throwDeleteArtifactVersion500Error(err error,
-) artifact.DeleteArtifactVersion500JSONResponse {
+func throwDeleteArtifactVersion500Error(err error) artifact.DeleteArtifactVersion500JSONResponse {
 	return artifact.DeleteArtifactVersion500JSONResponse{
 		InternalServerErrorJSONResponse: artifact.InternalServerErrorJSONResponse(
 			*GetErrorResponse(http.StatusInternalServerError, err.Error()),

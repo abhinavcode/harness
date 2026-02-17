@@ -25,3 +25,4 @@ FROM artifacts a
 WHERE r.registry_package_type IN ('DOCKER', 'HELM')
   AND m.manifest_id IS NULL
     );
+

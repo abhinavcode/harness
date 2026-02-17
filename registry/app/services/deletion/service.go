@@ -200,16 +200,20 @@ func (s *Service) DeleteOCIArtifactVersion(
 			if err != nil {
 				return fmt.Errorf("failed to find existing manifest for: %s, err: %w", versionName, err)
 			}
-			if existingManifest.MediaType == v1.MediaTypeImageIndex ||
-				existingManifest.MediaType == manifestlist.MediaTypeManifestList {
-				manifests, err := s.manifestStore.References(ctx, existingManifest)
+			if existingManifest.MediaType != v1.MediaTypeImageIndex &&
+				existingManifest.MediaType != manifestlist.MediaTypeManifestList {
+				manifests, err := s.manifestStore.ReferencedBy(ctx, existingManifest)
 				if err != nil {
-					return fmt.Errorf("failed to find existing manifests referenced by: %s, err: %w",
+					return fmt.Errorf("failed to find existing manifests referencing : %s, err: %w",
 						versionName, err)
 				}
 				if len(manifests) > 0 {
-					return fmt.Errorf("cannot delete manifest: %s, as it references other manifests",
-						versionName)
+					var parentsDigests []string
+					for _, m := range manifests {
+						parentsDigests = append(parentsDigests, m.Digest.String())
+					}
+					return fmt.Errorf("cannot delete manifest: %s, as it is referenced by: %s",
+						versionName, parentsDigests)
 				}
 			}
 			err = s.manifestStore.Delete(ctx, regInfo.RegistryID, existingManifest.ID)
@@ -221,7 +225,7 @@ func (s *Service) DeleteOCIArtifactVersion(
 			if err != nil {
 				return fmt.Errorf("failed to delete tags for: %s, err: %w", versionName, err)
 			}
-			err = s.artifactStore.DeleteByVersionAndImageName(ctx, imageName, versionName, regInfo.RegistryID)
+			err = s.artifactStore.DeleteByVersionAndImageName(ctx, imageName, dgst.String(), regInfo.RegistryID)
 			if err != nil {
 				return err
 			}

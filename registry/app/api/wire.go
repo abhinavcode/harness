@@ -23,6 +23,7 @@ import (
 	"github.com/harness/gitness/app/services/refcache"
 	corestore "github.com/harness/gitness/app/store"
 	urlprovider "github.com/harness/gitness/app/url"
+	"github.com/harness/gitness/audit"
 	cargo2 "github.com/harness/gitness/registry/app/api/controller/pkg/cargo"
 	generic3 "github.com/harness/gitness/registry/app/api/controller/pkg/generic"
 	gopackage2 "github.com/harness/gitness/registry/app/api/controller/pkg/gopackage"
@@ -116,6 +117,7 @@ func NewHandlerProvider(
 	config *types.Config,
 	registryFinder refcache2.RegistryFinder,
 	publicAccessService publicaccess2.CacheService,
+	auditService audit.Service,
 ) *ocihandler.Handler {
 	return ocihandler.NewHandler(
 		controller,
@@ -130,6 +132,7 @@ func NewHandlerProvider(
 		registryFinder,
 		publicAccessService,
 		config.Auth.AnonymousUserSecret,
+		auditService,
 	)
 }
 
@@ -137,7 +140,7 @@ func NewMavenHandlerProvider(
 	controller *maven.Controller, spaceStore corestore.SpaceStore,
 	tokenStore corestore.TokenStore, userCtrl *usercontroller.Controller, authenticator authn.Authenticator,
 	authorizer authz.Authorizer, spaceFinder refcache.SpaceFinder, registryFinder refcache2.RegistryFinder,
-	publicAccessService publicaccess2.CacheService,
+	publicAccessService publicaccess2.CacheService, auditService audit.Service,
 ) *mavenhandler.Handler {
 	return mavenhandler.NewHandler(
 		controller,
@@ -149,6 +152,7 @@ func NewMavenHandlerProvider(
 		spaceFinder,
 		registryFinder,
 		publicAccessService,
+		auditService,
 	)
 }
 
@@ -161,6 +165,8 @@ func NewPackageHandlerProvider(
 	regFinder refcache2.RegistryFinder,
 	fileManager filemanager.FileManager, quarantineFinder quarantine.Finder,
 	packageWrapper interfaces.PackageWrapper,
+	auditService audit.Service,
+	artifactDao store.ArtifactRepository,
 ) packages.Handler {
 	return packages.NewHandler(
 		registryDao,
@@ -177,6 +183,8 @@ func NewPackageHandlerProvider(
 		fileManager,
 		quarantineFinder,
 		packageWrapper,
+		auditService,
+		artifactDao,
 	)
 }
 
@@ -212,7 +220,7 @@ func NewGenericHandlerProvider(
 	spaceStore corestore.SpaceStore, controller *generic3.Controller, tokenStore corestore.TokenStore,
 	userCtrl *usercontroller.Controller, authenticator authn.Authenticator, urlProvider urlprovider.Provider,
 	authorizer authz.Authorizer, packageHandler packages.Handler, spaceFinder refcache.SpaceFinder,
-	registryFinder refcache2.RegistryFinder,
+	registryFinder refcache2.RegistryFinder, auditService audit.Service,
 ) *generic.Handler {
 	return generic.NewGenericArtifactHandler(
 		spaceStore,
@@ -225,6 +233,7 @@ func NewGenericHandlerProvider(
 		packageHandler,
 		spaceFinder,
 		registryFinder,
+		auditService,
 	)
 }
 
