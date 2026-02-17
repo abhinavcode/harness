@@ -76,11 +76,7 @@ export default function PythonVersionFilesContent() {
             ? getString('noResultsFound')
             : getString('versionDetails.artifactFiles.noFilesTitle'),
           button: hasFilter ? (
-            <Button
-              text={getString('clearFilters')}
-              variation={ButtonVariation.LINK}
-              onClick={handleClearFilters}
-            />
+            <Button text={getString('clearFilters')} variation={ButtonVariation.LINK} onClick={handleClearFilters} />
           ) : undefined
         }}>
         {data && table}
