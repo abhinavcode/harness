@@ -28,9 +28,13 @@ import (
 
 const (
 	// Audit metadata keys.
-	AuditKeyResourceName = "resourceName"
-	AuditKeyArtifactUUID = "artifactId"
-	AuditKeyImageUUID    = "imageUuid"
+	AuditKeyResourceName   = "resourceName"
+	AuditKeyArtifactUUID   = "artifactId"
+	AuditKeyImageUUID      = "imageUuid"
+	AuditKeyRegistryName   = "registryName"
+	AuditKeyPackageName    = "packageName"
+	AuditKeyPackageType    = "packageType"
+	AuditKeyVersionName    = "versionName"
 )
 
 // LogArtifactUpload logs audit trail for artifact push/upload operations.
@@ -62,6 +66,12 @@ func LogArtifactUpload(
 		artifactIdentifier = packageName
 	}
 
+	// Get package type string
+	packageType := ""
+	if info.ArtifactType != nil {
+		packageType = string(*info.ArtifactType)
+	}
+
 	// Operational metadata
 	auditData := []audit.Option{
 		audit.WithData(
@@ -77,6 +87,10 @@ func LogArtifactUpload(
 			artifactIdentifier,
 			AuditKeyResourceName, artifactIdentifier,
 			AuditKeyArtifactUUID, artifactUUID,
+			AuditKeyRegistryName, info.RegIdentifier,
+			AuditKeyPackageName, packageName,
+			AuditKeyPackageType, packageType,
+			AuditKeyVersionName, version,
 		),
 		audit.ActionUploaded,
 		parentSpace.Path,
@@ -97,7 +111,6 @@ func LogArtifactDownload(
 	spaceFinder refcache.SpaceFinder,
 	info pkg.ArtifactInfo,
 	version string,
-	artifactUUID string,
 ) {
 	session, ok := request.AuthSessionFrom(ctx)
 	if !ok {
@@ -117,6 +130,12 @@ func LogArtifactDownload(
 		artifactIdentifier = packageName
 	}
 
+	// Get package type string
+	packageType := ""
+	if info.ArtifactType != nil {
+		packageType = string(*info.ArtifactType)
+	}
+
 	err = auditService.Log(
 		ctx,
 		session.Principal,
@@ -124,7 +143,10 @@ func LogArtifactDownload(
 			audit.ResourceTypeRegistryArtifact,
 			artifactIdentifier,
 			AuditKeyResourceName, artifactIdentifier,
-			AuditKeyArtifactUUID, artifactUUID,
+			AuditKeyRegistryName, info.RegIdentifier,
+			AuditKeyPackageName, packageName,
+			AuditKeyPackageType, packageType,
+			AuditKeyVersionName, version,
 		),
 		audit.ActionDownloaded,
 		parentSpace.Path,

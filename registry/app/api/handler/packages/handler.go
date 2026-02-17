@@ -166,7 +166,7 @@ func (h *handler) TrackDownloadStats(
 	}
 
 	// Audit log for download operation
-	h.logArtifactDownloadAudit(r.Context(), info.BaseArtifactInfo(), info.GetVersion())
+	h.logArtifactDownloadAudit(ctx, info.BaseArtifactInfo(), info.GetVersion())
 	return nil
 }
 
@@ -175,22 +175,12 @@ func (h *handler) logArtifactDownloadAudit(
 	info pkg.ArtifactInfo,
 	version string,
 ) {
-	var artifactUUID string
-	artifact, err := h.ArtifactDao.GetByRegistryImageAndVersion(ctx, info.RegistryID, info.Image, version)
-	if err != nil {
-		log.Ctx(ctx).Debug().Err(err).Msg("artifact not found for audit")
-		artifactUUID = ""
-	} else {
-		artifactUUID = artifact.UUID
-	}
-
 	pkgaudit.LogArtifactDownload(
 		ctx,
 		h.AuditService,
 		h.SpaceFinder,
 		info,
 		version,
-		artifactUUID,
 	)
 }
 
