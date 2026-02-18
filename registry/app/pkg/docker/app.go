@@ -21,6 +21,7 @@ import (
 	"crypto/rand"
 	"fmt"
 
+	"github.com/google/uuid"
 	corestore "github.com/harness/gitness/app/store"
 	"github.com/harness/gitness/registry/app/dist_temp/dcontext"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
@@ -139,10 +140,12 @@ func (app *App) GetBlobsContext(
 		OciBlobStore: nil,
 	}
 
-	// For reads and lazy replication
-	if result := app.bucketService.GetBlobStore(c, info.RegIdentifier, info.RootIdentifier, blobLocator.BlobID,
-		digest.Digest(info.Digest).String()); result != nil {
-		ctx.OciBlobStore = result.OciStore
+	if blobLocator.BlobID != 0 || blobLocator.GenericBlobID != uuid.Nil {
+		// For reads and lazy replication
+		if result := app.bucketService.GetBlobStore(c, info.RegIdentifier, info.RootIdentifier, blobLocator.BlobID,
+			digest.Digest(info.Digest).String()); result != nil {
+			ctx.OciBlobStore = result.OciStore
+		}
 	}
 
 	// Default read/write
