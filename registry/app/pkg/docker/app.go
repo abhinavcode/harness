@@ -21,7 +21,6 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"github.com/google/uuid"
 	corestore "github.com/harness/gitness/app/store"
 	"github.com/harness/gitness/registry/app/dist_temp/dcontext"
 	"github.com/harness/gitness/registry/app/dist_temp/errcode"
@@ -32,6 +31,7 @@ import (
 	registryTypes "github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/types"
 
+	"github.com/google/uuid"
 	"github.com/opencontainers/go-digest"
 	"github.com/rs/zerolog/log"
 )
