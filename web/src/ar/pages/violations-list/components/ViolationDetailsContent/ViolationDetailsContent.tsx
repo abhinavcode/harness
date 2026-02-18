@@ -21,7 +21,7 @@ import {
   Error,
   evaluateArtifactScanV3,
   useGetArtifactScanDetailsV3Query,
-  V3Error
+  ErrorV3
 } from '@harnessio/react-har-service-client'
 
 import { useAppStore, useParentComponents } from '@ar/hooks'
@@ -70,7 +70,7 @@ function ViolationDetailsContent(props: ViolationDetailsContentProps) {
         clear()
         showSuccess(getString('versionList.messages.reEvaluateSuccess'))
       })
-      .catch((err: V3Error) => {
+      .catch((err: ErrorV3) => {
         clear()
         showError(err?.error?.message ?? getString('versionList.messages.reEvaluateFailed'))
       })

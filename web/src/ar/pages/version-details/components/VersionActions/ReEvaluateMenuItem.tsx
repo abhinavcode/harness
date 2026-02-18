@@ -16,7 +16,7 @@
 
 import React from 'react'
 import { useToaster } from '@harnessio/uicore'
-import { evaluateArtifactScanV3, type V3Error } from '@harnessio/react-har-service-client'
+import { evaluateArtifactScanV3, type ErrorV3 } from '@harnessio/react-har-service-client'
 
 import { useAppStore, useParentComponents } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
@@ -50,7 +50,7 @@ function ReEvaluateMenuItem(props: VersionActionProps) {
         clear()
         showSuccess(getString('versionList.messages.reEvaluateSuccess'))
       })
-      .catch((err: V3Error) => {
+      .catch((err: ErrorV3) => {
         clear()
         showError(err?.error?.message ?? getString('versionList.messages.reEvaluateFailed'))
       })
