@@ -1921,7 +1921,7 @@
   resolved "https://registry.npmjs.org/@harnessio/design-system/-/design-system-2.1.1.tgz#2da3036602ed9b9446d8139c72009e6dc1e25642"
   integrity sha512-ZwAGM1srOZ49/6YkwyjkczUv4v91CN0rCecRYnV3/g+xdSV5ycrUvkJjl9nHub6jw2eCGC0GdyNgAtAJnLmGfQ==
 
-"@harnessio/icons@^2.1.20":
+"@harnessio/icons@^2.1.18":
   version "2.1.20"
   resolved "https://registry.yarnpkg.com/@harnessio/icons/-/icons-2.1.20.tgz#e3d95107ff70f635009e87f28d61adaa64d9ebc0"
   integrity sha512-3wtngGnVltw/Y89cmBRMQVwFO/p+lixHG/ROU/pVtTqCooBr/fiSk6uqkQLzhqde7g7W1FWbdFFdyBeKBG8k2w==

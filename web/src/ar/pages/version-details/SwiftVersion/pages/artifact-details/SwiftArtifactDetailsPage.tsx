@@ -23,8 +23,8 @@ import { ButtonTab, ButtonTabs } from '@ar/components/ButtonTabs/ButtonTabs'
 import VersionFilesProvider from '@ar/pages/version-details/context/VersionFilesProvider'
 import { useVersionOverview } from '@ar/pages/version-details/context/VersionOverviewProvider'
 import ReadmeFileContent from '@ar/pages/version-details/components/ReadmeFileContent/ReadmeFileContent'
+import ArtifactFilesContent from '@ar/pages/version-details/components/ArtifactFileListTable/ArtifactFilesContent'
 
-import SwiftVersionFilesContent from './SwiftVersionFilesContent'
 import SwiftVersionDependencyContent from './SwiftVersionDependencyContent'
 import {
   SwiftArtifactDetails,
@@ -64,7 +64,7 @@ export default function SwiftArtifactDetailsPage() {
           iconProps={{ size: 12 }}
           panel={
             <VersionFilesProvider>
-              <SwiftVersionFilesContent />
+              <ArtifactFilesContent />
             </VersionFilesProvider>
           }
           title={getString('versionDetails.artifactDetails.tabs.files')}

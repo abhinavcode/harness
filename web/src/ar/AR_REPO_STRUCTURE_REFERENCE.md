@@ -205,7 +205,7 @@ So: **Version list**, **Version details header**, and **Version details tab cont
 **Tab content examples (by package type)**:
 
 - **OVERVIEW**: e.g. **SwiftOverviewPage** → **SwiftVersionGeneralInfo** (card with name, version, package type, size, downloads, uploaded by, description). Other types: **PythonVersionOverviewPage**, **NuGetVersionOverviewPage**, **GoVersionOverviewPage**, etc.
-- **ARTIFACT_DETAILS**: e.g. **SwiftArtifactDetailsPage** → tabs Readme / Files / Dependencies (**SwiftVersionFilesContent**, **SwiftVersionDependencyContent**, **ReadmeFileContent**). Other types have their own artifact-details pages (NuGet, Npm, Python, etc.).
+- **ARTIFACT_DETAILS**: e.g. **SwiftArtifactDetailsPage** → tabs Readme / Files / Dependencies (**ArtifactFilesContent**, **SwiftVersionDependencyContent**, **ReadmeFileContent**). Other types have their own artifact-details pages (NuGet, Npm, Python, etc.).
 - **CODE** / **OSS**: Some types render **OSSContentPage** or similar.
 - **SUPPLY_CHAIN**, **SECURITY_TESTS**, **DEPLOYMENTS**: Enterprise, feature-flagged.
 
@@ -323,7 +323,7 @@ To add a package type (Swift is already added; this is the checklist):
    - **SwiftVersionType.tsx** – Extend **VersionStep**, implement all render* methods, set `allowedVersionDetailsTabs` (e.g. OVERVIEW, ARTIFACT_DETAILS), `versionListTableColumnConfig`, `allowedActionsOnVersion` / `allowedActionsOnVersionDetailsPage`.
    - **types.ts** – e.g. **SwiftArtifactDetailsTabEnum**, **SwiftVersionDetailsQueryParams**, **SwiftArtifactDetails** (extends ArtifactDetail with local metadata).
    - **pages/overview/** – **SwiftOverviewPage**, **SwiftVersionGeneralInfo** (overview card).
-   - **pages/artifact-details/** – **SwiftArtifactDetailsPage** (tabs: Readme, Files, Dependencies), **SwiftVersionFilesContent**, **SwiftVersionDependencyContent**.
+   - **pages/artifact-details/** – **SwiftArtifactDetailsPage** (tabs: Readme, Files, Dependencies), **SwiftVersionDependencyContent**.
 5. **VersionFactory.tsx** – `versionFactory.registerStep(new SwiftVersionType())`.
 6. **Repository type** – Under `pages/repository-details/SwiftRepository/`:
    - **SwiftRepositoryType.tsx** – Extend **RepositoryStep**, set defaultValues, defaultUpstreamProxyValues, implement render* (create form, config form, setup client, header, tree node, etc.).
