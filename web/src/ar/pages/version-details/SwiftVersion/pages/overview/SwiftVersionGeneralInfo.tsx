@@ -63,7 +63,7 @@ export default function SwiftVersionGeneralInfo(props: SwiftVersionGeneralInfoPr
             label={getString('versionDetails.overview.generalInformation.packageType')}
             value={getString('packageTypes.swiftPackage' as StringKeys)}
             type={LabelValueTypeEnum.PackageType}
-            icon="maven-repository-type"
+            icon="swift-logo"
           />
           <LabelValueContent
             label={getString('versionDetails.overview.generalInformation.size')}

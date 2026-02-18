@@ -101,7 +101,7 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
   {
     label: 'repositoryTypes.swift',
     value: RepositoryPackageType.SWIFT,
-    icon: 'maven-repository-type'
+    icon: 'swift-logo'
   },
   {
     label: 'repositoryTypes.go',

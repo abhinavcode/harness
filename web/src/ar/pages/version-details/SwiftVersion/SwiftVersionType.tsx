@@ -136,7 +136,7 @@ export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
   }
 
   renderArtifactTreeNodeView(props: ArtifactTreeNodeViewProps): JSX.Element {
-    return <ArtifactTreeNode {...props} icon="maven-repository-type" />
+    return <ArtifactTreeNode {...props} icon="swift-logo" />
   }
 
   renderArtifactTreeNodeDetails(): JSX.Element {
@@ -144,7 +144,7 @@ export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
   }
 
   renderVersionTreeNodeView(props: VersionTreeNodeViewProps): JSX.Element {
-    return <VersionTreeNode {...props} icon="maven-repository-type" />
+    return <VersionTreeNode {...props} icon="swift-logo" />
   }
 
   renderVersionTreeNodeDetails(): JSX.Element {

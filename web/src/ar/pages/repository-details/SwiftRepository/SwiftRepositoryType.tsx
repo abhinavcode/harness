@@ -46,7 +46,7 @@ import RepositoryDetailsHeader from '../components/RepositoryDetailsHeader/Repos
 export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> {
   protected packageType = RepositoryPackageType.SWIFT
   protected repositoryName = 'Swift Repository'
-  protected repositoryIcon: IconName = 'maven-repository-type'
+  protected repositoryIcon: IconName = 'swift-logo'
   protected supportedScanners = []
   protected supportsUpstreamProxy = false
   protected isWebhookSupported = false
