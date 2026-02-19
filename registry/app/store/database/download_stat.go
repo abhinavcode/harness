@@ -132,12 +132,12 @@ func (d DownloadStatDao) CreateByRegistryIDImageAndArtifactName(
 	// Execute the query with parameters
 	now := time.Now().UnixMilli()
 	args := []interface{}{now, now, now, user, user, version, regID, image}
-	
+
 	// Only add artifactType parameter if the WHERE clause includes it
 	if artifactType != nil && *artifactType != "" {
 		args = append(args, artifactType)
 	}
-	
+
 	_, err = db.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		return fmt.Errorf("failed to insert download stat: %w", err)
