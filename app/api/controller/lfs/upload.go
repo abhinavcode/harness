@@ -41,7 +41,7 @@ const (
 )
 
 type UploadOut struct {
-	ObjectPath string `json:"object_path"`
+	ObjectPath string `json:"object_path"` //nolint:tagliatelle
 }
 
 // hashingReader wraps an io.Reader and calculates a hash while reading.
