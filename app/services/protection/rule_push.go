@@ -44,10 +44,9 @@ func (p *Push) PushVerify(
 		return PushVerifyOutput{}, nil, fmt.Errorf("file size limit verify error: %w", err)
 	}
 
-	bypassable := p.Bypass.matches(ctx, in.Actor, in.IsRepoOwner, in.ResolveUserGroupID)
 	for i := range violations {
-		violations[i].Bypassable = bypassable
-		violations[i].Bypassed = bypassable
+		violations[i].Bypassable = false
+		violations[i].Bypassed = false
 	}
 
 	return out, violations, nil
@@ -87,9 +86,8 @@ func (p *Push) Violations(
 		)
 	}
 
-	bypassable := p.Bypass.matches(ctx, in.Actor, in.IsRepoOwner, in.ResolveUserGroupID)
-	violations.Bypassable = bypassable
-	violations.Bypassed = bypassable
+	violations.Bypassable = false
+	violations.Bypassed = false
 
 	return PushViolationsOutput{
 		Violations: []types.RuleViolations{violations},
