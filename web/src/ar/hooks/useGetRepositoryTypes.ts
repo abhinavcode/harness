@@ -130,8 +130,8 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
   {
     label: 'repositoryTypes.swift',
     value: RepositoryPackageType.SWIFT,
-    icon: 'swift-logo', 
-    disabled:true, 
+    icon: 'swift-logo',
+    disabled: true,
     featureFlag: FeatureFlags.HAR_SWIFT_PACKAGE,
     parent: Parent.Enterprise,
     tooltip: 'Coming Soon!',
@@ -154,4 +154,3 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
     tag: ThumbnailTagEnum.ComingSoon
   }
 ]
-

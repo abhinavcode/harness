@@ -50,7 +50,6 @@ export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> 
   protected supportedScanners = []
   protected supportsUpstreamProxy = false
   protected isWebhookSupported = false
-  
 
   protected defaultValues: VirtualRegistryRequest = {
     packageType: RepositoryPackageType.SWIFT as VirtualRegistryRequest['packageType'],

@@ -26,18 +26,13 @@ import ReadmeFileContent from '@ar/pages/version-details/components/ReadmeFileCo
 import ArtifactFilesContent from '@ar/pages/version-details/components/ArtifactFileListTable/ArtifactFilesContent'
 
 import SwiftVersionDependencyContent from './SwiftVersionDependencyContent'
-import {
-  SwiftArtifactDetails,
-  SwiftArtifactDetailsTabEnum,
-  type SwiftVersionDetailsQueryParams
-} from '../../types'
+import { SwiftArtifactDetails, SwiftArtifactDetailsTabEnum, type SwiftVersionDetailsQueryParams } from '../../types'
 
 export default function SwiftArtifactDetailsPage() {
   const { getString } = useStrings()
   const { useUpdateQueryParams, useQueryParams } = useParentHooks()
   const { updateQueryParams } = useUpdateQueryParams()
-  const { detailsTab = SwiftArtifactDetailsTabEnum.ReadMe } =
-    useQueryParams<SwiftVersionDetailsQueryParams>()
+  const { detailsTab = SwiftArtifactDetailsTabEnum.ReadMe } = useQueryParams<SwiftVersionDetailsQueryParams>()
   const { data } = useVersionOverview<SwiftArtifactDetails>()
   const { metadata } = data
 

@@ -64,7 +64,6 @@ export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
     [VersionListColumnEnum.PullCommand]: { width: '100%' },
     [VersionListColumnEnum.LastModified]: { width: '100%' },
     [VersionListColumnEnum.Actions]: { width: '30%' }
-    
   }
 
   protected allowedActionsOnVersion = [
@@ -73,7 +72,7 @@ export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
     VersionAction.ViewVersionDetails,
     VersionAction.Quarantine,
     VersionAction.Download,
-    VersionAction.DownloadCommand,
+    VersionAction.DownloadCommand
   ]
   protected allowedActionsOnVersionDetailsPage = [
     VersionAction.Delete,
