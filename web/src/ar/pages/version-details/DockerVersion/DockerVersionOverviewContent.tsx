@@ -26,7 +26,7 @@ import { DEFAULT_DATE_TIME_FORMAT } from '@ar/constants'
 import type { VersionDetailsPathParams } from '@ar/routes/types'
 import { getReadableDateTime } from '@ar/common/dateUtils'
 import PageContent from '@ar/components/PageContent/PageContent'
-import { useAppStore, useDecodedParams, useGetSpaceRef } from '@ar/hooks'
+import { useAppStore, useDecodedParams, useGetSpaceRef, useParentHooks } from '@ar/hooks'
 
 import useGetOCIVersionParams from '../hooks/useGetOCIVersionParams'
 import { VersionOverviewCard } from '../components/OverviewCards/types'
@@ -41,6 +41,8 @@ export default function DockerVersionOverviewContent(): JSX.Element {
   const pathParams = useDecodedParams<VersionDetailsPathParams>()
   const spaceRef = useGetSpaceRef()
   const { parent } = useAppStore()
+  const { useQueryParams } = useParentHooks()
+  const { tag } = useQueryParams<{ tag?: string }>()
 
   const { versionIdentifier, versionType, digest } = useGetOCIVersionParams()
 
@@ -79,6 +81,7 @@ export default function DockerVersionOverviewContent(): JSX.Element {
                 VersionOverviewCard.SUPPLY_CHAIN
               ]}
               digest={digest}
+              tag={tag}
               version={versionIdentifier}
               versionType={versionType}
             />
