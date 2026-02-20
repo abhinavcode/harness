@@ -88,6 +88,11 @@ func init() {
 	factory.Register(driverName, &gcsDriverFactory{})
 }
 
+// TODO: figure-out why init is not called automatically
+func Register(ctx context.Context) {
+	log.Ctx(ctx).Info().Msgf("registering gcs driver")
+}
+
 // gcsDriverFactory implements the factory.StorageDriverFactory interface.
 type gcsDriverFactory struct{}
 
