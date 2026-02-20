@@ -93,12 +93,12 @@ export default function VersionOverviewCards(props: VersionOverviewCardsProps) {
     })
 
     // Build query params to preserve both tag and digest
-    const queryParams = new URLSearchParams()
-    if (tag) queryParams.append('tag', tag)
-    if (digest) queryParams.append('digest', digest)
+    const params = []
+    if (tag) params.push(`tag=${tag}`)
+    if (digest) params.push(`digest=${digest}`)
 
-    if (queryParams.toString()) {
-      url = `${url}?${queryParams.toString()}`
+    if (params.length > 0) {
+      url = `${url}?${params.join('&')}`
     }
 
     history.push(url)
