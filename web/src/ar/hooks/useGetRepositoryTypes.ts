@@ -135,6 +135,7 @@ const RepositoryTypes: RepositoryTypeListItem[] = [
     featureFlag: FeatureFlags.HAR_SWIFT_PACKAGE,
     parent: Parent.Enterprise,
     tooltip: 'Coming Soon!',
+    tag: ThumbnailTagEnum.ComingSoon
   },
   {
     label: 'repositoryTypes.debian',
