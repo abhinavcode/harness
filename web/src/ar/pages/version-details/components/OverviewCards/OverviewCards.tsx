@@ -49,13 +49,14 @@ interface RedirectToTabOptions {
 
 interface VersionOverviewCardsProps {
   digest?: string
+  tag?: string
   version: string
   versionType: OCIVersionType
   cards?: Array<VersionOverviewCard>
 }
 
 export default function VersionOverviewCards(props: VersionOverviewCardsProps) {
-  const { digest = '', cards = [], version, versionType } = props
+  const { digest = '', tag, cards = [], version, versionType } = props
   const { getString } = useStrings()
   const routes = useRoutes()
   const { scope, isCurrentSessionPublic } = useAppStore()
@@ -90,9 +91,16 @@ export default function VersionOverviewCards(props: VersionOverviewCardsProps) {
       versionTab: tab,
       ...options
     })
-    if (digest) {
-      url = `${url}?digest=${digest}`
+    
+    // Build query params to preserve both tag and digest
+    const queryParams = new URLSearchParams()
+    if (tag) queryParams.append('tag', tag)
+    if (digest) queryParams.append('digest', digest)
+    
+    if (queryParams.toString()) {
+      url = `${url}?${queryParams.toString()}`
     }
+    
     history.push(url)
   }
 
