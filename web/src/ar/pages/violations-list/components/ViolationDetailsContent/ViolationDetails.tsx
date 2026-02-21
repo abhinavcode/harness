@@ -17,19 +17,19 @@
 import React from 'react'
 import { Collapse, Layout, Text } from '@harnessio/uicore'
 import { Color, FontVariation } from '@harnessio/design-system'
-import type { ArtifactScanDetails, PolicySetFailureDetail } from '@harnessio/react-har-service-client'
+import type { ArtifactScanDetailsV3, PolicySetFailureDetailV3 } from '@harnessio/react-har-service-client'
 
 import { useStrings } from '@ar/frameworks/strings'
 import { Separator } from '@ar/components/Separator/Separator'
 
 import InformationMetrics from './InformationMetrics'
 import ViolationFailureDetails from './ViolationFailureDetails'
-import useGetPolicySetDetailsPageUrl from '../../hooks/useGetPolicyDetailsPageUrl'
+import useGetPolicySetDetailsPageUrl from '../../hooks/useGetPolicySetDetailsPageUrl'
 
 import css from './ViolationDetailsContent.module.scss'
 
 interface PolicySetCollapseTitleProps {
-  data: PolicySetFailureDetail
+  data: PolicySetFailureDetailV3
 }
 function PolicySetCollapseTitle({ data }: PolicySetCollapseTitleProps) {
   const { getString } = useStrings()
@@ -50,7 +50,7 @@ function PolicySetCollapseTitle({ data }: PolicySetCollapseTitleProps) {
 }
 
 interface ViolationDetailsProps {
-  data: ArtifactScanDetails
+  data: ArtifactScanDetailsV3
 }
 
 function ViolationDetails(props: ViolationDetailsProps) {
