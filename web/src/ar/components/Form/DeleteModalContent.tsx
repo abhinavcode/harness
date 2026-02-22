@@ -46,10 +46,10 @@ function DeleteModalContent({
   deleteBtnText
 }: DeleteModalContentProps) {
   const { getString } = useStrings()
-  
+
   // Construct the label with the value appended if provided
   const finalLabel = inputLabelValue ? `${inputLabel} (${inputLabelValue})` : inputLabel
-  
+
   return (
     <Formik
       initialValues={{ value: '' }}

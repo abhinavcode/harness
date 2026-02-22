@@ -24,13 +24,7 @@ import { useStrings } from '@ar/frameworks/strings'
 import { encodeRef } from '@ar/hooks/useGetSpaceRef'
 import DeleteModalContent from '@ar/components/Form/DeleteModalContent'
 import { RepositoryPackageType } from '@ar/common/types'
-
-// Helper function to decode HTML entities
-const decodeHtmlEntities = (text: string): string => {
-  const textarea = document.createElement('textarea')
-  textarea.innerHTML = text
-  return textarea.value
-}
+import { decodeHtmlEntities } from '@ar/common/utils'
 
 interface useDeleteVersionModalProps {
   repoKey: string
@@ -53,11 +47,11 @@ export default function useDeleteVersionModal(props: useDeleteVersionModalProps)
   const isDockerPackage = packageType === RepositoryPackageType.DOCKER
   const isHelmPackage = packageType === RepositoryPackageType.HELM
   const isOCIPackage = isDockerPackage || isHelmPackage
-  
+
   // Determine which value to use for confirmation
   const shouldUseDigest = isOCIPackage && digest
   const confirmationValue = shouldUseDigest ? digest : versionKey
-  
+
   // Decode HTML entities to display properly
   const decodedConfirmationValue = decodeHtmlEntities(confirmationValue)
 

@@ -23,13 +23,7 @@ import { useGetSpaceRef, useParentHooks } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
 import { encodeRef } from '@ar/hooks/useGetSpaceRef'
 import DeleteModalContent from '@ar/components/Form/DeleteModalContent'
-
-// Helper function to decode HTML entities
-const decodeHtmlEntities = (text: string): string => {
-  const textarea = document.createElement('textarea')
-  textarea.innerHTML = text
-  return textarea.value
-}
+import { decodeHtmlEntities } from '@ar/common/utils'
 
 interface useDeleteArtifactModalProps {
   repoKey: string

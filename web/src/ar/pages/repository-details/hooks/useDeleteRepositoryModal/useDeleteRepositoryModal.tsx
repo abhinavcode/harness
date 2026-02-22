@@ -22,13 +22,7 @@ import { useDeleteRegistryMutation } from '@harnessio/react-har-service-client'
 import { useStrings } from '@ar/frameworks/strings'
 import { useGetSpaceRef, useParentHooks } from '@ar/hooks'
 import DeleteModalContent from '@ar/components/Form/DeleteModalContent'
-
-// Helper function to decode HTML entities
-const decodeHtmlEntities = (text: string): string => {
-  const textarea = document.createElement('textarea')
-  textarea.innerHTML = text
-  return textarea.value
-}
+import { decodeHtmlEntities } from '@ar/common/utils'
 
 interface useDeleteRepositoryModalProps {
   repoKey: string
