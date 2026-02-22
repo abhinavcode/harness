@@ -23,6 +23,13 @@ import { useStrings } from '@ar/frameworks/strings'
 import { useGetSpaceRef, useParentHooks } from '@ar/hooks'
 import DeleteModalContent from '@ar/components/Form/DeleteModalContent'
 
+// Helper function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = text
+  return textarea.value
+}
+
 interface useDeleteRepositoryModalProps {
   repoKey: string
   onSuccess: () => void
@@ -35,6 +42,9 @@ export default function useDeleteRepositoryModal(props: useDeleteRepositoryModal
   const spaceRef = useGetSpaceRef(repoKey)
 
   const { mutateAsync: deleteRepository } = useDeleteRegistryMutation()
+
+  // Decode HTML entities to display properly
+  const decodedRepoKey = decodeHtmlEntities(repoKey)
 
   const handleDeleteRepository = async (): Promise<void> => {
     try {
@@ -60,12 +70,13 @@ export default function useDeleteRepositoryModal(props: useDeleteRepositoryModal
     contentText: (
       <DeleteModalContent
         entity="repository"
-        value={repoKey}
+        value={decodedRepoKey}
         onSubmit={handleDeleteRepository}
         onClose={handleCloseDialog}
         content={getString('repositoryList.deleteModal.contentText')}
         placeholder={getString('repositoryList.deleteModal.inputPlaceholder')}
         inputLabel={getString('repositoryList.deleteModal.inputLabel')}
+        inputLabelValue={decodedRepoKey}
       />
     ),
     customButtons: <></>,

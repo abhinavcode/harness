@@ -23,21 +23,43 @@ import { useConfirmationDialog, useGetSpaceRef } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
 import { encodeRef } from '@ar/hooks/useGetSpaceRef'
 import DeleteModalContent from '@ar/components/Form/DeleteModalContent'
+import { RepositoryPackageType } from '@ar/common/types'
+
+// Helper function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = text
+  return textarea.value
+}
 
 interface useDeleteVersionModalProps {
   repoKey: string
   artifactKey: string
   versionKey: string
   artifactType?: ArtifactType
+  packageType?: RepositoryPackageType
+  digest?: string
   onSuccess: () => void
 }
 export default function useDeleteVersionModal(props: useDeleteVersionModalProps) {
-  const { repoKey, onSuccess, artifactKey, versionKey, artifactType } = props
+  const { repoKey, onSuccess, artifactKey, versionKey, artifactType, packageType, digest } = props
   const { getString } = useStrings()
   const { showSuccess, showError, clear } = useToaster()
   const spaceRef = useGetSpaceRef(repoKey)
 
   const { mutateAsync: deleteVersion } = useDeleteArtifactVersionMutation()
+
+  // For OCI packages (Docker/Helm), use digest; for non-OCI packages, use version
+  const isDockerPackage = packageType === RepositoryPackageType.DOCKER
+  const isHelmPackage = packageType === RepositoryPackageType.HELM
+  const isOCIPackage = isDockerPackage || isHelmPackage
+  
+  // Determine which value to use for confirmation
+  const shouldUseDigest = isOCIPackage && digest
+  const confirmationValue = shouldUseDigest ? digest : versionKey
+  
+  // Decode HTML entities to display properly
+  const decodedConfirmationValue = decodeHtmlEntities(confirmationValue)
 
   const handleDeleteVersion = async (): Promise<void> => {
     try {
@@ -69,12 +91,13 @@ export default function useDeleteVersionModal(props: useDeleteVersionModalProps)
     contentText: (
       <DeleteModalContent
         entity="version"
-        value={versionKey}
+        value={decodedConfirmationValue}
         onSubmit={handleDeleteVersion}
         onClose={handleCloseDialog}
         content={getString('versionDetails.deleteVersionModal.contentText')}
         placeholder={getString('versionDetails.deleteVersionModal.inputPlaceholder')}
         inputLabel={getString('versionDetails.deleteVersionModal.inputLabel')}
+        inputLabelValue={decodedConfirmationValue}
       />
     ),
     customButtons: <></>,

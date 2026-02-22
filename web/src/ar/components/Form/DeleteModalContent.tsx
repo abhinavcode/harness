@@ -30,6 +30,7 @@ interface DeleteModalContentProps {
   content: string
   placeholder: string
   inputLabel: string
+  inputLabelValue?: string
   deleteBtnText?: string
 }
 
@@ -41,9 +42,14 @@ function DeleteModalContent({
   content,
   placeholder,
   inputLabel,
+  inputLabelValue,
   deleteBtnText
 }: DeleteModalContentProps) {
   const { getString } = useStrings()
+  
+  // Construct the label with the value appended if provided
+  const finalLabel = inputLabelValue ? `${inputLabel} (${inputLabelValue})` : inputLabel
+  
   return (
     <Formik
       initialValues={{ value: '' }}
@@ -61,7 +67,7 @@ function DeleteModalContent({
         <Container>
           <Layout.Vertical spacing="medium">
             <Text>{content}</Text>
-            <FormInput.Text label={inputLabel} name="value" placeholder={placeholder} intent={Intent.PRIMARY} />
+            <FormInput.Text label={finalLabel} name="value" placeholder={placeholder} intent={Intent.PRIMARY} />
           </Layout.Vertical>
           <Layout.Horizontal spacing="medium" margin={{ top: 'large' }}>
             <Button
