@@ -19,6 +19,7 @@ import React from 'react'
 import { useStrings } from '@ar/frameworks/strings'
 import { useParentComponents } from '@ar/hooks'
 import { PermissionIdentifier, ResourceType } from '@ar/common/permissionTypes'
+import type { RepositoryPackageType } from '@ar/common/types'
 
 import type { VersionActionProps } from './types'
 import useDeleteVersionModal from '../../hooks/useDeleteVersionModal'
@@ -41,7 +42,7 @@ export default function DeleteVersionMenuItem(props: VersionActionProps): JSX.El
     repoKey,
     versionKey,
     artifactType: data?.artifactType,
-    packageType: data?.packageType as any,
+    packageType: data?.packageType as RepositoryPackageType,
     digest,
     onSuccess: handleAfterDeleteVersion
   })
