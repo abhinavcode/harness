@@ -276,7 +276,6 @@ func (c *localRegistry) GetPackageVersionMetadata(
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
-
 	log.Ctx(ctx).Info().Msgf("successfully retrieved package version metadata for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
 	return createRegistrationLeafResponse(packageURL, info, artifact), nil
 }
