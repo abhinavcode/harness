@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/harness/gitness/app/api/usererror"
 	urlprovider "github.com/harness/gitness/app/url"
 	apicontract "github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	nugetmetadata "github.com/harness/gitness/registry/app/metadata/nuget"
@@ -266,7 +267,7 @@ func (c *localRegistry) UploadPackage(
 
 	metadata, err = c.buildMetadata(r)
 	if err != nil {
-		return headers, "", fmt.Errorf(
+		return headers, "", usererror.BadRequestf(
 			"failed to build metadata for registry: %d with error: %w",
 			info.RegistryID, err)
 	}
@@ -274,7 +275,7 @@ func (c *localRegistry) UploadPackage(
 	info.Version = metadata.PackageMetadata.Version
 	normalisedVersion, err2 := validateAndNormaliseVersion(info.Version)
 	if err2 != nil {
-		return headers, "", fmt.Errorf("nuspec file contains an invalid version: %s with "+
+		return headers, "", usererror.BadRequestf("nuspec file contains an invalid version: %s with "+
 			"package name: %s, registry name: %s", info.Version, info.Image, info.RegIdentifier)
 	}
 	info.Version = normalisedVersion
@@ -286,9 +287,9 @@ func (c *localRegistry) UploadPackage(
 				"failed to check package version existence for id: %s , version: %s "+
 					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
 		} else if !versionExists {
-			return headers, "", fmt.Errorf(
+			return headers, "", usererror.BadRequestf(
 				"can't push symbol package as package doesn't exists for id: %s , version: %s "+
-					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
+					"with registry: %d", info.Image, info.Version, info.RegistryID)
 		}
 		fileExtension = SymbolsPackageExtension
 	} else {
