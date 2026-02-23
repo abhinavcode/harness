@@ -252,7 +252,9 @@ func (c *localRegistry) GetPackageMetadata(
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
 	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get artifacts for registry: %d and image: %s", info.RegistryID, info.Image)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get artifacts for registry: %d and image: %s",
+				info.RegistryID, info.Image)
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	} else if artifacts == nil || len(*artifacts) == 0 {
@@ -260,7 +262,9 @@ func (c *localRegistry) GetPackageMetadata(
 		return nil, fmt.Errorf(
 			"no artifacts found for registry: %d and image: %s", info.RegistryID, info.Image)
 	}
-	log.Ctx(ctx).Info().Msgf("successfully retrieved package metadata for registry: %d, image: %s", info.RegistryID, info.Image)
+	log.Ctx(ctx).Info().
+		Msgf("successfully retrieved package metadata for registry: %d, image: %s",
+			info.RegistryID, info.Image)
 	return createRegistrationIndexResponse(packageURL, info, artifacts)
 }
 
@@ -268,21 +272,29 @@ func (c *localRegistry) GetPackageVersionMetadataV2(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (*nugettype.FeedEntryResponse, error) {
-	log.Ctx(ctx).Debug().Msgf("getting package version metadata v2 for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+	log.Ctx(ctx).Debug().
+		Msgf("getting package version metadata v2 for registry: %d, image: %s, version: %s",
+			info.RegistryID, info.Image, info.Version)
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
 	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get image for registry: %d and image: %s", info.RegistryID, info.Image)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get image for registry: %d and image: %s",
+				info.RegistryID, info.Image)
 		return nil, fmt.Errorf(
 			"failed to get image for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
 	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get artifact for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get artifact for registry: %d, image: %s, version: %s",
+				info.RegistryID, info.Image, info.Version)
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
-	log.Ctx(ctx).Info().Msgf("successfully retrieved package version metadata v2 for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+	log.Ctx(ctx).Info().
+		Msgf("successfully retrieved package version metadata v2 for registry: %d, image: %s, version: %s",
+			info.RegistryID, info.Image, info.Version)
 	return createFeedEntryResponse(packageURL, info, artifact)
 }
 
@@ -290,21 +302,29 @@ func (c *localRegistry) GetPackageVersionMetadata(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (*nugettype.RegistrationLeafResponse, error) {
-	log.Ctx(ctx).Debug().Msgf("getting package version metadata for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+	log.Ctx(ctx).Debug().
+		Msgf("getting package version metadata for registry: %d, image: %s, version: %s",
+			info.RegistryID, info.Image, info.Version)
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
 	image, err2 := c.imageDao.GetByName(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get image for registry: %d and image: %s", info.RegistryID, info.Image)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get image for registry: %d and image: %s",
+				info.RegistryID, info.Image)
 		return nil, fmt.Errorf(
 			"failed to get image for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
 	artifact, err2 := c.artifactDao.GetByName(ctx, image.ID, info.Version)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get artifact for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get artifact for registry: %d, image: %s, version: %s",
+				info.RegistryID, info.Image, info.Version)
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	}
-	log.Ctx(ctx).Info().Msgf("successfully retrieved package version metadata for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+	log.Ctx(ctx).Info().
+		Msgf("successfully retrieved package version metadata for registry: %d, image: %s, version: %s",
+			info.RegistryID, info.Image, info.Version)
 	return createRegistrationLeafResponse(packageURL, info, artifact), nil
 }
 
@@ -344,7 +364,9 @@ func (c *localRegistry) UploadPackage(
 	info.Version = metadata.PackageMetadata.Version
 	normalisedVersion, err2 := validateAndNormaliseVersion(info.Version)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("nuspec file contains an invalid version: %s with package name: %s, registry name: %s", info.Version, info.Image, info.RegIdentifier)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("nuspec file contains an invalid version: %s with package name: %s, registry name: %s",
+				info.Version, info.Image, info.RegIdentifier)
 		return headers, "", usererror.BadRequestf("nuspec file contains an invalid version: %s with "+
 			"package name: %s, registry name: %s", info.Version, info.Image, info.RegIdentifier)
 	}
@@ -353,12 +375,16 @@ func (c *localRegistry) UploadPackage(
 	if fileBundleType == SymbolsFile {
 		versionExists, err3 := c.localBase.CheckIfVersionExists(ctx, info)
 		if err3 != nil {
-			log.Ctx(ctx).Error().Err(err3).Msgf("failed to check package version existence for id: %s, version: %s with registry: %d", info.Image, info.Version, info.RegistryID)
+			log.Ctx(ctx).Error().Err(err3).
+				Msgf("failed to check package version existence for id: %s, version: %s with registry: %d",
+					info.Image, info.Version, info.RegistryID)
 			return headers, "", fmt.Errorf(
 				"failed to check package version existence for id: %s , version: %s "+
 					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
 		} else if !versionExists {
-			log.Ctx(ctx).Warn().Msgf("can't push symbol package as package doesn't exist for id: %s, version: %s with registry: %d", info.Image, info.Version, info.RegistryID)
+			log.Ctx(ctx).Warn().
+				Msgf("can't push symbol package as package doesn't exist for id: %s, version: %s with registry: %d",
+					info.Image, info.Version, info.RegistryID)
 			return headers, "", usererror.BadRequestf(
 				"can't push symbol package as package doesn't exists for id: %s , version: %s "+
 					"with registry: %d", info.Image, info.Version, info.RegistryID)
@@ -384,10 +410,14 @@ func (c *localRegistry) UploadPackage(
 			Metadata: info.Metadata,
 		}, fileInfo, false)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to update file manager and create artifact for package: %s, version: %s with registry: %d", info.Image, info.Version, info.RegistryID)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to update file manager and create artifact for package: %s, version: %s with registry: %d",
+				info.Image, info.Version, info.RegistryID)
 		return h, checkSum, err
 	}
-	log.Ctx(ctx).Info().Msgf("successfully uploaded package: %s, version: %s for registry: %d with checksum: %s", info.Image, info.Version, info.RegistryID, checkSum)
+	log.Ctx(ctx).Info().
+		Msgf("successfully uploaded package: %s, version: %s for registry: %d with checksum: %s",
+			info.Image, info.Version, info.RegistryID, checkSum)
 	return h, checkSum, err
 }
 
@@ -448,7 +478,9 @@ func (c *localRegistry) DownloadPackage(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (*commons.ResponseHeaders, *storage.FileReader, string, io.ReadCloser, error) {
-	log.Ctx(ctx).Debug().Msgf("downloading package for registry: %d, image: %s, version: %s, filename: %s", info.RegistryID, info.Image, info.Version, info.Filename)
+	log.Ctx(ctx).Debug().
+		Msgf("downloading package for registry: %d, image: %s, version: %s, filename: %s",
+			info.RegistryID, info.Image, info.Version, info.Filename)
 	responseHeaders := &commons.ResponseHeaders{
 		Headers: make(map[string]string),
 		Code:    0,
@@ -457,7 +489,9 @@ func (c *localRegistry) DownloadPackage(
 	path, err := c.fileManager.FindLatestFilePath(ctx, info.RegistryID,
 		"/"+info.Image+"/"+info.Version, info.Filename)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to find file node for id: %s, version: %s with registry: %d", info.Image, info.Version, info.RegistryID)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to find file node for id: %s, version: %s with registry: %d",
+				info.Image, info.Version, info.RegistryID)
 		return responseHeaders, nil, "", nil, fmt.Errorf("failed to find file node for id: %s , version: %s "+
 			"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
 	}
@@ -466,13 +500,17 @@ func (c *localRegistry) DownloadPackage(
 		info.RegistryID,
 		info.RegIdentifier, info.RootIdentifier, true)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to download file for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to download file for registry: %d, image: %s, version: %s",
+				info.RegistryID, info.Image, info.Version)
 		return responseHeaders, nil, "", nil, err
 	}
 	responseHeaders.Code = http.StatusOK
 	responseHeaders.Headers["Content-Type"] = "application/octet-stream"
 	responseHeaders.Headers["Content-Length"] = strconv.FormatInt(size, 10)
-	log.Ctx(ctx).Info().Msgf("successfully downloaded package for registry: %d, image: %s, version: %s, size: %d", info.RegistryID, info.Image, info.Version, size)
+	log.Ctx(ctx).Info().
+		Msgf("successfully downloaded package for registry: %d, image: %s, version: %s, size: %d",
+			info.RegistryID, info.Image, info.Version, size)
 	return responseHeaders, fileReader, redirectURL, nil, nil
 }
 
@@ -480,7 +518,9 @@ func (c *localRegistry) DeletePackage(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (*commons.ResponseHeaders, error) {
-	log.Ctx(ctx).Debug().Msgf("deleting package for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+	log.Ctx(ctx).Debug().
+		Msgf("deleting package for registry: %d, image: %s, version: %s",
+			info.RegistryID, info.Image, info.Version)
 	responseHeaders := &commons.ResponseHeaders{
 		Headers: make(map[string]string),
 		Code:    0,
@@ -488,12 +528,16 @@ func (c *localRegistry) DeletePackage(
 
 	err := c.localBase.DeleteVersion(ctx, info)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to delete package version with package: %s, version: %s and registry: %d", info.Image, info.Version, info.RegistryID)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to delete package version with package: %s, version: %s and registry: %d",
+				info.Image, info.Version, info.RegistryID)
 		return responseHeaders, fmt.Errorf("failed to delete package version with package: %s, version: %s and "+
 			"registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
 	}
 	responseHeaders.Code = http.StatusOK
-	log.Ctx(ctx).Info().Msgf("successfully deleted package for registry: %d, image: %s, version: %s", info.RegistryID, info.Image, info.Version)
+	log.Ctx(ctx).Info().
+		Msgf("successfully deleted package for registry: %d, image: %s, version: %s",
+			info.RegistryID, info.Image, info.Version)
 	return responseHeaders, nil
 }
 
