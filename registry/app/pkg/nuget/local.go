@@ -108,7 +108,9 @@ func (c *localRegistry) ListPackageVersion(
 	log.Ctx(ctx).Debug().Msgf("listing package versions for registry: %d, image: %s", info.RegistryID, info.Image)
 	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get artifacts for registry: %d and image: %s", info.RegistryID, info.Image)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get artifacts for registry: %d and image: %s",
+				info.RegistryID, info.Image)
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	} else if artifacts == nil || len(*artifacts) == 0 {
@@ -120,7 +122,9 @@ func (c *localRegistry) ListPackageVersion(
 	for _, artifact := range *artifacts {
 		versions = append(versions, artifact.Version)
 	}
-	log.Ctx(ctx).Info().Msgf("successfully listed %d package versions for registry: %d, image: %s", len(versions), info.RegistryID, info.Image)
+	log.Ctx(ctx).Info().
+		Msgf("successfully listed %d package versions for registry: %d, image: %s",
+			len(versions), info.RegistryID, info.Image)
 	return &nugettype.PackageVersion{
 		Versions: versions,
 	}, nil
@@ -134,7 +138,9 @@ func (c *localRegistry) ListPackageVersionV2(
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
 	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get artifacts for registry: %d and image: %s", info.RegistryID, info.Image)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get artifacts for registry: %d and image: %s",
+				info.RegistryID, info.Image)
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
 	} else if artifacts == nil || len(*artifacts) == 0 {
@@ -142,7 +148,9 @@ func (c *localRegistry) ListPackageVersionV2(
 		return nil, fmt.Errorf(
 			"no artifacts found for registry: %d and image: %s", info.RegistryID, info.Image)
 	}
-	log.Ctx(ctx).Info().Msgf("successfully listed package versions v2 for registry: %d, image: %s", info.RegistryID, info.Image)
+	log.Ctx(ctx).Info().
+		Msgf("successfully listed package versions v2 for registry: %d, image: %s",
+			info.RegistryID, info.Image)
 	return createFeedResponse(packageURL, info, artifacts)
 }
 
@@ -153,11 +161,15 @@ func (c *localRegistry) CountPackageVersionV2(
 	log.Ctx(ctx).Debug().Msgf("counting package versions v2 for registry: %d, image: %s", info.RegistryID, info.Image)
 	count, err = c.artifactDao.CountByImageName(ctx, info.RegistryID, info.Image)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to get artifacts count for registry: %d and image: %s", info.RegistryID, info.Image)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to get artifacts count for registry: %d and image: %s",
+				info.RegistryID, info.Image)
 		return 0, fmt.Errorf(
 			"failed to get artifacts count for registry: %d and image: %s: %w", info.RegistryID, info.Image, err)
 	}
-	log.Ctx(ctx).Info().Msgf("package versions v2 count: %d for registry: %d, image: %s", count, info.RegistryID, info.Image)
+	log.Ctx(ctx).Info().
+		Msgf("package versions v2 count: %d for registry: %d, image: %s",
+			count, info.RegistryID, info.Image)
 	return count, nil
 }
 
@@ -168,7 +180,9 @@ func (c *localRegistry) CountPackageV2(
 	log.Ctx(ctx).Debug().Msgf("counting packages v2 for registry: %d, searchTerm: %s", info.RegistryID, searchTerm)
 	count, err = c.artifactDao.CountByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm))
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to get artifacts count for registry: %d and searchTerm: %s", info.RegistryID, searchTerm)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to get artifacts count for registry: %d and searchTerm: %s",
+				info.RegistryID, searchTerm)
 		return 0, fmt.Errorf(
 			"failed to get artifacts count for registry: %d and image: %s: %w", info.RegistryID, searchTerm, err)
 	}
@@ -180,15 +194,21 @@ func (c *localRegistry) SearchPackageV2(
 	ctx context.Context, info nugettype.ArtifactInfo,
 	searchTerm string, limit int, offset int,
 ) (*nugettype.FeedResponse, error) {
-	log.Ctx(ctx).Debug().Msgf("searching packages v2 for registry: %d, searchTerm: %s, limit: %d, offset: %d", info.RegistryID, searchTerm, limit, offset)
+	log.Ctx(ctx).Debug().
+		Msgf("searching packages v2 for registry: %d, searchTerm: %s, limit: %d, offset: %d",
+			info.RegistryID, searchTerm, limit, offset)
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
 	artifacts, err := c.artifactDao.SearchByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), limit, offset)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to search artifacts for registry: %d and searchTerm: %s", info.RegistryID, searchTerm)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to search artifacts for registry: %d and searchTerm: %s",
+				info.RegistryID, searchTerm)
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, searchTerm, err)
 	}
-	log.Ctx(ctx).Info().Msgf("successfully searched packages v2 for registry: %d, searchTerm: %s", info.RegistryID, searchTerm)
+	log.Ctx(ctx).Info().
+		Msgf("successfully searched packages v2 for registry: %d, searchTerm: %s",
+			info.RegistryID, searchTerm)
 	return createSearchV2Response(packageURL, artifacts, searchTerm, limit, offset)
 }
 
@@ -197,22 +217,30 @@ func (c *localRegistry) SearchPackage(
 	info nugettype.ArtifactInfo,
 	searchTerm string, limit int, offset int,
 ) (*nugettype.SearchResultResponse, error) {
-	log.Ctx(ctx).Debug().Msgf("searching packages for registry: %d, searchTerm: %s, limit: %d, offset: %d", info.RegistryID, searchTerm, limit, offset)
+	log.Ctx(ctx).Debug().
+		Msgf("searching packages for registry: %d, searchTerm: %s, limit: %d, offset: %d",
+			info.RegistryID, searchTerm, limit, offset)
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
 	artifacts, err := c.artifactDao.SearchByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), limit, offset)
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("failed to search artifacts for registry: %d and searchTerm: %s", info.RegistryID, searchTerm)
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("failed to search artifacts for registry: %d and searchTerm: %s",
+				info.RegistryID, searchTerm)
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, searchTerm, err)
 	}
 	count, err2 := c.artifactDao.CountByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm))
 	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).Msgf("failed to get artifacts count for registry: %d and searchTerm: %s", info.RegistryID, searchTerm)
+		log.Ctx(ctx).Error().Err(err2).
+			Msgf("failed to get artifacts count for registry: %d and searchTerm: %s",
+				info.RegistryID, searchTerm)
 		return nil, fmt.Errorf(
 			"failed to get artifacts count for registry: %d and image: %s: %w",
 			info.RegistryID, info.Image, err2)
 	}
-	log.Ctx(ctx).Info().Msgf("successfully searched packages for registry: %d, searchTerm: %s, count: %d", info.RegistryID, searchTerm, count)
+	log.Ctx(ctx).Info().
+		Msgf("successfully searched packages for registry: %d, searchTerm: %s, count: %d",
+			info.RegistryID, searchTerm, count)
 	return createSearchResponse(packageURL, artifacts, count)
 }
 
