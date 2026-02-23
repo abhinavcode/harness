@@ -15,9 +15,11 @@
  */
 
 .mutliTagsInput {
+  
   &.hidePopover {
     & :global(.bp3-overlay) {
       display: none;
+     
     }
 
     & :global(.bp3-input) {
@@ -27,15 +29,18 @@
   &.readonly {
     & :global(.bp3-input) {
       cursor: default;
+      
     }
   }
   & :global(.bp3-tag) {
     background-color: #0280ff12 !important;
     border: 0.5px solid #0278d5;
     color: #0278d5 !important;
+    
 
     &:hover {
       background-color: #0281ff29 !important;
+     
     }
   }
 }
