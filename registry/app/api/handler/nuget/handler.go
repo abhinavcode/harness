@@ -101,20 +101,20 @@ func (h *handler) GetReadme(writer http.ResponseWriter, request *http.Request) {
 	// Get artifact info from request
 	info, err := h.GetPackageArtifactInfo(request)
 	if err != nil {
-		http.Error(writer, fmt.Sprintf("Failed to get artifact info: %v", err), http.StatusBadRequest)
+		h.HandleErrors(ctx, []error{err}, writer)
 		return
 	}
 
 	nugetInfo, ok := info.(*nugettype.ArtifactInfo)
 	if !ok {
-		http.Error(writer, "Invalid artifact info type", http.StatusInternalServerError)
+		h.HandleErrors(ctx, []error{fmt.Errorf("failed to fetch info from context")}, writer)
 		return
 	}
 
 	// Call controller to get readme
 	response := h.controller.GetReadme(ctx, *nugetInfo)
 	if response.Error != nil {
-		http.Error(writer, response.Error.Error(), http.StatusNotFound)
+		h.HandleError(ctx, writer, response.Error)
 		return
 	}
 
