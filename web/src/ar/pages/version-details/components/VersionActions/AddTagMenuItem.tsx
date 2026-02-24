@@ -20,6 +20,7 @@ import { Button, ButtonVariation, Layout, ModalDialog, useToaster } from '@harne
 
 import { useParentComponents } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
+import { queryClient } from '@ar/utils/queryClient'
 import { ResourceType } from '@ar/common/permissionTypes'
 import { PermissionIdentifier } from '@ar/common/permissionTypes'
 import PatternInput from '@ar/components/Form/PatternInput/PatternInput'
@@ -27,9 +28,7 @@ import PatternInput from '@ar/components/Form/PatternInput/PatternInput'
 import type { VersionActionProps } from './types'
 import css from './AddTagMenuItem.module.scss'
 
-function normalizeTagNames(
-  value: string[] | (string | { label: string; value: string })[]
-): string[] {
+function normalizeTagNames(value: string[] | (string | { label: string; value: string })[]): string[] {
   if (!Array.isArray(value)) return []
   return value
     .map(item => (typeof item === 'string' ? item : item?.value ?? ''))
@@ -62,9 +61,7 @@ export function AddTagModalContent({
   const { showSuccess, showError } = useToaster()
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (
-    tagNamesRaw: string[] | (string | { label: string; value: string })[]
-  ) => {
+  const handleSubmit = async (tagNamesRaw: string[] | (string | { label: string; value: string })[]) => {
     const trimmed = normalizeTagNames(tagNamesRaw)
     if (trimmed.length === 0) {
       showError(getString('validationMessages.entityRequired', { entity: 'Tag name' }))
@@ -76,8 +73,9 @@ export function AddTagModalContent({
         .replace(/\/api\/v1\/?$/, '')
         .replace(/\/har\/api\/v1\/?$/, '')
         .replace(/\/har\/?$/, '')
-      const url =
-        `${base}/har/api/v2/oci/tags?account_identifier=${encodeURIComponent(accountId || '')}&registry_identifier=${encodeURIComponent(repoKey)}`
+      const url = `${base}/har/api/v2/oci/tags?account_identifier=${encodeURIComponent(
+        accountId || ''
+      )}&registry_identifier=${encodeURIComponent(repoKey)}`
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...getCustomHeaders()
@@ -99,6 +97,8 @@ export function AddTagModalContent({
       hideModal()
       onClose?.()
       window.dispatchEvent(new CustomEvent('ar-refresh-artifact-list'))
+      queryClient.invalidateQueries(['GetAllHarnessArtifacts'])
+      queryClient.invalidateQueries(['ListVersions'])
     } catch (e) {
       showError((e as Error)?.message || getString('versionList.messages.addTagFailed'))
     } finally {
@@ -112,11 +112,7 @@ export function AddTagModalContent({
   }
 
   return (
-    <Formik
-      initialValues={{ tagNames: [] as string[] }}
-      enableReinitialize
-      onSubmit={() => {}}
-    >
+    <Formik initialValues={{ tagNames: [] as string[] }} enableReinitialize onSubmit={() => undefined}>
       {formik => (
         <ModalDialog
           title={getString('versionList.actions.addTag')}
@@ -128,8 +124,7 @@ export function AddTagModalContent({
               <Button
                 variation={ButtonVariation.PRIMARY}
                 onClick={() => handleSubmit(formik.values.tagNames)}
-                disabled={loading}
-              >
+                disabled={loading}>
                 {getString('add')}
               </Button>
               <Button variation={ButtonVariation.SECONDARY} onClick={handleClose} disabled={loading}>
