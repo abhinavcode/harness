@@ -331,7 +331,7 @@ func (c *localRegistry) buildMetadata(fileReader io.Reader) (metadata nugetmetad
 			if err != nil {
 				return metadata, fmt.Errorf("failed to parse metadata from .nuspec file: %w", err2)
 			}
-		} else if strings.HasSuffix(header.Name, "README.md") {
+		} else if strings.HasSuffix(strings.ToLower(header.Name), "readme.md") {
 			readme, err2 = c.parseReadme(zr)
 			if err2 != nil {
 				return metadata, fmt.Errorf("failed to parse metadata from README.md file: %w", err2)
