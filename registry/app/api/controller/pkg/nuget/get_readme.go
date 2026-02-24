@@ -16,92 +16,75 @@ package nuget
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/rs/zerolog/log"
-
+	"github.com/harness/gitness/registry/app/pkg"
+	"github.com/harness/gitness/registry/app/pkg/base"
 	"github.com/harness/gitness/registry/app/pkg/commons"
-	nugetmetadata "github.com/harness/gitness/registry/app/metadata/nuget"
+	"github.com/harness/gitness/registry/app/pkg/nuget"
+	"github.com/harness/gitness/registry/app/pkg/response"
 	nugettype "github.com/harness/gitness/registry/app/pkg/types/nuget"
+	registrytypes "github.com/harness/gitness/registry/types"
 )
 
 func (c *controller) GetReadme(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) *GetReadmeResponse {
-	// Get image first
-	image, err := c.imageDao.GetByName(ctx, info.RegistryID, info.Image)
+	f := func(registry registrytypes.Registry, a pkg.Artifact) response.Response {
+		info.RegIdentifier = registry.Name
+		info.RegistryID = registry.ID
+		nugetRegistry, ok := a.(nuget.Registry)
+		if !ok {
+			return &GetReadmeResponse{
+				BaseResponse{
+					fmt.Errorf("invalid registry type: expected nuget.Registry"),
+					nil,
+				}, "",
+			}
+		}
+		readmeContent, err := nugetRegistry.GetReadme(ctx, info)
+		if err != nil {
+			return &GetReadmeResponse{
+				BaseResponse{
+					err,
+					nil,
+				}, "",
+			}
+		}
+
+		headers := &commons.ResponseHeaders{
+			Headers: map[string]string{
+				"Content-Type": "text/markdown; charset=utf-8",
+			},
+		}
+
+		return &GetReadmeResponse{
+			BaseResponse{
+				nil,
+				headers,
+			}, readmeContent,
+		}
+	}
+
+	result, err := base.NoProxyWrapper(ctx, c.registryDao, f, info)
+
 	if err != nil {
-		log.Ctx(ctx).Error().Err(err).
-			Str("registry", info.RegIdentifier).
-			Str("package", info.Image).
-			Msg("failed to get image")
 		return &GetReadmeResponse{
-			BaseResponse: BaseResponse{
-				Error: fmt.Errorf("failed to get image: %w", err),
-			},
-			ReadmeContent: "",
+			BaseResponse{
+				err,
+				nil,
+			}, "",
 		}
 	}
-
-	// Get artifact by version
-	artifact, err := c.artifactDao.GetByName(ctx, image.ID, info.Version)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).
-			Str("registry", info.RegIdentifier).
-			Str("package", info.Image).
-			Str("version", info.Version).
-			Msg("failed to get artifact")
+	readmeResponse, ok := result.(*GetReadmeResponse)
+	if !ok {
 		return &GetReadmeResponse{
-			BaseResponse: BaseResponse{
-				Error: fmt.Errorf("failed to get artifact: %w", err),
-			},
-			ReadmeContent: "",
+			BaseResponse{
+				fmt.Errorf("invalid response type: expected GetReadmeResponse"),
+				nil,
+			}, "",
 		}
 	}
-
-	// Unmarshal the metadata to get the readme field
-	var metadata nugetmetadata.NugetMetadata
-	if err := json.Unmarshal(artifact.Metadata, &metadata); err != nil {
-		log.Ctx(ctx).Error().Err(err).
-			Str("registry", info.RegIdentifier).
-			Str("package", info.Image).
-			Str("version", info.Version).
-			Str("metadata_raw", string(artifact.Metadata)).
-			Msg("failed to unmarshal nuget metadata")
-		return &GetReadmeResponse{
-			BaseResponse: BaseResponse{
-				Error: fmt.Errorf("failed to unmarshal metadata: %w", err),
-			},
-			ReadmeContent: "",
-		}
-	}
-
-	// Get the readme content from metadata
-	readmeContent := metadata.Metadata.PackageMetadata.Readme
-	
-	if readmeContent == "" {
-		return &GetReadmeResponse{
-			BaseResponse: BaseResponse{
-				Error: fmt.Errorf("readme not found for package %s version %s", info.Image, info.Version),
-			},
-			ReadmeContent: "",
-		}
-	}
-
-	// Set response headers for markdown content
-	headers := &commons.ResponseHeaders{
-		Headers: map[string]string{
-			"Content-Type": "text/markdown; charset=utf-8",
-		},
-	}
-
-	return &GetReadmeResponse{
-		BaseResponse: BaseResponse{
-			Error:           nil,
-			ResponseHeaders: headers,
-		},
-		ReadmeContent: readmeContent,
-	}
+	return readmeResponse
 }

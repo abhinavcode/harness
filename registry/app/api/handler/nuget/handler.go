@@ -97,32 +97,32 @@ func (h *handler) GetPackageArtifactInfo(r *http.Request) (pkg.PackageArtifactIn
 
 func (h *handler) GetReadme(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
-	
+
 	// Get artifact info from request
 	info, err := h.GetPackageArtifactInfo(request)
 	if err != nil {
 		http.Error(writer, fmt.Sprintf("Failed to get artifact info: %v", err), http.StatusBadRequest)
 		return
 	}
-	
+
 	nugetInfo, ok := info.(*nugettype.ArtifactInfo)
 	if !ok {
 		http.Error(writer, "Invalid artifact info type", http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Call controller to get readme
 	response := h.controller.GetReadme(ctx, *nugetInfo)
 	if response.Error != nil {
 		http.Error(writer, response.Error.Error(), http.StatusNotFound)
 		return
 	}
-	
+
 	// Write response headers
 	if response.ResponseHeaders != nil {
 		response.ResponseHeaders.WriteHeadersToResponse(writer)
 	}
-	
+
 	// Write readme content
 	writer.WriteHeader(http.StatusOK)
 	_, _ = writer.Write([]byte(response.ReadmeContent))
