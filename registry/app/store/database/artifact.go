@@ -173,7 +173,8 @@ func (a ArtifactDao) GetByRegistryImageVersionAndArtifactType(
 		Where("i.image_registry_id = ?", registryID).
 		Where("i.image_name = ?", image).
 		Where("i.image_type = ?", artifactType).
-		Where("a.artifact_version = ?", version)
+		Where("a.artifact_version = ?", version).
+		Where("a.artifact_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -280,11 +281,41 @@ func (a ArtifactDao) GetLatestByImageID(
 	}, nil
 }
 
+// checkSoftDeletedArtifactExists checks if a soft-deleted artifact exists with the same image_id and version.
+func (a ArtifactDao) checkSoftDeletedArtifactExists(ctx context.Context, imageID int64, version string) error {
+	checkQuery := databaseg.Builder.Select("artifact_id").
+		From("artifacts").
+		Where("artifact_image_id = ? AND artifact_version = ? AND artifact_deleted_at IS NOT NULL",
+			imageID, version)
+
+	checkSQL, checkArgs, err := checkQuery.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build check query")
+	}
+
+	db := dbtx.GetAccessor(ctx, a.db)
+	var existingID int64
+	err = db.QueryRowContext(ctx, checkSQL, checkArgs...).Scan(&existingID)
+	if err == nil {
+		// Soft-deleted artifact exists with same identifier
+		return errors.New("artifact with same version already exists but is soft-deleted")
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to check for soft-deleted artifact")
+	}
+	return nil
+}
+
 func (a ArtifactDao) CreateOrUpdate(ctx context.Context, artifact *types.Artifact) (int64, error) {
 	if commons.IsEmpty(artifact.Version) {
 		return 0, errors.New("version is empty")
 	}
 
+	// Check if a soft-deleted artifact exists with the same image_id and version
+	if err := a.checkSoftDeletedArtifactExists(ctx, artifact.ImageID, artifact.Version); err != nil {
+		return 0, err
+	}
+
+	// Proceed with INSERT ... ON CONFLICT (only matches non-deleted records)
 	const sqlQuery = `
 		INSERT INTO artifacts ( 
 		         artifact_image_id
