@@ -31,7 +31,7 @@ type RegistryFinder interface {
 		*types.Registry,
 		error,
 	)
-	FindByRootParentID(ctx context.Context, rootParentID int64, regIdentifier string) (
+	FindByRootParentID(ctx context.Context, rootParentID int64, regIdentifier string, opts ...types.QueryOption) (
 		*types.Registry,
 		error,
 	)
