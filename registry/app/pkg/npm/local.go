@@ -153,6 +153,7 @@ func (c *localRegistry) UploadPackageFile(
 		Str("registryName", info.ArtifactInfo.RegIdentifier).
 		Str("packageName", info.Image).
 		Str("version", info.Version).
+		Str("path", filePath).
 		Msg("Successfully created the artifact")
 	_, err = c.AddTag(ctx, info)
 
