@@ -1094,7 +1094,13 @@ func (r *LocalRegistry) PushBlob(
 		return responseHeaders, errs
 	}
 
-	defer ctx.Upload.Close()
+	// Track if upload was cancelled to prevent double-close in defer
+	uploadCancelled := false
+	defer func() {
+		if !uploadCancelled {
+			ctx.Upload.Close()
+		}
+	}()
 
 	if artInfo.Digest == "" {
 		// no digest? return error, but allow retry.
@@ -1165,6 +1171,7 @@ func (r *LocalRegistry) PushBlob(
 		}
 		//nolint:contextcheck
 		// Clean up the backend blob data if there was an error.
+		uploadCancelled = true // Mark as cancelled to prevent defer Close() from running
 		if err := ctx.Upload.Cancel(ctx); err != nil {
 			// If the cleanup fails, all we can do is observe and report.
 			log.Ctx(ctx).Error().Msgf("error canceling upload after error: %v", err)
