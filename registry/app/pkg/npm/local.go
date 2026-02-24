@@ -149,8 +149,8 @@ func (c *localRegistry) UploadPackageFile(
 		return nil, "", err
 	}
 	log.Ctx(ctx).Info().
-		Int64("registryId", info.RegistryID).
-		Str("registryName", info.RegIdentifier).
+		Int64("registryId", info.ArtifactInfo.RegistryID).
+		Str("registryName", info.ArtifactInfo.RegIdentifier).
 		Str("packageName", info.Image).
 		Str("version", info.Version).
 		Msg("Successfully created the artifact")
