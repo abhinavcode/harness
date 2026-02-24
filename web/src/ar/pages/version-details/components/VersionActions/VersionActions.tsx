@@ -26,7 +26,6 @@ import {
   useRoutes,
   useParentHooks
 } from '@ar/hooks'
-import { useParentUtils } from '@ar/hooks/useParentUtils'
 import { useStrings } from '@ar/frameworks/strings'
 import ActionButton from '@ar/components/ActionButton/ActionButton'
 import CopyMenuItem from '@ar/components/MenuItemTypes/CopyMenuItem'
@@ -59,10 +58,9 @@ export default function VersionActions({
 }: VersionActionProps): JSX.Element {
   const [open, setOpen] = useState(false)
   const routes = useRoutes()
-  const { isCurrentSessionPublic, scope } = useAppStore()
+  const { isCurrentSessionPublic } = useAppStore()
   const { getString } = useStrings()
   const { useModalHook } = useParentHooks()
-  const { getApiBaseUrl, getCustomHeaders } = useParentUtils()
   const { HAR_DEPENDENCY_FIREWALL } = useFeatureFlags()
   const isBulkDownloadFileEnabled = useBulkDownloadFile()
   const allowSoftDelete = useAllowSoftDelete()
@@ -80,14 +78,11 @@ export default function VersionActions({
         artifactKey={artifactKey}
         repoKey={repoKey}
         versionKey={versionKey}
-        accountId={typeof scope?.accountId === 'string' ? scope.accountId : ''}
-        getApiBaseUrl={getApiBaseUrl}
-        getCustomHeaders={getCustomHeaders}
         hideModal={hideAddTagModal}
         onClose={closeMenu}
       />
     ),
-    [artifactKey, repoKey, versionKey, scope?.accountId]
+    [artifactKey, repoKey, versionKey]
   )
 
   const isAllowed = (action: VersionAction): boolean => {

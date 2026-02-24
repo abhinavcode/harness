@@ -18,7 +18,8 @@ import React, { useState } from 'react'
 import { Formik } from 'formik'
 import { Button, ButtonVariation, Layout, ModalDialog, useToaster } from '@harnessio/uicore'
 
-import { useParentComponents } from '@ar/hooks'
+import { useAppStore, useParentComponents } from '@ar/hooks'
+import { useParentUtils } from '@ar/hooks/useParentUtils'
 import { useStrings } from '@ar/frameworks/strings'
 import { queryClient } from '@ar/utils/queryClient'
 import { ResourceType } from '@ar/common/permissionTypes'
@@ -40,9 +41,6 @@ export interface AddTagModalContentProps {
   artifactKey: string
   repoKey: string
   versionKey: string
-  accountId: string
-  getApiBaseUrl: (url: string) => string
-  getCustomHeaders: () => Record<string, string>
   hideModal: () => void
   onClose?: () => void
 }
@@ -51,12 +49,12 @@ export function AddTagModalContent({
   artifactKey,
   repoKey,
   versionKey,
-  accountId,
-  getApiBaseUrl,
-  getCustomHeaders,
   hideModal,
   onClose
 }: AddTagModalContentProps): JSX.Element {
+  const { scope } = useAppStore()
+  const { getApiBaseUrl, getCustomHeaders } = useParentUtils()
+  const accountId = typeof scope?.accountId === 'string' ? scope.accountId : ''
   const { getString } = useStrings()
   const { showSuccess, showError } = useToaster()
   const [loading, setLoading] = useState(false)
@@ -70,12 +68,13 @@ export function AddTagModalContent({
     setLoading(true)
     try {
       const path = '/har/api/v2/oci/tags'
-      const searchParams = new URLSearchParams({
-        account_identifier: accountId || '',
-        registry_identifier: repoKey
-      })
-      const baseResolved = new URL(getApiBaseUrl(''), window.location.origin)
-      const url = `${baseResolved.origin}${path}?${searchParams.toString()}`
+      const baseUrl = new URL(getApiBaseUrl(''), window.location.origin)
+      console.log('baseUrl', baseUrl);
+      baseUrl.pathname = path
+      console.log('baseUrl after adding path', baseUrl);
+      baseUrl.searchParams.set('account_identifier', accountId || '')
+      baseUrl.searchParams.set('registry_identifier', repoKey)
+      const url = baseUrl.toString()
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...getCustomHeaders()
