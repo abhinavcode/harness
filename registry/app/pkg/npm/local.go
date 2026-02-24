@@ -126,7 +126,7 @@ func (c *localRegistry) UploadPackageFile(
 		log.Ctx(ctx).Error().Msgf("failed to parse npm package: %v", err)
 		return nil, "", err
 	}
-	log.Info().Str("packageName", info.Image).Msg("Successfully parsed and uploaded NPM package to tmp location")
+	log.Ctx(ctx).Info().Str("packageName", info.Image).Msg("Successfully parsed and uploaded NPM package to tmp location")
 	info.Metadata = packageMetadata
 	info.Image = packageMetadata.Name
 	for tag := range packageMetadata.DistTags {
@@ -148,6 +148,12 @@ func (c *localRegistry) UploadPackageFile(
 		log.Ctx(ctx).Error().Msgf("failed to move npm package: %v", err)
 		return nil, "", err
 	}
+	log.Ctx(ctx).Info().
+		Int64("registryId", info.RegistryID).
+		Str("registryName", info.RegIdentifier).
+		Str("packageName", info.Image).
+		Str("version", info.Version).
+		Msg("Successfully created the artifact")
 	_, err = c.AddTag(ctx, info)
 
 	if err != nil {

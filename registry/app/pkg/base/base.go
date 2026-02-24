@@ -202,6 +202,7 @@ func (l *localBase) UpdateFileManagerAndCreateArtifact(
 
 	err = l.CheckIfFileAlreadyExist(ctx, info, version, metadata, fileInfo.Filename, path)
 	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("Failed to check if file already exist")
 		if !errors.IsConflict(err) {
 			return nil, "", 0, false, err
 		}
