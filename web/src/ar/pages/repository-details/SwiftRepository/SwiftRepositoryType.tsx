@@ -49,10 +49,10 @@ export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> 
   protected repositoryIcon: IconName = 'swift-logo'
   protected supportedScanners = []
   protected supportsUpstreamProxy = false
-  protected isWebhookSupported = false
+  protected isWebhookSupported = true
 
   protected defaultValues: VirtualRegistryRequest = {
-    packageType: RepositoryPackageType.SWIFT as VirtualRegistryRequest['packageType'],
+    packageType: RepositoryPackageType.SWIFT,
     identifier: '',
     config: {
       type: RepositoryConfigType.VIRTUAL
@@ -62,7 +62,7 @@ export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> 
   }
 
   protected defaultUpstreamProxyValues: UpstreamRegistryRequest = {
-    packageType: RepositoryPackageType.SWIFT as UpstreamRegistryRequest['packageType'],
+    packageType: RepositoryPackageType.SWIFT,
     identifier: '',
     config: {
       type: RepositoryConfigType.UPSTREAM,
@@ -95,7 +95,7 @@ export class SwiftRepositoryType extends RepositoryStep<VirtualRegistryRequest> 
         artifactKey={artifactKey}
         versionKey={versionKey}
         onClose={onClose}
-        packageType={RepositoryPackageType.SWIFT as Parameters<typeof SetupClientContent>[0]['packageType']}
+        packageType={RepositoryPackageType.SWIFT}
       />
     )
   }

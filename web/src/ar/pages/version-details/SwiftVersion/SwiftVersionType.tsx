@@ -49,7 +49,7 @@ import VersionActions from '../components/VersionActions/VersionActions'
 import { VersionAction } from '../components/VersionActions/types'
 
 export class SwiftVersionType extends VersionStep<ArtifactVersionSummary> {
-  protected packageType = 'SWIFT' as RepositoryPackageType
+  protected packageType = RepositoryPackageType.SWIFT
   protected hasArtifactRowSubComponent = true
   protected allowedVersionDetailsTabs: VersionDetailsTab[] = [
     VersionDetailsTab.OVERVIEW,

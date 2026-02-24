@@ -19,7 +19,7 @@ import { defaultTo, isEmpty } from 'lodash-es'
 import { FontVariation } from '@harnessio/design-system'
 import { Card, Container, Layout, Text } from '@harnessio/uicore'
 
-import { useStrings, type StringKeys } from '@ar/frameworks/strings'
+import { useStrings } from '@ar/frameworks/strings'
 import { DEFAULT_DATE_TIME_FORMAT } from '@ar/constants'
 import { getReadableDateTime } from '@ar/common/dateUtils'
 import { LabelValueTypeEnum } from '@ar/pages/version-details/components/LabelValueContent/type'
@@ -61,7 +61,7 @@ export default function SwiftVersionGeneralInfo(props: SwiftVersionGeneralInfoPr
           />
           <LabelValueContent
             label={getString('versionDetails.overview.generalInformation.packageType')}
-            value={getString('packageTypes.swiftPackage' as StringKeys)}
+            value={getString('packageTypes.swiftPackage')}
             type={LabelValueTypeEnum.PackageType}
             icon="swift-logo"
           />
