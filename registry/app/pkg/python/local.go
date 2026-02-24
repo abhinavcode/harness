@@ -118,11 +118,7 @@ func (c *localRegistry) GetPackageMetadata(
 		return packageMetadata, err
 	}
 
-	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(
-		ctx,
-		registry.ID,
-		info.Image,
-	)
+	artifacts, err := c.artifactDao.GetByRegistryIDAndImage(ctx, registry.ID, info.Image)
 	if err != nil {
 		return packageMetadata, err
 	}
