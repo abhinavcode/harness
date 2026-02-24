@@ -205,7 +205,7 @@ type TagRepository interface {
 		ctx context.Context, parentID int64,
 		registryIDs *[]string, sortByField string,
 		sortByOrder string, limit int, offset int, search string,
-		latestVersion bool, packageTypes []string, opts ...types.QueryOption,
+		latestVersion bool, packageTypes []string,
 	) (*[]types.ArtifactMetadata, error)
 
 	GetAllArtifactsByParentIDUntagged(
@@ -213,21 +213,18 @@ type TagRepository interface {
 		registryIDs *[]string, sortByField string,
 		sortByOrder string, limit int, offset int, search string,
 		packageTypes []string,
-		opts ...types.QueryOption,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
 		registryIDs *[]string, search string,
 		latestVersion bool, packageTypes []string, includeUntagged bool,
-		opts ...types.QueryOption,
 	) (int64, error)
 
 	GetAllArtifactsByRepo(
 		ctx context.Context, parentID int64, repoKey string,
 		sortByField string, sortByOrder string,
 		limit int, offset int, search string, labels []string,
-		opts ...types.QueryOption,
 	) (*[]types.ArtifactMetadata, error)
 
 	GetLatestTagMetadata(
@@ -261,7 +258,6 @@ type TagRepository interface {
 	CountAllArtifactsByRepo(
 		ctx context.Context, parentID int64, repoKey string,
 		search string, labels []string,
-		opts ...types.QueryOption,
 	) (int64, error)
 
 	GetTagDetail(
@@ -346,13 +342,14 @@ type UpstreamProxyConfig struct {
 
 type UpstreamProxyConfigRepository interface {
 	// Get the upstreamproxy specified by ID
-	Get(ctx context.Context, id int64) (upstreamProxy *types.UpstreamProxy, err error)
+	Get(ctx context.Context, id int64,opts ...types.QueryOption) (upstreamProxy *types.UpstreamProxy, err error)
 
 	// GetByRepoKey gets the upstreamproxy specified by registry key
 	GetByRegistryIdentifier(
 		ctx context.Context,
 		parentID int64,
 		repoKey string,
+		opts ...types.QueryOption,
 	) (upstreamProxy *types.UpstreamProxy, err error)
 
 	// GetByParentUniqueId gets the upstreamproxy specified by parent id and parent unique id
@@ -448,12 +445,11 @@ type RegistryRepository interface {
 		offset int,
 		search string,
 		repoType string,
-		opts ...types.QueryOption,
 	) (repos *[]RegistryMetadata, err error)
 
 	CountAll(
 		ctx context.Context, parentIDs []int64, packageTypes []string,
-		search string, repoType string, opts ...types.QueryOption,
+		search string, repoType string,
 	) (count int64, err error)
 
 	FetchUpstreamProxyIDs(
@@ -467,16 +463,13 @@ type RegistryRepository interface {
 	) (ids []int64, err error)
 
 	FetchUpstreamProxyKeys(ctx context.Context, ids []int64) (repokeys []string, err error)
-	Count(ctx context.Context, opts ...types.QueryOption) (int64, error)
+	Count(ctx context.Context) (int64, error)
 
 	// GetIDsByParentSpace returns all registry IDs under a given parent space
 	GetIDsByParentSpace(ctx context.Context, parentSpaceID int64) ([]int64, error)
 
 	// UpdateParentSpace updates the parent space ID for all registries under a given source space to target space
 	UpdateParentSpace(ctx context.Context, srcSpaceID int64, targetSpaceID int64) (int64, error)
-
-	// GetDistinctAccountIDs returns a list of distinct account identifiers that have registries
-	GetDistinctAccountIDs(ctx context.Context) ([]string, error)
 }
 
 type RegistryBlobRepository interface {
@@ -497,7 +490,7 @@ type RegistryBlobRepository interface {
 
 type ImageRepository interface {
 	// Get an Image specified by ID
-	Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error)
+	Get(ctx context.Context, id int64) (*types.Image, error)
 	// Get an Artifact specified by Artifact Name
 	GetByName(
 		ctx context.Context, registryID int64,
@@ -513,17 +506,17 @@ type ImageRepository interface {
 	GetLabelsByParentIDAndRepo(
 		ctx context.Context, parentID int64,
 		repo string, limit int, offset int,
-		search string, opts ...types.QueryOption,
+		search string,
 	) (labels []string, err error)
 	// Count the Labels specified by Parent ID and Repo
 	CountLabelsByParentIDAndRepo(
 		ctx context.Context, parentID int64,
-		repo, search string, opts ...types.QueryOption,
+		repo, search string,
 	) (count int64, err error)
 	// Get an Artifact specified by Artifact Name
 	GetByRepoAndName(
 		ctx context.Context, parentID int64,
-		repo string, name string, opts ...types.QueryOption,
+		repo string, name string,
 	) (*types.Image, error)
 	// Create an Image
 	CreateOrUpdate(ctx context.Context, image *types.Image) error
@@ -552,19 +545,19 @@ type ArtifactRepository interface {
 	) (*types.Artifact, error)
 	// Get an Artifact specified by RegistryID, image name and version
 	GetByRegistryImageAndVersion(
-		ctx context.Context, registryID int64, image string, version string, opts ...types.QueryOption,
+		ctx context.Context, registryID int64, image string, version string,
 	) (*types.Artifact, error)
 	GetByRegistryImageVersionAndArtifactType(
 		ctx context.Context, registryID int64, image string, version string, artifactType string,
 	) (*types.Artifact, error)
 	// Create an Artifact
 	CreateOrUpdate(ctx context.Context, artifact *types.Artifact) (int64, error)
-	Count(ctx context.Context, opts ...types.QueryOption) (int64, error)
+	Count(ctx context.Context) (int64, error)
 	GetAllArtifactsByParentID(
 		ctx context.Context, parentID int64,
 		registryIDs *[]string, sortByField string,
 		sortByOrder string, limit int, offset int, search string,
-		latestVersion bool, packageTypes []string, opts ...types.QueryOption,
+		latestVersion bool, packageTypes []string,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountAllArtifactsByParentID(
@@ -573,30 +566,29 @@ type ArtifactRepository interface {
 		search string,
 		latestVersion bool,
 		packageTypes []string,
-		opts ...types.QueryOption,
 	) (int64, error)
 
 	GetArtifactsByRepo(
 		ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string,
 		limit int, offset int, search string, labels []string,
-		artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+		artifactType *artifact.ArtifactType,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountArtifactsByRepo(
 		ctx context.Context, parentID int64, repoKey, search string, labels []string,
-		artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+		artifactType *artifact.ArtifactType,
 	) (int64, error)
 	GetLatestArtifactMetadata(
 		ctx context.Context, id int64, identifier string,
-		image string, opts ...types.QueryOption,
+		image string,
 	) (*types.ArtifactMetadata, error)
 	GetAllVersionsByRepoAndImage(
 		ctx context.Context, id int64, image string, field string, order string, limit int,
-		offset int, term string, artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+		offset int, term string, artifactType *artifact.ArtifactType,
 	) (*[]types.NonOCIArtifactMetadata, error)
 	CountAllVersionsByRepoAndImage(
 		ctx context.Context, parentID int64, repoKey string, image string,
-		search string, artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+		search string, artifactType *artifact.ArtifactType,
 	) (int64, error)
 	GetArtifactMetadata(
 		ctx context.Context, id int64, identifier string, image string, version string,
@@ -607,7 +599,7 @@ type ArtifactRepository interface {
 		artifactID int64,
 	) (err error)
 
-	GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, opts ...types.QueryOption) (
+	GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string) (
 		*[]types.Artifact,
 		error,
 	)
@@ -619,7 +611,7 @@ type ArtifactRepository interface {
 	// GetByUUID gets an artifact by its UUID
 	GetByUUID(ctx context.Context, uuid string) (*types.Artifact, error)
 
-	GetLatestByImageID(ctx context.Context, imageID int64, opts ...types.QueryOption) (*types.Artifact, error)
+	GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error)
 
 	// get latest artifacts from all images under repo
 	GetLatestArtifactsByRepo(
@@ -636,20 +628,20 @@ type ArtifactRepository interface {
 	) (*[]types.ArtifactMetadata, error)
 
 	SearchLatestByName(
-		ctx context.Context, regID int64, name string, limit int, offset int, opts ...types.QueryOption,
+		ctx context.Context, regID int64, name string, limit int, offset int,
 	) (*[]types.Artifact, error)
 
 	CountLatestByName(
-		ctx context.Context, regID int64, name string, opts ...types.QueryOption,
+		ctx context.Context, regID int64, name string,
 	) (int64, error)
 
 	SearchByImageName(
 		ctx context.Context, regID int64, name string,
-		limit int, offset int, opts ...types.QueryOption,
+		limit int, offset int,
 	) (*[]types.ArtifactMetadata, error)
 
 	CountByImageName(
-		ctx context.Context, regID int64, name string, opts ...types.QueryOption,
+		ctx context.Context, regID int64, name string,
 	) (int64, error)
 
 	// DuplicateArtifact creates a copy of an artifact with a different image ID and created by user
@@ -842,8 +834,10 @@ type WebhooksExecutionRepository interface {
 }
 
 type PackageTagRepository interface {
-	FindByImageNameAndRegID(ctx context.Context,
-		image string, regID int64, imageType *string) ([]*types.PackageTagMetadata, error)
+	FindByImageNameAndRegID(
+		ctx context.Context,
+		image string, regID int64, imageType *string,
+	) ([]*types.PackageTagMetadata, error)
 
 	Create(ctx context.Context, tag *types.PackageTag) (string, error)
 

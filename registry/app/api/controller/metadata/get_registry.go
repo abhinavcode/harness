@@ -130,6 +130,7 @@ func (c *APIController) GetRegistry(
 	upstreamproxyEntity, err := c.UpstreamProxyStore.GetByRegistryIdentifier(
 		ctx,
 		regInfo.ParentID, regInfo.RegistryIdentifier,
+		types.WithAllDeleted(),
 	)
 	if len(upstreamproxyEntity.RepoKey) == 0 {
 		return artifact.GetRegistry404JSONResponse{

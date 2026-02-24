@@ -135,10 +135,24 @@ func getUpstreamProxyQuery() squirrel.SelectBuilder {
 		LeftJoin("upstream_proxy_configs u ON r.registry_id = u.upstream_proxy_config_registry_id ")
 }
 
-func (r UpstreamproxyDao) Get(ctx context.Context, id int64) (upstreamProxy *types.UpstreamProxy, err error) {
+func (r UpstreamproxyDao) Get(
+	ctx context.Context,
+	id int64,
+	opts ...types.QueryOption,
+) (upstreamProxy *types.UpstreamProxy, err error) {
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := getUpstreamProxyQuery()
 	q = q.Where("r.registry_id = ? AND r.registry_type = 'UPSTREAM'", id)
+	q = q.Where("registry_deleted_at IS NULL")
 
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
+		q = q.Where("registry_deleted_at IS NULL")
+	case types.DeleteFilterOnlyDeleted:
+		q = q.Where("registry_deleted_at IS NOT NULL")
+	case types.DeleteFilterIncludeDeleted:
+		// No filter
+	}
 	sql, args, err := q.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to convert query to sql")
@@ -158,11 +172,21 @@ func (r UpstreamproxyDao) GetByRegistryIdentifier(
 	ctx context.Context,
 	parentID int64,
 	repoKey string,
+	opts ...types.QueryOption,
 ) (upstreamProxy *types.UpstreamProxy, err error) {
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := getUpstreamProxyQuery()
 	q = q.Where("r.registry_parent_id = ? AND r.registry_name = ? AND r.registry_type = 'UPSTREAM'",
 		parentID, repoKey)
 
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
+		q = q.Where("registry_deleted_at IS NULL")
+	case types.DeleteFilterOnlyDeleted:
+		q = q.Where("registry_deleted_at IS NOT NULL")
+	case types.DeleteFilterIncludeDeleted:
+		// No filter
+	}
 	sql, args, err := q.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to convert query to sql")

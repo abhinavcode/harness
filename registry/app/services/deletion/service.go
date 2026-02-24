@@ -157,7 +157,7 @@ func (s *Service) DeleteArtifactVersionByPackageType(
 		}
 	default:
 		// Unknown types: delegate to package wrapper
-		imageInfo, err := s.imageStore.GetByName(ctx, registryID, imageName)
+		imageInfo, err := s.imageStore.GetByName(ctx, registryID, imageName, registrytypes.WithAllDeleted())
 		if err != nil {
 			return err
 		}

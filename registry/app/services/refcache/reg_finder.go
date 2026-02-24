@@ -31,7 +31,7 @@ type RegistryFinder interface {
 		*types.Registry,
 		error,
 	)
-	FindByRootParentID(ctx context.Context, rootParentID int64, regIdentifier string, opts ...types.QueryOption) (
+	FindByRootParentID(ctx context.Context, rootParentID int64, regIdentifier string) (
 		*types.Registry,
 		error,
 	)
@@ -82,7 +82,12 @@ func (r registryFinder) FindByID(ctx context.Context, repoID int64) (*types.Regi
 	return r.regIDCache.Get(ctx, repoID)
 }
 
-func (r registryFinder) FindByRootRef(ctx context.Context, rootParentRef string, regIdentifier string, opts ...types.QueryOption) (
+func (r registryFinder) FindByRootRef(
+	ctx context.Context,
+	rootParentRef string,
+	regIdentifier string,
+	opts ...types.QueryOption,
+) (
 	*types.Registry,
 	error,
 ) {
@@ -94,7 +99,8 @@ func (r registryFinder) FindByRootRef(ctx context.Context, rootParentRef string,
 }
 
 func (r registryFinder) FindByRootParentID(
-	ctx context.Context, rootParentID int64, regIdentifier string, opts ...types.QueryOption) (
+	ctx context.Context, rootParentID int64, regIdentifier string, opts ...types.QueryOption,
+) (
 	*types.Registry,
 	error,
 ) {
@@ -116,11 +122,11 @@ func (r registryFinder) FindByRootParentID(
 	switch deleteFilter {
 	case types.DeleteFilterExcludeDeleted:
 		if reg.DeletedAt != nil {
-			return nil, fmt.Errorf("registry is soft deleted")
+			return nil, fmt.Errorf("registry is deleted")
 		}
 	case types.DeleteFilterOnlyDeleted:
 		if reg.DeletedAt == nil {
-			return nil, fmt.Errorf("registry is not soft deleted")
+			return nil, fmt.Errorf("registry is not deleted")
 		}
 	case types.DeleteFilterIncludeDeleted:
 		// No filtering - return all registries

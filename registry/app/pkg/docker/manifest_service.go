@@ -495,18 +495,6 @@ func (l *manifestService) dbPutManifest(
 
 func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.Digest, info pkg.RegistryInfo) error {
 	dbRepo := info.Registry
-
-	// Check if registry is soft deleted
-	if dbRepo.DeletedAt != nil {
-		return fmt.Errorf("cannot upload manifest to deleted registry: %s", dbRepo.Name)
-	}
-
-	// Check if image already exists and is soft-deleted
-	existingImage, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.WithAllDeleted())
-	if err == nil && existingImage.DeletedAt != nil {
-		return fmt.Errorf("cannot upload manifest to deleted image: %s", info.Image)
-	}
-
 	dbImage := &types.Image{
 		Name:       info.Image,
 		RegistryID: dbRepo.ID,
@@ -521,13 +509,6 @@ func (l *manifestService) upsertImageAndArtifact(ctx context.Context, d digest.D
 	if err != nil {
 		return err
 	}
-
-	// Check if artifact version already exists and is soft-deleted
-	existingArtifact, err := l.artifactDao.GetByName(ctx, dbImage.ID, dgst.String(), types.WithAllDeleted())
-	if err == nil && existingArtifact.DeletedAt != nil {
-		return fmt.Errorf("cannot upload manifest to deleted artifact version: %s", dgst.String())
-	}
-
 	dbArtifact := &types.Artifact{
 		ImageID: dbImage.ID,
 		Version: dgst.String(),
@@ -551,16 +532,10 @@ func (l *manifestService) UpsertImage(
 	info pkg.RegistryInfo,
 ) error {
 	dbRepo := info.Registry
-	image, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image, types.WithAllDeleted())
+	image, err := l.imageDao.GetByName(ctx, dbRepo.ID, info.Image)
 	if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 		return err
-	}
-
-	if image != nil {
-		// Check if image is soft-deleted
-		if image.DeletedAt != nil {
-			return fmt.Errorf("cannot upsert manifest to deleted image: %s", info.Image)
-		}
+	} else if image != nil {
 		return nil
 	}
 
@@ -1019,11 +994,7 @@ func (l *manifestService) dbPutImageIndex(
 	headers *commons.ResponseHeaders,
 	info pkg.RegistryInfo,
 ) error {
-	r, err := l.registryDao.GetByParentIDAndName(
-		ctx,
-		info.ParentID,
-		info.RegIdentifier,
-	)
+	r, err := l.registryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier)
 	if err != nil {
 		return err
 	}

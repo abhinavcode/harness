@@ -39,8 +39,8 @@ func (_m *MockTagRepository) EXPECT() *MockTagRepository_Expecter {
 }
 
 // CountAllArtifactsByParentID provides a mock function for the type MockTagRepository
-func (_mock *MockTagRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool, opts ...types.QueryOption) (int64, error) {
-	ret := _mock.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, opts)
+func (_mock *MockTagRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool) (int64, error) {
+	ret := _mock.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAllArtifactsByParentID")
@@ -48,16 +48,16 @@ func (_mock *MockTagRepository) CountAllArtifactsByParentID(ctx context.Context,
 
 	var r0 int64
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool, ...types.QueryOption) (int64, error)); ok {
-		return returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool) (int64, error)); ok {
+		return returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool, ...types.QueryOption) int64); ok {
-		r0 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, bool) int64); ok {
+		r0 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, bool, ...types.QueryOption) error); ok {
-		r1 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, opts...)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, bool) error); ok {
+		r1 = returnFunc(ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -77,12 +77,11 @@ type MockTagRepository_CountAllArtifactsByParentID_Call struct {
 //   - latestVersion bool
 //   - packageTypes []string
 //   - untaggedImagesEnabled bool
-//   - opts ...types.QueryOption
-func (_e *MockTagRepository_Expecter) CountAllArtifactsByParentID(ctx interface{}, parentID interface{}, registryIDs interface{}, search interface{}, latestVersion interface{}, packageTypes interface{}, untaggedImagesEnabled interface{}, opts interface{}) *MockTagRepository_CountAllArtifactsByParentID_Call {
-	return &MockTagRepository_CountAllArtifactsByParentID_Call{Call: _e.mock.On("CountAllArtifactsByParentID", ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled, opts)}
+func (_e *MockTagRepository_Expecter) CountAllArtifactsByParentID(ctx interface{}, parentID interface{}, registryIDs interface{}, search interface{}, latestVersion interface{}, packageTypes interface{}, untaggedImagesEnabled interface{}) *MockTagRepository_CountAllArtifactsByParentID_Call {
+	return &MockTagRepository_CountAllArtifactsByParentID_Call{Call: _e.mock.On("CountAllArtifactsByParentID", ctx, parentID, registryIDs, search, latestVersion, packageTypes, untaggedImagesEnabled)}
 }
 
-func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool, opts ...types.QueryOption)) *MockTagRepository_CountAllArtifactsByParentID_Call {
+func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool)) *MockTagRepository_CountAllArtifactsByParentID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -112,10 +111,6 @@ func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx c
 		if args[6] != nil {
 			arg6 = args[6].(bool)
 		}
-		var arg7 []types.QueryOption
-		if args[7] != nil {
-			arg7 = args[7].([]types.QueryOption)
-		}
 		run(
 			arg0,
 			arg1,
@@ -124,7 +119,6 @@ func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Run(run func(ctx c
 			arg4,
 			arg5,
 			arg6,
-			arg7...,
 		)
 	})
 	return _c
@@ -135,14 +129,14 @@ func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) Return(n int64, er
 	return _c
 }
 
-func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool, opts ...types.QueryOption) (int64, error)) *MockTagRepository_CountAllArtifactsByParentID_Call {
+func (_c *MockTagRepository_CountAllArtifactsByParentID_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool) (int64, error)) *MockTagRepository_CountAllArtifactsByParentID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CountAllArtifactsByRepo provides a mock function for the type MockTagRepository
-func (_mock *MockTagRepository) CountAllArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, opts ...types.QueryOption) (int64, error) {
-	ret := _mock.Called(ctx, parentID, repoKey, search, labels, opts)
+func (_mock *MockTagRepository) CountAllArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string) (int64, error) {
+	ret := _mock.Called(ctx, parentID, repoKey, search, labels)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAllArtifactsByRepo")
@@ -150,16 +144,16 @@ func (_mock *MockTagRepository) CountAllArtifactsByRepo(ctx context.Context, par
 
 	var r0 int64
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, ...types.QueryOption) (int64, error)); ok {
-		return returnFunc(ctx, parentID, repoKey, search, labels, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, []string) (int64, error)); ok {
+		return returnFunc(ctx, parentID, repoKey, search, labels)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, ...types.QueryOption) int64); ok {
-		r0 = returnFunc(ctx, parentID, repoKey, search, labels, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, []string) int64); ok {
+		r0 = returnFunc(ctx, parentID, repoKey, search, labels)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, string, []string, ...types.QueryOption) error); ok {
-		r1 = returnFunc(ctx, parentID, repoKey, search, labels, opts...)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, string, []string) error); ok {
+		r1 = returnFunc(ctx, parentID, repoKey, search, labels)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -177,12 +171,11 @@ type MockTagRepository_CountAllArtifactsByRepo_Call struct {
 //   - repoKey string
 //   - search string
 //   - labels []string
-//   - opts ...types.QueryOption
-func (_e *MockTagRepository_Expecter) CountAllArtifactsByRepo(ctx interface{}, parentID interface{}, repoKey interface{}, search interface{}, labels interface{}, opts interface{}) *MockTagRepository_CountAllArtifactsByRepo_Call {
-	return &MockTagRepository_CountAllArtifactsByRepo_Call{Call: _e.mock.On("CountAllArtifactsByRepo", ctx, parentID, repoKey, search, labels, opts)}
+func (_e *MockTagRepository_Expecter) CountAllArtifactsByRepo(ctx interface{}, parentID interface{}, repoKey interface{}, search interface{}, labels interface{}) *MockTagRepository_CountAllArtifactsByRepo_Call {
+	return &MockTagRepository_CountAllArtifactsByRepo_Call{Call: _e.mock.On("CountAllArtifactsByRepo", ctx, parentID, repoKey, search, labels)}
 }
 
-func (_c *MockTagRepository_CountAllArtifactsByRepo_Call) Run(run func(ctx context.Context, parentID int64, repoKey string, search string, labels []string, opts ...types.QueryOption)) *MockTagRepository_CountAllArtifactsByRepo_Call {
+func (_c *MockTagRepository_CountAllArtifactsByRepo_Call) Run(run func(ctx context.Context, parentID int64, repoKey string, search string, labels []string)) *MockTagRepository_CountAllArtifactsByRepo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -204,17 +197,12 @@ func (_c *MockTagRepository_CountAllArtifactsByRepo_Call) Run(run func(ctx conte
 		if args[4] != nil {
 			arg4 = args[4].([]string)
 		}
-		var arg5 []types.QueryOption
-		if args[5] != nil {
-			arg5 = args[5].([]types.QueryOption)
-		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
 			arg4,
-			arg5...,
 		)
 	})
 	return _c
@@ -225,7 +213,7 @@ func (_c *MockTagRepository_CountAllArtifactsByRepo_Call) Return(n int64, err er
 	return _c
 }
 
-func (_c *MockTagRepository_CountAllArtifactsByRepo_Call) RunAndReturn(run func(ctx context.Context, parentID int64, repoKey string, search string, labels []string, opts ...types.QueryOption) (int64, error)) *MockTagRepository_CountAllArtifactsByRepo_Call {
+func (_c *MockTagRepository_CountAllArtifactsByRepo_Call) RunAndReturn(run func(ctx context.Context, parentID int64, repoKey string, search string, labels []string) (int64, error)) *MockTagRepository_CountAllArtifactsByRepo_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -812,8 +800,8 @@ func (_c *MockTagRepository_FindTag_Call) RunAndReturn(run func(ctx context.Cont
 }
 
 // GetAllArtifactsByParentID provides a mock function for the type MockTagRepository
-func (_mock *MockTagRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _mock.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts)
+func (_mock *MockTagRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string) (*[]types.ArtifactMetadata, error) {
+	ret := _mock.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllArtifactsByParentID")
@@ -821,18 +809,18 @@ func (_mock *MockTagRepository) GetAllArtifactsByParentID(ctx context.Context, p
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) (*[]types.ArtifactMetadata, error)); ok {
+		return returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) *[]types.ArtifactMetadata); ok {
+		r0 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption) error); ok {
-		r1 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts...)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) error); ok {
+		r1 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -855,12 +843,11 @@ type MockTagRepository_GetAllArtifactsByParentID_Call struct {
 //   - search string
 //   - latestVersion bool
 //   - packageTypes []string
-//   - opts ...types.QueryOption
-func (_e *MockTagRepository_Expecter) GetAllArtifactsByParentID(ctx interface{}, parentID interface{}, registryIDs interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, latestVersion interface{}, packageTypes interface{}, opts interface{}) *MockTagRepository_GetAllArtifactsByParentID_Call {
-	return &MockTagRepository_GetAllArtifactsByParentID_Call{Call: _e.mock.On("GetAllArtifactsByParentID", ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts)}
+func (_e *MockTagRepository_Expecter) GetAllArtifactsByParentID(ctx interface{}, parentID interface{}, registryIDs interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, latestVersion interface{}, packageTypes interface{}) *MockTagRepository_GetAllArtifactsByParentID_Call {
+	return &MockTagRepository_GetAllArtifactsByParentID_Call{Call: _e.mock.On("GetAllArtifactsByParentID", ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)}
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string, opts ...types.QueryOption)) *MockTagRepository_GetAllArtifactsByParentID_Call {
+func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string)) *MockTagRepository_GetAllArtifactsByParentID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -902,10 +889,6 @@ func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) Run(run func(ctx con
 		if args[9] != nil {
 			arg9 = args[9].([]string)
 		}
-		var arg10 []types.QueryOption
-		if args[10] != nil {
-			arg10 = args[10].([]types.QueryOption)
-		}
 		run(
 			arg0,
 			arg1,
@@ -917,7 +900,6 @@ func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) Run(run func(ctx con
 			arg7,
 			arg8,
 			arg9,
-			arg10...,
 		)
 	})
 	return _c
@@ -928,14 +910,14 @@ func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) Return(artifactMetad
 	return _c
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByParentID_Call {
+func (_c *MockTagRepository_GetAllArtifactsByParentID_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByParentID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetAllArtifactsByParentIDUntagged provides a mock function for the type MockTagRepository
-func (_mock *MockTagRepository) GetAllArtifactsByParentIDUntagged(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _mock.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, opts)
+func (_mock *MockTagRepository) GetAllArtifactsByParentIDUntagged(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string) (*[]types.ArtifactMetadata, error) {
+	ret := _mock.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllArtifactsByParentIDUntagged")
@@ -943,18 +925,18 @@ func (_mock *MockTagRepository) GetAllArtifactsByParentIDUntagged(ctx context.Co
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string) (*[]types.ArtifactMetadata, error)); ok {
+		return returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, []string) *[]types.ArtifactMetadata); ok {
+		r0 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, []string, ...types.QueryOption) error); ok {
-		r1 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, opts...)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, []string) error); ok {
+		r1 = returnFunc(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -976,12 +958,11 @@ type MockTagRepository_GetAllArtifactsByParentIDUntagged_Call struct {
 //   - offset int
 //   - search string
 //   - packageTypes []string
-//   - opts ...types.QueryOption
-func (_e *MockTagRepository_Expecter) GetAllArtifactsByParentIDUntagged(ctx interface{}, parentID interface{}, registryIDs interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, packageTypes interface{}, opts interface{}) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
-	return &MockTagRepository_GetAllArtifactsByParentIDUntagged_Call{Call: _e.mock.On("GetAllArtifactsByParentIDUntagged", ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes, opts)}
+func (_e *MockTagRepository_Expecter) GetAllArtifactsByParentIDUntagged(ctx interface{}, parentID interface{}, registryIDs interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, packageTypes interface{}) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
+	return &MockTagRepository_GetAllArtifactsByParentIDUntagged_Call{Call: _e.mock.On("GetAllArtifactsByParentIDUntagged", ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, packageTypes)}
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string, opts ...types.QueryOption)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
+func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1019,10 +1000,6 @@ func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func
 		if args[8] != nil {
 			arg8 = args[8].([]string)
 		}
-		var arg9 []types.QueryOption
-		if args[9] != nil {
-			arg9 = args[9].([]types.QueryOption)
-		}
 		run(
 			arg0,
 			arg1,
@@ -1033,7 +1010,6 @@ func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Run(run func
 			arg6,
 			arg7,
 			arg8,
-			arg9...,
 		)
 	})
 	return _c
@@ -1044,14 +1020,14 @@ func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) Return(artif
 	return _c
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
+func (_c *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call) RunAndReturn(run func(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, packageTypes []string) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByParentIDUntagged_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetAllArtifactsByRepo provides a mock function for the type MockTagRepository
-func (_mock *MockTagRepository) GetAllArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _mock.Called(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, opts)
+func (_mock *MockTagRepository) GetAllArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string) (*[]types.ArtifactMetadata, error) {
+	ret := _mock.Called(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllArtifactsByRepo")
@@ -1059,18 +1035,18 @@ func (_mock *MockTagRepository) GetAllArtifactsByRepo(ctx context.Context, paren
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return returnFunc(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string) (*[]types.ArtifactMetadata, error)); ok {
+		return returnFunc(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = returnFunc(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, opts...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string) *[]types.ArtifactMetadata); ok {
+		r0 = returnFunc(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, []string, ...types.QueryOption) error); ok {
-		r1 = returnFunc(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, opts...)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, []string) error); ok {
+		r1 = returnFunc(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1092,12 +1068,11 @@ type MockTagRepository_GetAllArtifactsByRepo_Call struct {
 //   - offset int
 //   - search string
 //   - labels []string
-//   - opts ...types.QueryOption
-func (_e *MockTagRepository_Expecter) GetAllArtifactsByRepo(ctx interface{}, parentID interface{}, repoKey interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, labels interface{}, opts interface{}) *MockTagRepository_GetAllArtifactsByRepo_Call {
-	return &MockTagRepository_GetAllArtifactsByRepo_Call{Call: _e.mock.On("GetAllArtifactsByRepo", ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, opts)}
+func (_e *MockTagRepository_Expecter) GetAllArtifactsByRepo(ctx interface{}, parentID interface{}, repoKey interface{}, sortByField interface{}, sortByOrder interface{}, limit interface{}, offset interface{}, search interface{}, labels interface{}) *MockTagRepository_GetAllArtifactsByRepo_Call {
+	return &MockTagRepository_GetAllArtifactsByRepo_Call{Call: _e.mock.On("GetAllArtifactsByRepo", ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels)}
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByRepo_Call) Run(run func(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, opts ...types.QueryOption)) *MockTagRepository_GetAllArtifactsByRepo_Call {
+func (_c *MockTagRepository_GetAllArtifactsByRepo_Call) Run(run func(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string)) *MockTagRepository_GetAllArtifactsByRepo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1135,10 +1110,6 @@ func (_c *MockTagRepository_GetAllArtifactsByRepo_Call) Run(run func(ctx context
 		if args[8] != nil {
 			arg8 = args[8].([]string)
 		}
-		var arg9 []types.QueryOption
-		if args[9] != nil {
-			arg9 = args[9].([]types.QueryOption)
-		}
 		run(
 			arg0,
 			arg1,
@@ -1149,7 +1120,6 @@ func (_c *MockTagRepository_GetAllArtifactsByRepo_Call) Run(run func(ctx context
 			arg6,
 			arg7,
 			arg8,
-			arg9...,
 		)
 	})
 	return _c
@@ -1160,7 +1130,7 @@ func (_c *MockTagRepository_GetAllArtifactsByRepo_Call) Return(artifactMetadatas
 	return _c
 }
 
-func (_c *MockTagRepository_GetAllArtifactsByRepo_Call) RunAndReturn(run func(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByRepo_Call {
+func (_c *MockTagRepository_GetAllArtifactsByRepo_Call) RunAndReturn(run func(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string) (*[]types.ArtifactMetadata, error)) *MockTagRepository_GetAllArtifactsByRepo_Call {
 	_c.Call.Return(run)
 	return _c
 }

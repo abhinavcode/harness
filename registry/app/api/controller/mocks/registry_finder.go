@@ -131,15 +131,8 @@ func (_c *RegistryFinder_FindByID_Call) RunAndReturn(run func(context.Context, i
 }
 
 // FindByRootParentID provides a mock function with given fields: ctx, rootParentID, regIdentifier, opts
-func (_m *RegistryFinder) FindByRootParentID(ctx context.Context, rootParentID int64, regIdentifier string, opts ...types.QueryOption) (*types.Registry, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, rootParentID, regIdentifier)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+func (_m *RegistryFinder) FindByRootParentID(ctx context.Context, rootParentID int64, regIdentifier string) (*types.Registry, error) {
+	ret := _m.Called(ctx, rootParentID, regIdentifier)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindByRootParentID")
@@ -147,19 +140,19 @@ func (_m *RegistryFinder) FindByRootParentID(ctx context.Context, rootParentID i
 
 	var r0 *types.Registry
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) (*types.Registry, error)); ok {
-		return rf(ctx, rootParentID, regIdentifier, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (*types.Registry, error)); ok {
+		return rf(ctx, rootParentID, regIdentifier)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) *types.Registry); ok {
-		r0 = rf(ctx, rootParentID, regIdentifier, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) *types.Registry); ok {
+		r0 = rf(ctx, rootParentID, regIdentifier)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Registry)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, rootParentID, regIdentifier, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = rf(ctx, rootParentID, regIdentifier)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -176,23 +169,13 @@ type RegistryFinder_FindByRootParentID_Call struct {
 //   - ctx context.Context
 //   - rootParentID int64
 //   - regIdentifier string
-//   - opts ...types.QueryOption
-func (_e *RegistryFinder_Expecter) FindByRootParentID(ctx interface{}, rootParentID interface{}, regIdentifier interface{}, opts ...interface{}) *RegistryFinder_FindByRootParentID_Call {
-	var _ca []interface{}
-	_ca = append(_ca, ctx, rootParentID, regIdentifier)
-	_ca = append(_ca, opts...)
-	return &RegistryFinder_FindByRootParentID_Call{Call: _e.mock.On("FindByRootParentID", _ca...)}
+func (_e *RegistryFinder_Expecter) FindByRootParentID(ctx interface{}, rootParentID interface{}, regIdentifier interface{}) *RegistryFinder_FindByRootParentID_Call {
+	return &RegistryFinder_FindByRootParentID_Call{Call: _e.mock.On("FindByRootParentID", ctx, rootParentID, regIdentifier)}
 }
 
-func (_c *RegistryFinder_FindByRootParentID_Call) Run(run func(ctx context.Context, rootParentID int64, regIdentifier string, opts ...types.QueryOption)) *RegistryFinder_FindByRootParentID_Call {
+func (_c *RegistryFinder_FindByRootParentID_Call) Run(run func(ctx context.Context, rootParentID int64, regIdentifier string)) *RegistryFinder_FindByRootParentID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]types.QueryOption, len(args)-3)
-		for i, a := range args[3:] {
-			if a != nil {
-				variadicArgs[i] = a.(types.QueryOption)
-			}
-		}
-		run(args[0].(context.Context), args[1].(int64), args[2].(string), variadicArgs...)
+		run(args[0].(context.Context), args[1].(int64), args[2].(string))
 	})
 	return _c
 }
@@ -202,14 +185,14 @@ func (_c *RegistryFinder_FindByRootParentID_Call) Return(_a0 *types.Registry, _a
 	return _c
 }
 
-func (_c *RegistryFinder_FindByRootParentID_Call) RunAndReturn(run func(context.Context, int64, string, ...types.QueryOption) (*types.Registry, error)) *RegistryFinder_FindByRootParentID_Call {
+func (_c *RegistryFinder_FindByRootParentID_Call) RunAndReturn(run func(context.Context, int64, string) (*types.Registry, error)) *RegistryFinder_FindByRootParentID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // FindByRootRef provides a mock function with given fields: ctx, rootParentRef, regIdentifier, opts
-func (_m *RegistryFinder) FindByRootRef(ctx context.Context, rootParentRef string, regIdentifier string, opts ...types.QueryOption) (*types.Registry, error) {
-	ret := _m.Called(ctx, rootParentRef, regIdentifier, opts)
+func (_m *RegistryFinder) FindByRootRef(ctx context.Context, rootParentRef string, regIdentifier string) (*types.Registry, error) {
+	ret := _m.Called(ctx, rootParentRef, regIdentifier)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindByRootRef")
@@ -246,9 +229,8 @@ type RegistryFinder_FindByRootRef_Call struct {
 //   - ctx context.Context
 //   - rootParentRef string
 //   - regIdentifier string
-//   - opts ...types.QueryOption
-func (_e *RegistryFinder_Expecter) FindByRootRef(ctx interface{}, rootParentRef interface{}, regIdentifier interface{}, opts ...interface{}) *RegistryFinder_FindByRootRef_Call {
-	return &RegistryFinder_FindByRootRef_Call{Call: _e.mock.On("FindByRootRef", append([]interface{}{ctx, rootParentRef, regIdentifier}, opts...)...)}
+func (_e *RegistryFinder_Expecter) FindByRootRef(ctx interface{}, rootParentRef interface{}, regIdentifier interface{}) *RegistryFinder_FindByRootRef_Call {
+	return &RegistryFinder_FindByRootRef_Call{Call: _e.mock.On("FindByRootRef", ctx, rootParentRef, regIdentifier)}
 }
 
 func (_c *RegistryFinder_FindByRootRef_Call) Run(run func(ctx context.Context, rootParentRef string, regIdentifier string)) *RegistryFinder_FindByRootRef_Call {

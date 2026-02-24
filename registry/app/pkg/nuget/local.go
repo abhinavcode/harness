@@ -99,11 +99,7 @@ func (c *localRegistry) ListPackageVersion(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (response *nugettype.PackageVersion, err error) {
-	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(
-		ctx,
-		info.RegistryID,
-		info.Image,
-	)
+	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -125,11 +121,7 @@ func (c *localRegistry) ListPackageVersionV2(
 	info nugettype.ArtifactInfo,
 ) (response *nugettype.FeedResponse, err error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(
-		ctx,
-		info.RegistryID,
-		info.Image,
-	)
+	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -144,14 +136,10 @@ func (c *localRegistry) CountPackageVersionV2(
 	ctx context.Context,
 	info nugettype.ArtifactInfo,
 ) (count int64, err error) {
-	count, err2 := c.artifactDao.CountByImageName(
-		ctx,
-		info.RegistryID,
-		info.Image,
-	)
-	if err2 != nil {
+	count, err = c.artifactDao.CountByImageName(ctx, info.RegistryID, info.Image)
+	if err != nil {
 		return 0, fmt.Errorf(
-			"failed to get artifacts count for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
+			"failed to get artifacts count for registry: %d and image: %s: %w", info.RegistryID, info.Image, err)
 	}
 	return count, nil
 }
@@ -173,16 +161,10 @@ func (c *localRegistry) SearchPackageV2(
 	searchTerm string, limit int, offset int,
 ) (*nugettype.FeedResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err := c.artifactDao.SearchByImageName(
-		ctx,
-		info.RegistryID,
-		strings.ToLower(searchTerm),
-		limit,
-		offset,
-	)
+	artifacts, err := c.artifactDao.SearchByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err)
+			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, searchTerm, err)
 	}
 	return createSearchV2Response(packageURL, artifacts, searchTerm, limit, offset)
 }
@@ -193,22 +175,12 @@ func (c *localRegistry) SearchPackage(
 	searchTerm string, limit int, offset int,
 ) (*nugettype.SearchResultResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err := c.artifactDao.SearchByImageName(
-		ctx,
-		info.RegistryID,
-		strings.ToLower(searchTerm),
-		limit,
-		offset,
-	)
+	artifacts, err := c.artifactDao.SearchByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm), limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err)
+			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, searchTerm, err)
 	}
-	count, err2 := c.artifactDao.CountByImageName(
-		ctx,
-		info.RegistryID,
-		strings.ToLower(searchTerm),
-	)
+	count, err2 := c.artifactDao.CountByImageName(ctx, info.RegistryID, strings.ToLower(searchTerm))
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts count for registry: %d and image: %s: %w",
@@ -222,11 +194,7 @@ func (c *localRegistry) GetPackageMetadata(
 	info nugettype.ArtifactInfo,
 ) (nugettype.RegistrationResponse, error) {
 	packageURL := c.urlProvider.PackageURL(ctx, info.RootIdentifier+"/"+info.RegIdentifier, "nuget")
-	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(
-		ctx,
-		info.RegistryID,
-		info.Image,
-	)
+	artifacts, err2 := c.artifactDao.GetByRegistryIDAndImage(ctx, info.RegistryID, info.Image)
 	if err2 != nil {
 		return nil, fmt.Errorf(
 			"failed to get artifacts for registry: %d and image: %s: %w", info.RegistryID, info.Image, err2)
@@ -312,12 +280,12 @@ func (c *localRegistry) UploadPackage(
 	info.Version = normalisedVersion
 	info.Metadata = metadata
 	if fileBundleType == SymbolsFile {
-		artifact, err3 := c.localBase.CheckIfVersionExists(ctx, info)
+		existingArtifact, err3 := c.localBase.CheckIfVersionExists(ctx, info)
 		if err3 != nil {
 			return headers, "", fmt.Errorf(
 				"failed to check package version existence for id: %s , version: %s "+
 					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
-		} else if artifact == nil {
+		} else if existingArtifact == nil {
 			return headers, "", fmt.Errorf(
 				"can't push symbol package as package doesn't exists for id: %s , version: %s "+
 					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)

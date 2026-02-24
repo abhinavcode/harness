@@ -50,7 +50,6 @@ type mockLocalBase struct {
 	checkIfVersionExists func(
 		ctx context.Context,
 		info pkg.PackageArtifactInfo,
-		opts ...types.QueryOption,
 	) (*types.Artifact, error)
 	download func(
 		ctx context.Context,
@@ -188,10 +187,9 @@ func (m *mockLocalBase) ExistsByFilePath(context.Context, int64, string) (bool, 
 func (m *mockLocalBase) CheckIfVersionExists(
 	ctx context.Context,
 	info pkg.PackageArtifactInfo,
-	opts ...types.QueryOption,
 ) (*types.Artifact, error) {
 	if m.checkIfVersionExists != nil {
-		return m.checkIfVersionExists(ctx, info, opts...)
+		return m.checkIfVersionExists(ctx, info)
 	}
 	return nil, nil //nolint:nilnil
 }
@@ -262,7 +260,7 @@ func (m *mockImageDAO) GetByUUID(context.Context, string) (*types.Image, error) 
 	return nil, nil //nolint:nilnil
 }
 
-func (m *mockImageDAO) Get(context.Context, int64, ...types.QueryOption) (*types.Image, error) {
+func (m *mockImageDAO) Get(context.Context, int64) (*types.Image, error) {
 	return nil, nil //nolint:nilnil
 }
 
@@ -276,22 +274,44 @@ func (m *mockImageDAO) GetByName(
 }
 
 //nolint:lll
-func (m *mockImageDAO) GetByNameAndType(context.Context, int64, string, *artifact.ArtifactType, ...types.QueryOption) (*types.Image, error) {
+func (m *mockImageDAO) GetByNameAndType(
+	context.Context,
+	int64,
+	string,
+	*artifact.ArtifactType,
+	...types.QueryOption,
+) (*types.Image, error) {
 	return nil, nil //nolint:nilnil
 }
 
 //nolint:lll
-func (m *mockImageDAO) GetLabelsByParentIDAndRepo(context.Context, int64, string, int, int, string, ...types.QueryOption) ([]string, error) {
+func (m *mockImageDAO) GetLabelsByParentIDAndRepo(
+	context.Context,
+	int64,
+	string,
+	int,
+	int,
+	string,
+) ([]string, error) {
 	return nil, nil //nolint:nilnil
 }
 
 //nolint:lll
-func (m *mockImageDAO) CountLabelsByParentIDAndRepo(context.Context, int64, string, string, ...types.QueryOption) (int64, error) {
+func (m *mockImageDAO) CountLabelsByParentIDAndRepo(
+	context.Context,
+	int64,
+	string,
+	string,
+) (int64, error) {
 	return 0, nil
 }
 
 //nolint:lll
-func (m *mockImageDAO) GetByRepoAndName(ctx context.Context, parentID int64, repo, name string, _ ...types.QueryOption) (*types.Image, error) {
+func (m *mockImageDAO) GetByRepoAndName(
+	ctx context.Context,
+	parentID int64,
+	repo, name string,
+) (*types.Image, error) {
 	return m.getByRepoAndName(ctx, parentID, repo, name)
 }
 func (m *mockImageDAO) CreateOrUpdate(context.Context, *types.Image) error             { return nil }
@@ -344,8 +364,7 @@ func (m *mockArtifactDAO) GetByName(
 	return m.getByName(ctx, imageID, version)
 }
 func (m *mockArtifactDAO) GetByRegistryImageAndVersion(
-	context.Context,
-	int64, string, string, ...types.QueryOption,
+	context.Context, int64, string, string,
 ) (*types.Artifact, error) {
 	return nil, nil //nolint:nilnil
 }
@@ -357,25 +376,22 @@ func (m *mockArtifactDAO) GetByRegistryImageVersionAndArtifactType(
 func (m *mockArtifactDAO) CreateOrUpdate(context.Context, *types.Artifact) (int64, error) {
 	return 0, nil
 }
-func (m *mockArtifactDAO) Count(context.Context, ...types.QueryOption) (int64, error) {
+func (m *mockArtifactDAO) Count(context.Context) (int64, error) {
 	return 0, nil
 }
 func (m *mockArtifactDAO) GetLatestArtifactMetadata(
-	context.Context,
-	int64, string, string, ...types.QueryOption,
+	context.Context, int64, string, string,
 ) (*types.ArtifactMetadata, error) {
 	return &types.ArtifactMetadata{}, nil
 }
 func (m *mockArtifactDAO) GetAllVersionsByRepoAndImage(
-	context.Context,
-	int64, string, string, string,
-	int, int, string, *artifact.ArtifactType, ...types.QueryOption,
+	context.Context, int64, string, string, string,
+	int, int, string, *artifact.ArtifactType,
 ) (*[]types.NonOCIArtifactMetadata, error) {
 	return &[]types.NonOCIArtifactMetadata{}, nil
 }
 func (m *mockArtifactDAO) CountAllVersionsByRepoAndImage(
-	context.Context,
-	int64, string, string, string, *artifact.ArtifactType, ...types.QueryOption,
+	context.Context, int64, string, string, string, *artifact.ArtifactType,
 ) (int64, error) {
 	return 0, nil
 }
@@ -389,8 +405,7 @@ func (m *mockArtifactDAO) UpdateArtifactMetadata(context.Context, json.RawMessag
 	return nil //nolint:nilnil
 }
 func (m *mockArtifactDAO) GetByRegistryIDAndImage(
-	ctx context.Context,
-	registryID int64, image string, _ ...types.QueryOption,
+	ctx context.Context, registryID int64, image string,
 ) (*[]types.Artifact, error) {
 	return m.getByRegistryIDAndImage(ctx, registryID, image)
 }
@@ -406,7 +421,7 @@ func (m *mockArtifactDAO) DeleteByImageNameAndRegistryID(context.Context, int64,
 func (m *mockArtifactDAO) DeleteByVersionAndImageName(context.Context, string, string, int64) error {
 	return nil //nolint:nilnil
 }
-func (m *mockArtifactDAO) GetLatestByImageID(context.Context, int64, ...types.QueryOption) (*types.Artifact, error) {
+func (m *mockArtifactDAO) GetLatestByImageID(context.Context, int64) (*types.Artifact, error) {
 	return nil, nil //nolint:nilnil
 }
 func (m *mockArtifactDAO) GetAllArtifactsByRepo(
@@ -422,47 +437,48 @@ func (m *mockArtifactDAO) GetArtifactsByRepoAndImageBatch(
 }
 
 func (m *mockArtifactDAO) SearchLatestByName(
-	ctx context.Context, regID int64, name string, limit int, offset int, _ ...types.QueryOption,
+	ctx context.Context, regID int64, name string, limit int, offset int,
 ) (*[]types.Artifact, error) {
 	return m.searchLatestByName(ctx, regID, name, limit, offset)
 }
 
 func (m *mockArtifactDAO) CountLatestByName(
-	ctx context.Context, regID int64, name string, _ ...types.QueryOption,
+	ctx context.Context, regID int64, name string,
 ) (int64, error) {
 	return m.countLatestByName(ctx, regID, name)
 }
 func (m *mockArtifactDAO) SearchByImageName(
-	context.Context, int64, string, int, int, ...types.QueryOption,
+	context.Context, int64, string, int, int,
 ) (*[]types.ArtifactMetadata, error) {
 	return &[]types.ArtifactMetadata{}, nil
 }
 
-func (m *mockArtifactDAO) CountByImageName(context.Context, int64, string, ...types.QueryOption) (int64, error) {
+func (m *mockArtifactDAO) CountByImageName(context.Context, int64, string) (int64, error) {
 	return 0, nil
 }
 
 func (m *mockArtifactDAO) GetAllArtifactsByParentID(
-	context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption,
+	context.Context, int64, *[]string, string, string, int, int, string, bool, []string,
 ) (*[]types.ArtifactMetadata, error) {
 	return &[]types.ArtifactMetadata{}, nil
 }
 
 func (m *mockArtifactDAO) CountAllArtifactsByParentID(
-	context.Context, int64, *[]string, string, bool, []string, ...types.QueryOption,
+	context.Context, int64, *[]string, string, bool, []string,
 ) (int64, error) {
 	return 0, nil
 }
 
 func (m *mockArtifactDAO) GetArtifactsByRepo(
 	//nolint:lll
-	context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption,
+	context.Context, int64, string, string, string,
+	int, int, string, []string, *artifact.ArtifactType,
 ) (*[]types.ArtifactMetadata, error) {
 	return &[]types.ArtifactMetadata{}, nil
 }
 
 func (m *mockArtifactDAO) CountArtifactsByRepo(
-	context.Context, int64, string, string, []string, *artifact.ArtifactType, ...types.QueryOption,
+	context.Context, int64, string, string, []string, *artifact.ArtifactType,
 ) (int64, error) {
 	return 0, nil
 }
@@ -570,7 +586,6 @@ func TestHeadAndDownloadAndDeleteDelegation(t *testing.T) {
 		checkIfVersionExists: func(
 			_ context.Context,
 			_ pkg.PackageArtifactInfo,
-			_ ...types.QueryOption,
 		) (*types.Artifact, error) {
 			return &types.Artifact{ID: 1}, nil
 		},
@@ -604,7 +619,10 @@ func TestListTags(t *testing.T) {
 	info := sampleArtifactInfo()
 	tags := []*types.PackageTagMetadata{{Name: "latest", Version: "1.0.0"}, {Name: "beta", Version: "2.0.0"}}
 	tdao := &mockTagsDAO{
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) (
+			[]*types.PackageTagMetadata,
+			error,
+		) {
 			return tags, nil
 		},
 	}
@@ -637,7 +655,10 @@ func TestAddTag_Success(t *testing.T) {
 			created = true
 			return tag.ID, nil
 		},
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) (
+			[]*types.PackageTagMetadata,
+			error,
+		) {
 			return []*types.PackageTagMetadata{{Name: "latest", Version: info.Version}}, nil
 		},
 	}
@@ -701,7 +722,10 @@ func TestDeleteTag_Success(t *testing.T) {
 			deleted = true
 			return nil
 		},
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) (
+			[]*types.PackageTagMetadata,
+			error,
+		) {
 			return []*types.PackageTagMetadata{}, nil
 		},
 	}
@@ -732,7 +756,10 @@ func TestGetPackageMetadata_Success(t *testing.T) {
 		},
 	}
 	tdao := &mockTagsDAO{
-		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) ([]*types.PackageTagMetadata, error) {
+		findByImageNameAndRegID: func(_ context.Context, _ string, _ int64, _ *string) (
+			[]*types.PackageTagMetadata,
+			error,
+		) {
 			return []*types.PackageTagMetadata{{Name: "latest", Version: "1.0.0"}}, nil
 		},
 	}

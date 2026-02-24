@@ -396,14 +396,13 @@ func (t tagDao) GetAllArtifactsByParentID(
 	search string,
 	latestVersion bool,
 	packageTypes []string,
-	opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	q1 := t.GetAllArtifactOnParentIDQueryForNonOCI(
-		parentID, latestVersion, registryIDs, packageTypes, search, false, opts...,
+		parentID, latestVersion, registryIDs, packageTypes, search, false,
 	)
 
 	q2 := t.GetAllArtifactsQueryByParentIDForOCI(
-		parentID, latestVersion, registryIDs, packageTypes, search, opts...,
+		parentID, latestVersion, registryIDs, packageTypes, search,
 	)
 
 	q1SQL, q1Args, err := q1.ToSql()
@@ -452,9 +451,8 @@ func (t tagDao) GetAllArtifactsByParentID(
 
 func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 	parentID int64, latestVersion bool, registryIDs *[]string,
-	packageTypes []string, search string, opts ...types.QueryOption,
+	packageTypes []string, search string,
 ) sq.SelectBuilder {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	// TODO: update query to return correct artifact uuid
 	q2 := databaseg.Builder.Select(
 		`r.registry_name as repo_name,
@@ -494,18 +492,8 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 		baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
 			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 			JOIN registries r ON t.tag_registry_id = r.registry_id`
-		var joinClause string
-		whereClause := " WHERE r.registry_parent_id = ?"
-		switch deleteFilter {
-		case types.DeleteFilterExcludeDeleted:
-			joinClause = joinTagsWithImages
-			whereClause += whereImageDeletedAtIsNull
-		case types.DeleteFilterOnlyDeleted:
-			joinClause = joinTagsWithImages
-			whereClause += whereImageDeletedAtIsNotNull
-		case types.DeleteFilterIncludeDeleted:
-			// No filtering
-		}
+		joinClause := joinTagsWithImages
+		whereClause := " WHERE r.registry_parent_id = ?" + whereImageDeletedAtIsNull
 		rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 		q2 = q2.Join(rowNumSubquery+` ON t.tag_id = a.id`, parentID).Where("a.rank = 1")
 	}
@@ -522,14 +510,7 @@ func (t tagDao) GetAllArtifactsQueryByParentIDForOCI(
 		q2 = q2.Where("t.tag_image_name LIKE ?", sqlPartialMatch(search))
 	}
 
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q2 = q2.Where("i.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q2 = q2.Where("i.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q2 = q2.Where("i.image_deleted_at IS NULL")
 
 	return q2
 }
@@ -544,11 +525,10 @@ func (t tagDao) GetAllArtifactsByParentIDUntagged(
 	offset int,
 	search string,
 	packageTypes []string,
-	opts ...types.QueryOption,
 ) (*[]types.ArtifactMetadata, error) {
 	// Query 1: Get core artifact data with pagination
 	coreQuery := t.getCoreArtifactsQuery(
-		parentID, registryIDs, packageTypes, search, sortByField, sortByOrder, limit, offset, opts...)
+		parentID, registryIDs, packageTypes, search, sortByField, sortByOrder, limit, offset)
 
 	coreSQL, coreArgs, err := coreQuery.ToSql()
 	if err != nil {
@@ -600,9 +580,7 @@ func (t tagDao) getCoreArtifactsQuery(
 	sortByOrder string,
 	limit int,
 	offset int,
-	opts ...types.QueryOption,
 ) sq.SelectBuilder {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	query := databaseg.Builder.Select(
 		`ar.artifact_id,
 		ar.artifact_uuid as uuid,
@@ -620,17 +598,8 @@ func (t tagDao) getCoreArtifactsQuery(
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_parent_id = ?", parentID)
-
-	// Apply soft delete filtering
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		query = query.Where("ar.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		query = query.Where("ar.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("r.registry_parent_id = ?", parentID).
+		Where("ar.artifact_deleted_at IS NULL")
 
 	// Apply filters
 	if len(*registryIDs) > 0 {
@@ -816,9 +785,8 @@ func (t tagDao) getArtifactEnrichmentData(ctx context.Context, artifactIDs []int
 
 func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 	parentID int64, latestVersion bool, registryIDs *[]string,
-	packageTypes []string, search string, queryTags bool, opts ...types.QueryOption,
+	packageTypes []string, search string, queryTags bool,
 ) sq.SelectBuilder {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	suffix := " "
 	if queryTags {
 		suffix = ", NULL AS tags "
@@ -863,15 +831,7 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 			ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
 			JOIN images i ON i.image_id = ar.artifact_image_id 
 			JOIN registries r ON i.image_registry_id = r.registry_id 
-			WHERE r.registry_parent_id = ?`
-		switch deleteFilter {
-		case types.DeleteFilterExcludeDeleted:
-			baseSubquery += " AND ar.artifact_deleted_at IS NULL"
-		case types.DeleteFilterOnlyDeleted:
-			baseSubquery += " AND ar.artifact_deleted_at IS NOT NULL"
-		case types.DeleteFilterIncludeDeleted:
-			// No filtering
-		}
+			WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL`
 		rowNumSubquery := baseSubquery + `) AS a`
 		q1 = q1.Join(rowNumSubquery+` ON ar.artifact_id = a.id`, parentID).Where("a.rank = 1")
 	}
@@ -888,14 +848,7 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 		q1 = q1.Where("i.image_name LIKE ?", sqlPartialMatch(search))
 	}
 
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q1 = q1.Where("ar.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q1 = q1.Where("ar.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering - return everything
-	}
+	q1 = q1.Where("ar.artifact_deleted_at IS NULL")
 
 	return q1
 }
@@ -903,9 +856,7 @@ func (t tagDao) GetAllArtifactOnParentIDQueryForNonOCI(
 func (t tagDao) CountAllOCIArtifactsByParentID(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, latestVersion bool, packageTypes []string,
-	opts ...types.QueryOption,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	// nolint:goconst
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("tags t").
@@ -920,18 +871,8 @@ func (t tagDao) CountAllOCIArtifactsByParentID(
 		baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
 			ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 			JOIN registries r ON t.tag_registry_id = r.registry_id`
-		var joinClause string
-		whereClause := " WHERE r.registry_parent_id = ?"
-		switch deleteFilter {
-		case types.DeleteFilterExcludeDeleted:
-			joinClause = joinTagsWithImages
-			whereClause += whereImageDeletedAtIsNull
-		case types.DeleteFilterOnlyDeleted:
-			joinClause = joinTagsWithImages
-			whereClause += whereImageDeletedAtIsNotNull
-		case types.DeleteFilterIncludeDeleted:
-			// No filtering
-		}
+		joinClause := joinTagsWithImages
+		whereClause := " WHERE r.registry_parent_id = ?" + whereImageDeletedAtIsNull
 		rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 		q = q.Join(rowNumSubquery+` ON t.tag_id = a.id`, parentID).Where("a.rank = 1")
 	}
@@ -947,14 +888,7 @@ func (t tagDao) CountAllOCIArtifactsByParentID(
 		q = q.Where(sq.Eq{"registry_package_type": packageTypes})
 	}
 
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("ar.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("ar.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q = q.Where("ar.image_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -973,13 +907,11 @@ func (t tagDao) CountAllOCIArtifactsByParentID(
 func (t tagDao) CountAllArtifactsByParentID(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, latestVersion bool, packageTypes []string, untaggedImagesEnabled bool,
-	opts ...types.QueryOption,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	if untaggedImagesEnabled {
 		// Use the new unified count function for all artifacts
 		return t.CountAllArtifactsByParentIDUntagged(
-			ctx, parentID, registryIDs, search, latestVersion, packageTypes, opts...,
+			ctx, parentID, registryIDs, search, latestVersion, packageTypes,
 		)
 	}
 
@@ -987,32 +919,15 @@ func (t tagDao) CountAllArtifactsByParentID(
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_parent_id = ? AND r.registry_package_type NOT IN ('DOCKER', 'HELM')", parentID)
-
-	// Apply soft delete filtering
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("ar.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("ar.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("r.registry_parent_id = ? AND r.registry_package_type NOT IN ('DOCKER', 'HELM')", parentID).
+		Where("ar.artifact_deleted_at IS NULL")
 
 	if latestVersion {
 		baseSubquery := `(SELECT ar.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY ar.artifact_image_id 
 			ORDER BY ar.artifact_updated_at DESC) AS rank FROM artifacts ar 
 			JOIN images i ON i.image_id = ar.artifact_image_id 
 			JOIN registries r ON i.image_registry_id = r.registry_id 
-			WHERE r.registry_parent_id = ?`
-		switch deleteFilter {
-		case types.DeleteFilterExcludeDeleted:
-			baseSubquery += " AND ar.artifact_deleted_at IS NULL"
-		case types.DeleteFilterOnlyDeleted:
-			baseSubquery += " AND ar.artifact_deleted_at IS NOT NULL"
-		case types.DeleteFilterIncludeDeleted:
-			// No filtering
-		}
+			WHERE r.registry_parent_id = ? AND ar.artifact_deleted_at IS NULL`
 		rowNumSubquery := baseSubquery + `) AS a`
 		q = q.Join(rowNumSubquery+` ON ar.artifact_id = a.id`, parentID).Where("a.rank = 1")
 	}
@@ -1043,7 +958,7 @@ func (t tagDao) CountAllArtifactsByParentID(
 
 	var ociCount int64
 	ociCount, err = t.CountAllOCIArtifactsByParentID(ctx, parentID, registryIDs, search,
-		latestVersion, packageTypes, opts...)
+		latestVersion, packageTypes)
 	if err != nil {
 		return 0, databaseg.ProcessSQLErrorf(ctx, err, "Failed executing count query")
 	}
@@ -1054,24 +969,13 @@ func (t tagDao) CountAllArtifactsByParentID(
 func (t tagDao) CountAllArtifactsByParentIDUntagged(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, _ bool, packageTypes []string,
-	opts ...types.QueryOption,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	query := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts ar").
 		Join("images i ON i.image_id = ar.artifact_image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_parent_id = ?", parentID)
-
-	// Apply soft delete filtering
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		query = query.Where("ar.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		query = query.Where("ar.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("r.registry_parent_id = ?", parentID).
+		Where("ar.artifact_deleted_at IS NULL")
 
 	// Apply filters
 	if len(*registryIDs) > 0 {
@@ -1426,24 +1330,13 @@ func (t tagDao) GetLatestTag(ctx context.Context, repoID int64, imageName string
 func (t tagDao) GetAllArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey string,
 	sortByField string, sortByOrder string, limit int, offset int, search string,
-	labels []string, opts ...types.QueryOption,
+	labels []string,
 ) (*[]types.ArtifactMetadata, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
 		ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 		JOIN registries r ON t.tag_registry_id = r.registry_id`
-	var joinClause string
-	whereClause := " WHERE r.registry_parent_id = ? AND r.registry_name = ?"
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		joinClause = joinTagsWithImages
-		whereClause += " AND i.image_deleted_at IS NULL"
-	case types.DeleteFilterOnlyDeleted:
-		joinClause = joinTagsWithImages
-		whereClause += " AND i.image_deleted_at IS NOT NULL"
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	joinClause := joinTagsWithImages
+	whereClause := " WHERE r.registry_parent_id = ? AND r.registry_name = ? AND i.image_deleted_at IS NULL"
 	rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 
 	q := databaseg.Builder.Select(
@@ -1483,14 +1376,7 @@ func (t tagDao) GetAllArtifactsByRepo(
 		q = q.Where("'^_' || ar.image_labels || '^_' LIKE ?", labelsVal)
 	}
 
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("ar.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("ar.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q = q.Where("ar.image_deleted_at IS NULL")
 
 	sortField := "t.tag_" + sortByField
 	if sortByField == downloadCount {
@@ -1515,24 +1401,13 @@ func (t tagDao) GetAllArtifactsByRepo(
 // nolint:goconst
 func (t tagDao) CountAllArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey string,
-	search string, labels []string, opts ...types.QueryOption,
+	search string, labels []string,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	baseSubquery := `(SELECT t.tag_id as id, ROW_NUMBER() OVER (PARTITION BY t.tag_registry_id, t.tag_image_name 
 		ORDER BY t.tag_updated_at DESC) AS rank FROM tags t 
 		JOIN registries r ON t.tag_registry_id = r.registry_id`
-	var joinClause string
-	whereClause := " WHERE r.registry_parent_id = ? AND r.registry_name = ?"
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		joinClause = joinTagsWithImages
-		whereClause += " AND i.image_deleted_at IS NULL"
-	case types.DeleteFilterOnlyDeleted:
-		joinClause = joinTagsWithImages
-		whereClause += " AND i.image_deleted_at IS NOT NULL"
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	joinClause := joinTagsWithImages
+	whereClause := " WHERE r.registry_parent_id = ? AND r.registry_name = ? AND i.image_deleted_at IS NULL"
 	rowNumSubquery := baseSubquery + joinClause + whereClause + `) AS a`
 
 	q := databaseg.Builder.Select("COUNT(*)").
@@ -1543,7 +1418,8 @@ func (t tagDao) CountAllArtifactsByRepo(
 			"images ar ON ar.image_registry_id = t.tag_registry_id AND" +
 				" ar.image_name = t.tag_image_name",
 		).
-		Where("a.rank = 1 ")
+		Where("a.rank = 1 ").
+		Where("ar.image_deleted_at IS NULL")
 
 	if search != "" {
 		q = q.Where("tag_image_name LIKE ?", sqlPartialMatch(search))
@@ -1554,15 +1430,6 @@ func (t tagDao) CountAllArtifactsByRepo(
 		labelsVal := util.GetEmptySQLString(util.ArrToString(labels))
 		labelsVal.String = labelSeparatorStart + labelsVal.String + labelSeparatorEnd
 		q = q.Where("'^_' || ar.image_labels || '^_' LIKE ?", labelsVal)
-	}
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("ar.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("ar.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
 	}
 
 	sql, args, err := q.ToSql()

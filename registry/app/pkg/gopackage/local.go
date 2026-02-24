@@ -40,7 +40,6 @@ import (
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/services/webhook"
-	registrytypes "github.com/harness/gitness/registry/types"
 	gitnessstore "github.com/harness/gitness/store"
 	"github.com/harness/gitness/store/database/dbtx"
 )
@@ -103,7 +102,7 @@ func (c *localRegistry) UploadPackage(
 	ctx context.Context, info gopackagetype.ArtifactInfo,
 	modfile io.ReadCloser, zipfile io.ReadCloser,
 ) (*commons.ResponseHeaders, error) {
-	existingArtifact, err := c.localBase.CheckIfVersionExists(ctx, info, registrytypes.WithAllDeleted())
+	existingArtifact, err := c.localBase.CheckIfVersionExists(ctx, info)
 	if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 		return nil, fmt.Errorf("failed to check if version exists: %w", err)
 	}
@@ -252,11 +251,6 @@ func (c *localRegistry) DownloadPackageLatestVersionInfo(
 	artifact, err := c.artifactDao.GetLatestByImageID(ctx, image.ID)
 	if err != nil {
 		return nil, nil, nil, "", fmt.Errorf("failed to get latest artifact: %w", err)
-	}
-
-	// If no artifacts found, return error
-	if artifact == nil {
-		return nil, nil, nil, "", fmt.Errorf("no artifacts found for image")
 	}
 
 	info.Version = artifact.Version

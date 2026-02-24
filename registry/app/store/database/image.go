@@ -65,20 +65,11 @@ type imageLabelDB struct {
 	Labels sql.NullString `db:"labels"`
 }
 
-func (i ImageDao) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
+func (i ImageDao) Get(ctx context.Context, id int64) (*types.Image, error) {
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images i").
-		Where("i.image_id = ?", id)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("i.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("i.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filter
-	}
+		Where("i.image_id = ?", id).
+		Where("i.image_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -281,25 +272,16 @@ func (i ImageDao) CreateOrUpdate(ctx context.Context, image *types.Image) error 
 
 func (i ImageDao) GetLabelsByParentIDAndRepo(
 	ctx context.Context, parentID int64, repo string,
-	limit int, offset int, search string, opts ...types.QueryOption,
+	limit int, offset int, search string,
 ) (labels []string, err error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select("a.image_labels as labels").
 		From("images a").
 		Join("registries r ON r.registry_id = a.image_registry_id").
-		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repo)
+		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repo).
+		Where("a.image_deleted_at IS NULL")
 
 	if search != "" {
 		q = q.Where("a.image_labels LIKE ?", "%"+search+"%")
-	}
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
 	}
 
 	q = q.OrderBy("a.image_labels ASC").
@@ -323,25 +305,16 @@ func (i ImageDao) GetLabelsByParentIDAndRepo(
 
 func (i ImageDao) CountLabelsByParentIDAndRepo(
 	ctx context.Context, parentID int64, repo,
-	search string, opts ...types.QueryOption,
+	search string,
 ) (count int64, err error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select("a.image_labels as labels").
 		From("images a").
 		Join("registries r ON r.registry_id = a.image_registry_id").
-		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repo)
+		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repo).
+		Where("a.image_deleted_at IS NULL")
 
 	if search != "" {
 		q = q.Where("a.image_labels LIKE ?", "%"+search+"%")
-	}
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
 	}
 
 	sql, args, err := q.ToSql()
@@ -362,23 +335,14 @@ func (i ImageDao) CountLabelsByParentIDAndRepo(
 
 func (i ImageDao) GetByRepoAndName(
 	ctx context.Context, parentID int64,
-	repo string, name string, opts ...types.QueryOption,
+	repo string, name string,
 ) (*types.Image, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images a").
 		Join(" registries r ON r.registry_id = a.image_registry_id").
 		Where("r.registry_parent_id = ? AND r.registry_name = ? AND a.image_name = ?",
-			parentID, repo, name)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.image_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.image_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+			parentID, repo, name).
+		Where("a.image_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {

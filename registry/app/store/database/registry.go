@@ -187,19 +187,10 @@ func (r registryDao) GetByRootParentIDAndName(
 	return r.mapToRegistry(ctx, dst)
 }
 
-func (r registryDao) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
+func (r registryDao) Count(ctx context.Context) (int64, error) {
 	stmt := databaseg.Builder.Select("COUNT(*)").
-		From("registries")
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		From("registries").
+		Where("registry_deleted_at IS NULL")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {
@@ -222,21 +213,11 @@ func (r registryDao) CountAll(
 	packageTypes []string,
 	search string,
 	repoType string,
-	opts ...types.QueryOption,
 ) (count int64, err error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("registries").
-		Where(sq.Eq{"registry_parent_id": parentIDs})
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		stmt = stmt.Where("registry_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		stmt = stmt.Where("registry_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where(sq.Eq{"registry_parent_id": parentIDs}).
+		Where("registry_deleted_at IS NULL")
 
 	if !commons.IsEmpty(search) {
 		stmt = stmt.Where("registry_name LIKE ?", "%"+search+"%")
@@ -372,9 +353,7 @@ func (r registryDao) GetAll(
 	offset int,
 	search string,
 	repoType string,
-	opts ...types.QueryOption,
 ) (repos *[]store.RegistryMetadata, err error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	if limit < 0 || offset < 0 {
 		return nil, fmt.Errorf("limit and offset must be non-negative")
 	}
@@ -400,17 +379,8 @@ func (r registryDao) GetAll(
 		Select(selectFields).
 		From("registries r").
 		LeftJoin("upstream_proxy_configs u ON r.registry_id = u.upstream_proxy_config_registry_id").
-		Where(sq.Eq{"r.registry_parent_id": parentIDs})
-
-	// Apply soft delete filter for registries
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		query = query.Where("r.registry_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		query = query.Where("r.registry_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filter - include all
-	}
+		Where(sq.Eq{"r.registry_parent_id": parentIDs}).
+		Where("r.registry_deleted_at IS NULL")
 
 	// Apply search filter
 	if search != "" {
@@ -471,12 +441,12 @@ func (r registryDao) GetAll(
 	}
 
 	// Fetch aggregate data sequentially with soft delete filtering
-	artifactCounts, err := r.fetchArtifactCounts(ctx, registryIDs, opts...)
+	artifactCounts, err := r.fetchArtifactCounts(ctx, registryIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch artifact counts: %w", err)
 	}
 
-	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs, opts...)
+	ociSizes, err := r.fetchOCIBlobSizes(ctx, registryIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OCI blob sizes: %w", err)
 	}
@@ -519,30 +489,18 @@ func (r registryDao) GetAll(
 
 // fetchArtifactCounts fetches artifact counts for given registry IDs with soft delete filtering.
 func (r registryDao) fetchArtifactCounts(
-	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
+	ctx context.Context, registryIDs []int64,
 ) (map[int64]int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
-	// Build soft delete filter clause
-	var softDeleteClause string
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		softDeleteClause = " AND image_deleted_at IS NULL"
-	case types.DeleteFilterOnlyDeleted:
-		softDeleteClause = " AND image_deleted_at IS NOT NULL"
-	case types.DeleteFilterIncludeDeleted:
-		softDeleteClause = ""
-	}
-
-	query := fmt.Sprintf(`
+	query := `
 		SELECT image_registry_id, COUNT(image_id) AS count
 		FROM images
-		WHERE image_registry_id IN (?) %s
+		WHERE image_registry_id IN (?) AND image_deleted_at IS NULL
 		GROUP BY image_registry_id
-	`, softDeleteClause)
+	`
 
 	db := dbtx.GetAccessor(ctx, r.db)
 	sql, args, err := sqlx.In(query, registryIDs)
@@ -570,35 +528,21 @@ func (r registryDao) fetchArtifactCounts(
 
 // fetchOCIBlobSizes fetches OCI blob sizes for given registry IDs with soft delete filtering.
 func (r registryDao) fetchOCIBlobSizes(
-	ctx context.Context, registryIDs []int64, opts ...types.QueryOption,
+	ctx context.Context, registryIDs []int64,
 ) (map[int64]int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	if len(registryIDs) == 0 {
 		return make(map[int64]int64), nil
 	}
 
 	// Build query with deduplication (same blob shared across multiple images)
-	baseQuery := `
+	query := `
 		SELECT unique_blobs.rblob_registry_id, COALESCE(SUM(unique_blobs.blob_size), 0) AS total_size
 		FROM (
 			SELECT rb.rblob_registry_id, rb.rblob_blob_id, MAX(b.blob_size) AS blob_size
 			FROM registry_blobs rb
 			LEFT JOIN blobs b ON rb.rblob_blob_id = b.blob_id
 			LEFT JOIN images i ON i.image_registry_id = rb.rblob_registry_id AND i.image_name = rb.rblob_image_name
-			WHERE rb.rblob_registry_id IN (?)`
-
-	var filterCondition string
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		filterCondition = " AND (i.image_id IS NULL OR i.image_deleted_at IS NULL)"
-	case types.DeleteFilterOnlyDeleted:
-		filterCondition = " AND (i.image_id IS NOT NULL AND i.image_deleted_at IS NOT NULL)"
-	case types.DeleteFilterIncludeDeleted:
-		// No filter - include all
-		filterCondition = ""
-	}
-
-	query := baseQuery + filterCondition + `
+			WHERE rb.rblob_registry_id IN (?) AND (i.image_id IS NULL OR i.image_deleted_at IS NULL)
 			GROUP BY rb.rblob_registry_id, rb.rblob_blob_id
 		) AS unique_blobs
 		GROUP BY unique_blobs.rblob_registry_id
@@ -1091,26 +1035,4 @@ func (r registryDao) UpdateParentSpace(ctx context.Context, srcSpaceID int64, ta
 	}
 
 	return rowsAffected, nil
-}
-
-// GetDistinctAccountIDs returns a list of distinct account space UIDs that have registries.
-func (r registryDao) GetDistinctAccountIDs(ctx context.Context) ([]string, error) {
-	stmt := databaseg.Builder.
-		Select("DISTINCT s.space_uid").
-		From("registries r").
-		Join("spaces s ON r.registry_root_parent_id = s.space_id").
-		Where(sq.NotEq{"r.registry_root_parent_id": nil})
-
-	sql, args, err := stmt.ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert get distinct account IDs query to sql: %w", err)
-	}
-
-	db := dbtx.GetAccessor(ctx, r.db)
-	var accountIDs []string
-	if err = db.SelectContext(ctx, &accountIDs, sql, args...); err != nil {
-		return nil, databaseg.ProcessSQLErrorf(ctx, err, "failed to get distinct account IDs")
-	}
-
-	return accountIDs, nil
 }

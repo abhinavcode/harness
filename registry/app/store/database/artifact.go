@@ -141,22 +141,13 @@ func (a ArtifactDao) GetByName(
 }
 
 func (a ArtifactDao) GetByRegistryImageAndVersion(
-	ctx context.Context, registryID int64, image string, version string, opts ...types.QueryOption,
+	ctx context.Context, registryID int64, image string, version string,
 ) (*types.Artifact, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Where("i.image_registry_id = ? AND i.image_name = ? AND a.artifact_version = ?", registryID, image, version)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("i.image_registry_id = ? AND i.image_name = ? AND a.artifact_version = ?", registryID, image, version).
+		Where("a.artifact_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -200,25 +191,16 @@ func (a ArtifactDao) GetByRegistryImageVersionAndArtifactType(
 
 // GetByRegistryIDAndImage gets artifacts by registry and image with soft delete filtering.
 func (a ArtifactDao) GetByRegistryIDAndImage(
-	ctx context.Context, registryID int64, image string, opts ...types.QueryOption,
+	ctx context.Context, registryID int64, image string,
 ) (
 	*[]types.Artifact,
 	error,
 ) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Where("i.image_registry_id = ? AND i.image_name = ? AND i.image_type IS NULL", registryID, image)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("i.image_registry_id = ? AND i.image_name = ? AND i.image_type IS NULL", registryID, image).
+		Where("a.artifact_deleted_at IS NULL")
 
 	q = q.OrderBy("a.artifact_created_at DESC")
 
@@ -248,21 +230,12 @@ func (a ArtifactDao) GetByRegistryIDAndImage(
 }
 
 func (a ArtifactDao) GetLatestByImageID(
-	ctx context.Context, imageID int64, opts ...types.QueryOption,
+	ctx context.Context, imageID int64,
 ) (*types.Artifact, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(artifactDB{}), ",")).
 		From("artifacts a").
-		Where("a.artifact_image_id = ?", imageID)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("a.artifact_image_id = ?", imageID).
+		Where("a.artifact_deleted_at IS NULL")
 
 	q = q.OrderBy("a.artifact_updated_at DESC").Limit(1)
 
@@ -348,19 +321,10 @@ func (a ArtifactDao) CreateOrUpdate(ctx context.Context, artifact *types.Artifac
 	return artifact.ID, nil
 }
 
-func (a ArtifactDao) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
+func (a ArtifactDao) Count(ctx context.Context) (int64, error) {
 	stmt := databaseg.Builder.Select("COUNT(*)").
-		From("artifacts a")
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		stmt = stmt.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		stmt = stmt.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		From("artifacts a").
+		Where("a.artifact_deleted_at IS NULL")
 
 	sql, args, err := stmt.ToSql()
 	if err != nil {
@@ -516,9 +480,8 @@ func (a ArtifactDao) mapArtifactDB(_ context.Context, dst *artifactDB) (*types.A
 }
 
 func (a ArtifactDao) SearchLatestByName(
-	ctx context.Context, regID int64, name string, limit int, offset int, opts ...types.QueryOption,
+	ctx context.Context, regID int64, name string, limit int, offset int,
 ) (*[]types.Artifact, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	subQuery := `
 	SELECT artifact_image_id, MAX(artifact_created_at) AS max_created_at
 	FROM artifacts
@@ -532,16 +495,8 @@ func (a ArtifactDao) SearchLatestByName(
 	ON a.artifact_image_id = latest.artifact_image_id
 	AND a.artifact_created_at = latest.max_created_at
 `, subQuery)).
-		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID).
+		Where("a.artifact_deleted_at IS NULL")
 
 	q = q.Limit(util.SafeIntToUInt64(limit)).
 		Offset(util.SafeIntToUInt64(offset))
@@ -570,25 +525,15 @@ func (a ArtifactDao) SearchLatestByName(
 }
 
 func (a ArtifactDao) CountLatestByName(
-	ctx context.Context, regID int64, name string, opts ...types.QueryOption,
+	ctx context.Context, regID int64, name string,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
-
 	// Count distinct images that have artifacts matching the name pattern
 	q := databaseg.Builder.
-		Select("COUNT(DISTINCT i.image_id)").
+		Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON a.artifact_image_id = i.image_id").
-		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("i.image_name LIKE ? AND i.image_registry_id = ?", "%"+name+"%", regID).
+		Where("a.artifact_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -607,9 +552,8 @@ func (a ArtifactDao) CountLatestByName(
 
 func (a ArtifactDao) SearchByImageName(
 	ctx context.Context, regID int64, name string,
-	limit int, offset int, opts ...types.QueryOption,
+	limit int, offset int,
 ) (*[]types.ArtifactMetadata, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select(
 		`i.image_name as name,
         a.artifact_id as artifact_id, a.artifact_version as version, a.artifact_metadata as metadata,
@@ -621,15 +565,7 @@ func (a ArtifactDao) SearchByImageName(
 	if name != "" {
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
 	}
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q = q.Where("a.artifact_deleted_at IS NULL")
 
 	q = q.OrderBy("i.image_name ASC, a.artifact_version ASC").
 		Limit(util.SafeIntToUInt64(limit)).
@@ -650,9 +586,8 @@ func (a ArtifactDao) SearchByImageName(
 }
 
 func (a ArtifactDao) CountByImageName(
-	ctx context.Context, regID int64, name string, opts ...types.QueryOption,
+	ctx context.Context, regID int64, name string,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.
 		Select("COUNT(*)").
 		From("artifacts a").
@@ -661,15 +596,7 @@ func (a ArtifactDao) CountByImageName(
 	if name != "" {
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(name))
 	}
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q = q.Where("a.artifact_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -690,20 +617,9 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, sortByField string,
 	sortByOrder string, limit int, offset int, search string,
-	latestVersion bool, packageTypes []string, opts ...types.QueryOption,
+	latestVersion bool, packageTypes []string,
 ) (*[]types.ArtifactMetadata, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
-
-	// Build soft delete filter clause
-	var softDeleteClause string
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		softDeleteClause = " AND a.artifact_deleted_at IS NULL"
-	case types.DeleteFilterOnlyDeleted:
-		softDeleteClause = " AND a.artifact_deleted_at IS NOT NULL"
-	case types.DeleteFilterIncludeDeleted:
-		softDeleteClause = ""
-	}
+	softDeleteClause := " AND a.artifact_deleted_at IS NULL"
 
 	// Build download count subquery - per artifact, with soft delete filter
 	downloadCountSubquery := fmt.Sprintf(`( SELECT a.artifact_id, COUNT(d.download_stat_id) as download_count 
@@ -752,14 +668,7 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 		q = q.Where("i.image_name LIKE ?", sqlPartialMatch(search))
 	}
 
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q = q.Where("a.artifact_deleted_at IS NULL")
 
 	sortField := "i." + sortByField
 	if sortByField == downloadCount {
@@ -784,9 +693,7 @@ func (a ArtifactDao) GetAllArtifactsByParentID(
 func (a ArtifactDao) CountAllArtifactsByParentID(
 	ctx context.Context, parentID int64,
 	registryIDs *[]string, search string, latestVersion bool, packageTypes []string,
-	opts ...types.QueryOption,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	// nolint:goconst
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
@@ -795,20 +702,12 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 		Where("r.registry_parent_id = ?", parentID)
 
 	if latestVersion {
+		whereClause := " AND t.artifact_deleted_at IS NULL"
 		baseSubquery := `(SELECT t.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY t.artifact_image_id
 			ORDER BY t.artifact_updated_at DESC) AS rank FROM artifacts t 
 			JOIN images i ON t.artifact_image_id = i.image_id
 			JOIN registries r ON i.image_registry_id = r.registry_id
 			WHERE r.registry_parent_id = ?`
-		var whereClause string
-		switch deleteFilter {
-		case types.DeleteFilterExcludeDeleted:
-			whereClause = " AND t.artifact_deleted_at IS NULL"
-		case types.DeleteFilterOnlyDeleted:
-			whereClause = " AND t.artifact_deleted_at IS NOT NULL"
-		case types.DeleteFilterIncludeDeleted:
-			whereClause = ""
-		}
 		rowNumSubquery := baseSubquery + whereClause + `) AS a1`
 		q = q.Join(rowNumSubquery+` ON a.artifact_id = a1.id`, parentID).Where("a1.rank = 1")
 	}
@@ -825,14 +724,7 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 		q = q.Where(sq.Eq{"r.registry_package_type": packageTypes})
 	}
 
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q = q.Where("a.artifact_deleted_at IS NULL")
 
 	sql, args, err := q.ToSql()
 	if err != nil {
@@ -851,20 +743,9 @@ func (a ArtifactDao) CountAllArtifactsByParentID(
 func (a ArtifactDao) GetArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string,
 	limit int, offset int, search string, labels []string,
-	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+	artifactType *artifact.ArtifactType,
 ) (*[]types.ArtifactMetadata, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
-
-	// Build soft delete filter clause
-	var softDeleteClause string
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		softDeleteClause = " AND a.artifact_deleted_at IS NULL"
-	case types.DeleteFilterOnlyDeleted:
-		softDeleteClause = " AND a.artifact_deleted_at IS NOT NULL"
-	case types.DeleteFilterIncludeDeleted:
-		softDeleteClause = ""
-	}
+	softDeleteClause := " AND a.artifact_deleted_at IS NULL"
 
 	// Build rank subquery with soft delete filter
 	rankSubquery := fmt.Sprintf(`(SELECT a.artifact_id as id, ROW_NUMBER() OVER (PARTITION BY a.artifact_image_id 
@@ -910,15 +791,7 @@ func (a ArtifactDao) GetArtifactsByRepo(
 		q = q.Where("'^_' || i.image_labels || '^_' LIKE ?", labelsVal)
 	}
 
-	// Apply soft delete filter
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering - include all
-	}
+	q = q.Where("a.artifact_deleted_at IS NULL")
 
 	// nolint:goconst
 	sortField := "image_" + sortByField
@@ -946,25 +819,14 @@ func (a ArtifactDao) GetArtifactsByRepo(
 
 func (a ArtifactDao) CountArtifactsByRepo(
 	ctx context.Context, parentID int64, repoKey, search string, labels []string,
-	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+	artifactType *artifact.ArtifactType,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
-
 	q := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON i.image_id = a.artifact_image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repoKey)
-
-	// Apply soft delete filtering on artifacts only
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering - include all
-	}
+		Where("r.registry_parent_id = ? AND r.registry_name = ?", parentID, repoKey).
+		Where("a.artifact_deleted_at IS NULL")
 
 	if artifactType != nil && *artifactType != "" {
 		q = q.Where("i.image_type = ?", *artifactType)
@@ -999,9 +861,7 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 	parentID int64,
 	repoKey string,
 	imageName string,
-	opts ...types.QueryOption,
 ) (*types.ArtifactMetadata, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	db := dbtx.GetAccessor(ctx, a.db)
 
 	// Step 1: Find the latest artifact ID
@@ -1009,16 +869,8 @@ func (a ArtifactDao) GetLatestArtifactMetadata(
 		From("artifacts a").
 		Join("images i ON i.image_id = a.artifact_image_id").
 		Join("registries r ON i.image_registry_id = r.registry_id").
-		Where("r.registry_parent_id = ? AND r.registry_name = ? AND i.image_name = ?", parentID, repoKey, imageName)
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		latestArtifactQuery = latestArtifactQuery.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		latestArtifactQuery = latestArtifactQuery.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+		Where("r.registry_parent_id = ? AND r.registry_name = ? AND i.image_name = ?", parentID, repoKey, imageName).
+		Where("a.artifact_deleted_at IS NULL")
 
 	latestArtifactQuery = latestArtifactQuery.OrderBy("a.artifact_updated_at DESC").Limit(1)
 
@@ -1085,9 +937,8 @@ func (a ArtifactDao) mapToArtifactMetadataList(
 func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 	ctx context.Context, regID int64, image string,
 	sortByField string, sortByOrder string, limit int, offset int, search string,
-	artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+	artifactType *artifact.ArtifactType,
 ) (*[]types.NonOCIArtifactMetadata, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	// Build the main query
 	q := databaseg.Builder.
 		Select(`
@@ -1132,14 +983,7 @@ func (a ArtifactDao) GetAllVersionsByRepoAndImage(
 		q = q.Where("artifact_version LIKE ?", sqlPartialMatch(search))
 	}
 
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		q = q.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		q = q.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
-	}
+	q = q.Where("a.artifact_deleted_at IS NULL")
 
 	// nolint:goconst
 	sortField := "artifact_" + sortByField
@@ -1223,9 +1067,8 @@ func (a ArtifactDao) fetchDownloadStatsForArtifacts(
 
 func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 	ctx context.Context, parentID int64, repoKey string, image string,
-	search string, artifactType *artifact.ArtifactType, opts ...types.QueryOption,
+	search string, artifactType *artifact.ArtifactType,
 ) (int64, error) {
-	deleteFilter := types.ExtractDeleteFilter(opts...)
 	stmt := databaseg.Builder.Select("COUNT(*)").
 		From("artifacts a").
 		Join("images i ON i.image_id = a.artifact_image_id").
@@ -1233,7 +1076,8 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 		Where(
 			"r.registry_parent_id = ? AND r.registry_name = ? "+
 				"AND i.image_name = ?", parentID, repoKey, image,
-		)
+		).
+		Where("a.artifact_deleted_at IS NULL")
 
 	if artifactType != nil && *artifactType != "" {
 		stmt = stmt.Where("i.image_type = ?", *artifactType)
@@ -1241,15 +1085,6 @@ func (a ArtifactDao) CountAllVersionsByRepoAndImage(
 
 	if search != "" {
 		stmt = stmt.Where("artifact_version LIKE ?", sqlPartialMatch(search))
-	}
-
-	switch deleteFilter {
-	case types.DeleteFilterExcludeDeleted:
-		stmt = stmt.Where("a.artifact_deleted_at IS NULL")
-	case types.DeleteFilterOnlyDeleted:
-		stmt = stmt.Where("a.artifact_deleted_at IS NOT NULL")
-	case types.DeleteFilterIncludeDeleted:
-		// No filtering
 	}
 
 	sql, args, err := stmt.ToSql()

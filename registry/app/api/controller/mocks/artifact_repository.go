@@ -114,9 +114,9 @@ func (_m *ArtifactRepository) Get(ctx context.Context, id int64) (*types.Artifac
 	return r0, r1
 }
 
-// Count provides a mock function with given fields: ctx, opts
-func (_m *ArtifactRepository) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, opts)
+// Count provides a mock function with given fields: ctx
+func (_m *ArtifactRepository) Count(ctx context.Context) (int64, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Count")
@@ -124,17 +124,17 @@ func (_m *ArtifactRepository) Count(ctx context.Context, opts ...types.QueryOpti
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -142,9 +142,9 @@ func (_m *ArtifactRepository) Count(ctx context.Context, opts ...types.QueryOpti
 	return r0, r1
 }
 
-// CountAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes, opts
-func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes, opts)
+// CountAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, search, latestVersion, packageTypes
+func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, search string, latestVersion bool, packageTypes []string) (int64, error) {
+	ret := _m.Called(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAllArtifactsByParentID")
@@ -152,17 +152,17 @@ func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, p
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string) (int64, error)); ok {
+		return rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, bool, []string) int64); ok {
+		r0 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string) error); ok {
+		r1 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -170,9 +170,9 @@ func (_m *ArtifactRepository) CountAllArtifactsByParentID(ctx context.Context, p
 	return r0, r1
 }
 
-// CountAllVersionsByRepoAndImage provides a mock function with given fields: ctx, parentID, repoKey, image, search, artifactType, opts
-func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context, parentID int64, repoKey string, image string, search string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, parentID, repoKey, image, search, artifactType, opts)
+// CountAllVersionsByRepoAndImage provides a mock function with given fields: ctx, parentID, repoKey, image, search, artifactType
+func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context, parentID int64, repoKey string, image string, search string, artifactType *artifact.ArtifactType) (int64, error) {
+	ret := _m.Called(ctx, parentID, repoKey, image, search, artifactType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAllVersionsByRepoAndImage")
@@ -180,17 +180,17 @@ func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, parentID, repoKey, image, search, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) (int64, error)); ok {
+		return rf(ctx, parentID, repoKey, image, search, artifactType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, parentID, repoKey, image, search, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) int64); ok {
+		r0 = rf(ctx, parentID, repoKey, image, search, artifactType)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, *artifact.ArtifactType, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, repoKey, image, search, artifactType, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, *artifact.ArtifactType) error); ok {
+		r1 = rf(ctx, parentID, repoKey, image, search, artifactType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -198,9 +198,9 @@ func (_m *ArtifactRepository) CountAllVersionsByRepoAndImage(ctx context.Context
 	return r0, r1
 }
 
-// CountArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, artifactType, opts
-func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, parentID, repoKey, search, labels, artifactType, opts)
+// CountArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, search, labels, artifactType
+func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, search string, labels []string, artifactType *artifact.ArtifactType) (int64, error) {
+	ret := _m.Called(ctx, parentID, repoKey, search, labels, artifactType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountArtifactsByRepo")
@@ -208,17 +208,17 @@ func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, parentID, repoKey, search, labels, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType) (int64, error)); ok {
+		return rf(ctx, parentID, repoKey, search, labels, artifactType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, parentID, repoKey, search, labels, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType) int64); ok {
+		r0 = rf(ctx, parentID, repoKey, search, labels, artifactType)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, repoKey, search, labels, artifactType, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, []string, *artifact.ArtifactType) error); ok {
+		r1 = rf(ctx, parentID, repoKey, search, labels, artifactType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -226,9 +226,9 @@ func (_m *ArtifactRepository) CountArtifactsByRepo(ctx context.Context, parentID
 	return r0, r1
 }
 
-// CountByImageName provides a mock function with given fields: ctx, regID, name, opts
-func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64, name string, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, regID, name, opts)
+// CountByImageName provides a mock function with given fields: ctx, regID, name
+func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64, name string) (int64, error) {
+	ret := _m.Called(ctx, regID, name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountByImageName")
@@ -236,17 +236,17 @@ func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64,
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, regID, name, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (int64, error)); ok {
+		return rf(ctx, regID, name)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, regID, name, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) int64); ok {
+		r0 = rf(ctx, regID, name)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, regID, name, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = rf(ctx, regID, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -254,9 +254,9 @@ func (_m *ArtifactRepository) CountByImageName(ctx context.Context, regID int64,
 	return r0, r1
 }
 
-// CountLatestByName provides a mock function with given fields: ctx, regID, name, opts
-func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64, name string, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, regID, name, opts)
+// CountLatestByName provides a mock function with given fields: ctx, regID, name
+func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64, name string) (int64, error) {
+	ret := _m.Called(ctx, regID, name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountLatestByName")
@@ -264,17 +264,17 @@ func (_m *ArtifactRepository) CountLatestByName(ctx context.Context, regID int64
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, regID, name, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (int64, error)); ok {
+		return rf(ctx, regID, name)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, regID, name, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) int64); ok {
+		r0 = rf(ctx, regID, name)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, regID, name, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = rf(ctx, regID, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -376,9 +376,9 @@ func (_m *ArtifactRepository) DuplicateArtifact(ctx context.Context, sourceArtif
 	return r0, r1
 }
 
-// GetAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts
-func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts)
+// GetAllArtifactsByParentID provides a mock function with given fields: ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes
+func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, parentID int64, registryIDs *[]string, sortByField string, sortByOrder string, limit int, offset int, search string, latestVersion bool, packageTypes []string) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllArtifactsByParentID")
@@ -386,19 +386,19 @@ func (_m *ArtifactRepository) GetAllArtifactsByParentID(ctx context.Context, par
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, bool, []string, int, int, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, registryIDs, search, latestVersion, packageTypes, limit, offset, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, *[]string, string, string, int, int, string, bool, []string) error); ok {
+		r1 = rf(ctx, parentID, registryIDs, sortByField, sortByOrder, limit, offset, search, latestVersion, packageTypes)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -436,9 +436,9 @@ func (_m *ArtifactRepository) GetAllArtifactsByRepo(ctx context.Context, registr
 	return r0, r1
 }
 
-// GetAllVersionsByRepoAndImage provides a mock function with given fields: ctx, id, image, field, order, limit, offset, term, artifactType, opts
-func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, id int64, image string, field string, order string, limit int, offset int, term string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*[]types.NonOCIArtifactMetadata, error) {
-	ret := _m.Called(ctx, id, image, field, order, limit, offset, term, artifactType, opts)
+// GetAllVersionsByRepoAndImage provides a mock function with given fields: ctx, id, image, field, order, limit, offset, term, artifactType
+func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, id int64, image string, field string, order string, limit int, offset int, term string, artifactType *artifact.ArtifactType) (*[]types.NonOCIArtifactMetadata, error) {
+	ret := _m.Called(ctx, id, image, field, order, limit, offset, term, artifactType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllVersionsByRepoAndImage")
@@ -446,19 +446,19 @@ func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, 
 
 	var r0 *[]types.NonOCIArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType, ...types.QueryOption) (*[]types.NonOCIArtifactMetadata, error)); ok {
-		return rf(ctx, id, image, field, order, limit, offset, term, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType) (*[]types.NonOCIArtifactMetadata, error)); ok {
+		return rf(ctx, id, image, field, order, limit, offset, term, artifactType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType, ...types.QueryOption) *[]types.NonOCIArtifactMetadata); ok {
-		r0 = rf(ctx, id, image, field, order, limit, offset, term, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType) *[]types.NonOCIArtifactMetadata); ok {
+		r0 = rf(ctx, id, image, field, order, limit, offset, term, artifactType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.NonOCIArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, id, image, field, order, limit, offset, term, artifactType, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, *artifact.ArtifactType) error); ok {
+		r1 = rf(ctx, id, image, field, order, limit, offset, term, artifactType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -468,7 +468,14 @@ func (_m *ArtifactRepository) GetAllVersionsByRepoAndImage(ctx context.Context, 
 
 // GetArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, version, artifactType, opts
 func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64, identifier string, image string, version string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, id, identifier, image, version, artifactType, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, identifier, image, version, artifactType)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetArtifactMetadata")
@@ -496,9 +503,9 @@ func (_m *ArtifactRepository) GetArtifactMetadata(ctx context.Context, id int64,
 	return r0, r1
 }
 
-// GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts
-func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts)
+// GetArtifactsByRepo provides a mock function with given fields: ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType
+func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID int64, repoKey string, sortByField string, sortByOrder string, limit int, offset int, search string, labels []string, artifactType *artifact.ArtifactType) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetArtifactsByRepo")
@@ -506,19 +513,19 @@ func (_m *ArtifactRepository) GetArtifactsByRepo(ctx context.Context, parentID i
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, string, int, int, string, []string, *artifact.ArtifactType) error); ok {
+		r1 = rf(ctx, parentID, repoKey, sortByField, sortByOrder, limit, offset, search, labels, artifactType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -558,7 +565,14 @@ func (_m *ArtifactRepository) GetArtifactsByRepoAndImageBatch(ctx context.Contex
 
 // GetByName provides a mock function with given fields: ctx, imageID, version, opts
 func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, version string, opts ...types.QueryOption) (*types.Artifact, error) {
-	ret := _m.Called(ctx, imageID, version, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, imageID, version)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByName")
@@ -586,9 +600,9 @@ func (_m *ArtifactRepository) GetByName(ctx context.Context, imageID int64, vers
 	return r0, r1
 }
 
-// GetByRegistryIDAndImage provides a mock function with given fields: ctx, registryID, image, opts
-func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string, opts ...types.QueryOption) (*[]types.Artifact, error) {
-	ret := _m.Called(ctx, registryID, image, opts)
+// GetByRegistryIDAndImage provides a mock function with given fields: ctx, registryID, image
+func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, registryID int64, image string) (*[]types.Artifact, error) {
+	ret := _m.Called(ctx, registryID, image)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRegistryIDAndImage")
@@ -596,19 +610,19 @@ func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, regis
 
 	var r0 *[]types.Artifact
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) (*[]types.Artifact, error)); ok {
-		return rf(ctx, registryID, image, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) (*[]types.Artifact, error)); ok {
+		return rf(ctx, registryID, image)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, ...types.QueryOption) *[]types.Artifact); ok {
-		r0 = rf(ctx, registryID, image, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string) *[]types.Artifact); ok {
+		r0 = rf(ctx, registryID, image)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.Artifact)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, registryID, image, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string) error); ok {
+		r1 = rf(ctx, registryID, image)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -616,9 +630,9 @@ func (_m *ArtifactRepository) GetByRegistryIDAndImage(ctx context.Context, regis
 	return r0, r1
 }
 
-// GetByRegistryImageAndVersion provides a mock function with given fields: ctx, registryID, image, version, opts
-func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, registryID int64, image string, version string, opts ...types.QueryOption) (*types.Artifact, error) {
-	ret := _m.Called(ctx, registryID, image, version, opts)
+// GetByRegistryImageAndVersion provides a mock function with given fields: ctx, registryID, image, version
+func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, registryID int64, image string, version string) (*types.Artifact, error) {
+	ret := _m.Called(ctx, registryID, image, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRegistryImageAndVersion")
@@ -626,19 +640,19 @@ func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, 
 
 	var r0 *types.Artifact
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) (*types.Artifact, error)); ok {
-		return rf(ctx, registryID, image, version, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) (*types.Artifact, error)); ok {
+		return rf(ctx, registryID, image, version)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) *types.Artifact); ok {
-		r0 = rf(ctx, registryID, image, version, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) *types.Artifact); ok {
+		r0 = rf(ctx, registryID, image, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Artifact)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, registryID, image, version, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
+		r1 = rf(ctx, registryID, image, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -646,9 +660,9 @@ func (_m *ArtifactRepository) GetByRegistryImageAndVersion(ctx context.Context, 
 	return r0, r1
 }
 
-// GetLatestArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image, opts
-func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id int64, identifier string, image string, opts ...types.QueryOption) (*types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, id, identifier, image, opts)
+// GetLatestArtifactMetadata provides a mock function with given fields: ctx, id, identifier, image
+func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id int64, identifier string, image string) (*types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, id, identifier, image)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestArtifactMetadata")
@@ -656,19 +670,19 @@ func (_m *ArtifactRepository) GetLatestArtifactMetadata(ctx context.Context, id 
 
 	var r0 *types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) (*types.ArtifactMetadata, error)); ok {
-		return rf(ctx, id, identifier, image, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) (*types.ArtifactMetadata, error)); ok {
+		return rf(ctx, id, identifier, image)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) *types.ArtifactMetadata); ok {
-		r0 = rf(ctx, id, identifier, image, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) *types.ArtifactMetadata); ok {
+		r0 = rf(ctx, id, identifier, image)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, id, identifier, image, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
+		r1 = rf(ctx, id, identifier, image)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -706,9 +720,9 @@ func (_m *ArtifactRepository) GetLatestArtifactsByRepo(ctx context.Context, regi
 	return r0, r1
 }
 
-// GetLatestByImageID provides a mock function with given fields: ctx, imageID, opts
-func (_m *ArtifactRepository) GetLatestByImageID(ctx context.Context, imageID int64, opts ...types.QueryOption) (*types.Artifact, error) {
-	ret := _m.Called(ctx, imageID, opts)
+// GetLatestByImageID provides a mock function with given fields: ctx, imageID
+func (_m *ArtifactRepository) GetLatestByImageID(ctx context.Context, imageID int64) (*types.Artifact, error) {
+	ret := _m.Called(ctx, imageID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestByImageID")
@@ -716,19 +730,19 @@ func (_m *ArtifactRepository) GetLatestByImageID(ctx context.Context, imageID in
 
 	var r0 *types.Artifact
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, ...types.QueryOption) (*types.Artifact, error)); ok {
-		return rf(ctx, imageID, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*types.Artifact, error)); ok {
+		return rf(ctx, imageID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, ...types.QueryOption) *types.Artifact); ok {
-		r0 = rf(ctx, imageID, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *types.Artifact); ok {
+		r0 = rf(ctx, imageID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Artifact)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, imageID, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, imageID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -736,9 +750,9 @@ func (_m *ArtifactRepository) GetLatestByImageID(ctx context.Context, imageID in
 	return r0, r1
 }
 
-// SearchByImageName provides a mock function with given fields: ctx, regID, name, limit, offset, opts
-func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64, name string, limit int, offset int, opts ...types.QueryOption) (*[]types.ArtifactMetadata, error) {
-	ret := _m.Called(ctx, regID, name, limit, offset, opts)
+// SearchByImageName provides a mock function with given fields: ctx, regID, name, limit, offset
+func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64, name string, limit int, offset int) (*[]types.ArtifactMetadata, error) {
+	ret := _m.Called(ctx, regID, name, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SearchByImageName")
@@ -746,19 +760,19 @@ func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64
 
 	var r0 *[]types.ArtifactMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, ...types.QueryOption) (*[]types.ArtifactMetadata, error)); ok {
-		return rf(ctx, regID, name, limit, offset, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int) (*[]types.ArtifactMetadata, error)); ok {
+		return rf(ctx, regID, name, limit, offset)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, ...types.QueryOption) *[]types.ArtifactMetadata); ok {
-		r0 = rf(ctx, regID, name, limit, offset, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int) *[]types.ArtifactMetadata); ok {
+		r0 = rf(ctx, regID, name, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.ArtifactMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, regID, name, limit, offset, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int) error); ok {
+		r1 = rf(ctx, regID, name, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -766,9 +780,9 @@ func (_m *ArtifactRepository) SearchByImageName(ctx context.Context, regID int64
 	return r0, r1
 }
 
-// SearchLatestByName provides a mock function with given fields: ctx, regID, name, limit, offset, opts
-func (_m *ArtifactRepository) SearchLatestByName(ctx context.Context, regID int64, name string, limit int, offset int, opts ...types.QueryOption) (*[]types.Artifact, error) {
-	ret := _m.Called(ctx, regID, name, limit, offset, opts)
+// SearchLatestByName provides a mock function with given fields: ctx, regID, name, limit, offset
+func (_m *ArtifactRepository) SearchLatestByName(ctx context.Context, regID int64, name string, limit int, offset int) (*[]types.Artifact, error) {
+	ret := _m.Called(ctx, regID, name, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SearchLatestByName")
@@ -776,19 +790,19 @@ func (_m *ArtifactRepository) SearchLatestByName(ctx context.Context, regID int6
 
 	var r0 *[]types.Artifact
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, ...types.QueryOption) (*[]types.Artifact, error)); ok {
-		return rf(ctx, regID, name, limit, offset, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int) (*[]types.Artifact, error)); ok {
+		return rf(ctx, regID, name, limit, offset)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, ...types.QueryOption) *[]types.Artifact); ok {
-		r0 = rf(ctx, regID, name, limit, offset, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int) *[]types.Artifact); ok {
+		r0 = rf(ctx, regID, name, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]types.Artifact)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, regID, name, limit, offset, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int) error); ok {
+		r1 = rf(ctx, regID, name, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}

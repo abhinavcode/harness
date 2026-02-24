@@ -215,7 +215,6 @@ func getPathRoot(ctx context.Context) string {
 	return pathRoot
 }
 
-// todo check this.
 func (h *Handler) GetRegistryInfo(r *http.Request, remoteSupport bool) (pkg.RegistryInfo, error) {
 	ctx := r.Context()
 	queryParams := r.URL.Query()

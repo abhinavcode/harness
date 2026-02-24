@@ -196,6 +196,7 @@ func (c *APIController) ProcessManifest(
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		return nil, err

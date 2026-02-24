@@ -24,6 +24,7 @@ import (
 	"github.com/harness/gitness/app/api/request"
 	"github.com/harness/gitness/audit"
 	"github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
+	"github.com/harness/gitness/registry/types"
 	"github.com/harness/gitness/store"
 	"github.com/harness/gitness/types/enum"
 
@@ -78,6 +79,7 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 		ctx,
 		regInfo.ParentID,
 		regInfo.RegistryIdentifier,
+		types.WithAllDeleted(),
 	)
 	if err != nil {
 		//nolint:nilerr
@@ -95,7 +97,7 @@ func (c *APIController) DeleteArtifactVersion(ctx context.Context, r artifact.De
 	versionName := string(r.Version)
 	registryName := repoEntity.Name
 
-	_, err = c.ImageStore.GetByName(ctx, repoEntity.ID, artifactName)
+	_, err = c.ImageStore.GetByName(ctx, repoEntity.ID, artifactName, types.WithAllDeleted())
 	if err != nil {
 		//nolint:nilerr
 		return artifact.DeleteArtifactVersion404JSONResponse{

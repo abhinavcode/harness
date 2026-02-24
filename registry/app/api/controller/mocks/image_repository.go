@@ -17,9 +17,9 @@ type ImageRepository struct {
 	mock.Mock
 }
 
-// CountLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, search, opts
-func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, search string, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, parentID, repo, search, opts)
+// CountLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, search
+func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, search string) (int64, error) {
+	ret := _m.Called(ctx, parentID, repo, search)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountLabelsByParentIDAndRepo")
@@ -27,17 +27,17 @@ func (_m *ImageRepository) CountLabelsByParentIDAndRepo(ctx context.Context, par
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, parentID, repo, search, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) (int64, error)); ok {
+		return rf(ctx, parentID, repo, search)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, parentID, repo, search, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) int64); ok {
+		r0 = rf(ctx, parentID, repo, search)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, repo, search, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
+		r1 = rf(ctx, parentID, repo, search)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -129,9 +129,9 @@ func (_m *ImageRepository) DuplicateImage(ctx context.Context, sourceImage *type
 	return r0, r1
 }
 
-// Get provides a mock function with given fields: ctx, id, opts
-func (_m *ImageRepository) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error) {
-	ret := _m.Called(ctx, id, opts)
+// Get provides a mock function with given fields: ctx, id
+func (_m *ImageRepository) Get(ctx context.Context, id int64) (*types.Image, error) {
+	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -139,19 +139,19 @@ func (_m *ImageRepository) Get(ctx context.Context, id int64, opts ...types.Quer
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, ...types.QueryOption) (*types.Image, error)); ok {
-		return rf(ctx, id, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (*types.Image, error)); ok {
+		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, ...types.QueryOption) *types.Image); ok {
-		r0 = rf(ctx, id, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) *types.Image); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Image)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, id, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -161,7 +161,14 @@ func (_m *ImageRepository) Get(ctx context.Context, id int64, opts ...types.Quer
 
 // GetByName provides a mock function with given fields: ctx, registryID, name, opts
 func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name string, opts ...types.QueryOption) (*types.Image, error) {
-	ret := _m.Called(ctx, registryID, name, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, registryID, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByName")
@@ -191,7 +198,14 @@ func (_m *ImageRepository) GetByName(ctx context.Context, registryID int64, name
 
 // GetByNameAndType provides a mock function with given fields: ctx, registryID, name, artifactType, opts
 func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int64, name string, artifactType *artifact.ArtifactType, opts ...types.QueryOption) (*types.Image, error) {
-	ret := _m.Called(ctx, registryID, name, artifactType, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, registryID, name, artifactType)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByNameAndType")
@@ -219,9 +233,9 @@ func (_m *ImageRepository) GetByNameAndType(ctx context.Context, registryID int6
 	return r0, r1
 }
 
-// GetByRepoAndName provides a mock function with given fields: ctx, parentID, repo, name, opts
-func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64, repo string, name string, opts ...types.QueryOption) (*types.Image, error) {
-	ret := _m.Called(ctx, parentID, repo, name, opts)
+// GetByRepoAndName provides a mock function with given fields: ctx, parentID, repo, name
+func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64, repo string, name string) (*types.Image, error) {
+	ret := _m.Called(ctx, parentID, repo, name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRepoAndName")
@@ -229,19 +243,19 @@ func (_m *ImageRepository) GetByRepoAndName(ctx context.Context, parentID int64,
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) (*types.Image, error)); ok {
-		return rf(ctx, parentID, repo, name, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) (*types.Image, error)); ok {
+		return rf(ctx, parentID, repo, name)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string, ...types.QueryOption) *types.Image); ok {
-		r0 = rf(ctx, parentID, repo, name, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, string) *types.Image); ok {
+		r0 = rf(ctx, parentID, repo, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Image)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, repo, name, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, string) error); ok {
+		r1 = rf(ctx, parentID, repo, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -279,9 +293,9 @@ func (_m *ImageRepository) GetByUUID(ctx context.Context, uuid string) (*types.I
 	return r0, r1
 }
 
-// GetLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, limit, offset, search, opts
-func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, limit int, offset int, search string, opts ...types.QueryOption) ([]string, error) {
-	ret := _m.Called(ctx, parentID, repo, limit, offset, search, opts)
+// GetLabelsByParentIDAndRepo provides a mock function with given fields: ctx, parentID, repo, limit, offset, search
+func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, parentID int64, repo string, limit int, offset int, search string) ([]string, error) {
+	ret := _m.Called(ctx, parentID, repo, limit, offset, search)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLabelsByParentIDAndRepo")
@@ -289,19 +303,19 @@ func (_m *ImageRepository) GetLabelsByParentIDAndRepo(ctx context.Context, paren
 
 	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string, ...types.QueryOption) ([]string, error)); ok {
-		return rf(ctx, parentID, repo, limit, offset, search, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string) ([]string, error)); ok {
+		return rf(ctx, parentID, repo, limit, offset, search)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string, ...types.QueryOption) []string); ok {
-		r0 = rf(ctx, parentID, repo, limit, offset, search, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, string, int, int, string) []string); ok {
+		r0 = rf(ctx, parentID, repo, limit, offset, search)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentID, repo, limit, offset, search, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, string, int, int, string) error); ok {
+		r1 = rf(ctx, parentID, repo, limit, offset, search)
 	} else {
 		r1 = ret.Error(1)
 	}

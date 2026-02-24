@@ -24,9 +24,9 @@ func (_m *RegistryRepository) EXPECT() *RegistryRepository_Expecter {
 	return &RegistryRepository_Expecter{mock: &_m.Mock}
 }
 
-// Count provides a mock function with given fields: ctx, opts
-func (_m *RegistryRepository) Count(ctx context.Context, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, opts)
+// Count provides a mock function with given fields: ctx
+func (_m *RegistryRepository) Count(ctx context.Context) (int64, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Count")
@@ -34,17 +34,17 @@ func (_m *RegistryRepository) Count(ctx context.Context, opts ...types.QueryOpti
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context) (int64, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -52,9 +52,9 @@ func (_m *RegistryRepository) Count(ctx context.Context, opts ...types.QueryOpti
 	return r0, r1
 }
 
-// CountAll provides a mock function with given fields: ctx, parentIDs, packageTypes, search, repoType, opts
-func (_m *RegistryRepository) CountAll(ctx context.Context, parentIDs []int64, packageTypes []string, search string, repoType string, opts ...types.QueryOption) (int64, error) {
-	ret := _m.Called(ctx, parentIDs, packageTypes, search, repoType, opts)
+// CountAll provides a mock function with given fields: ctx, parentIDs, packageTypes, search, repoType
+func (_m *RegistryRepository) CountAll(ctx context.Context, parentIDs []int64, packageTypes []string, search string, repoType string) (int64, error) {
+	ret := _m.Called(ctx, parentIDs, packageTypes, search, repoType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountAll")
@@ -62,17 +62,17 @@ func (_m *RegistryRepository) CountAll(ctx context.Context, parentIDs []int64, p
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, ...types.QueryOption) (int64, error)); ok {
-		return rf(ctx, parentIDs, packageTypes, search, repoType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string) (int64, error)); ok {
+		return rf(ctx, parentIDs, packageTypes, search, repoType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, ...types.QueryOption) int64); ok {
-		r0 = rf(ctx, parentIDs, packageTypes, search, repoType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string) int64); ok {
+		r0 = rf(ctx, parentIDs, packageTypes, search, repoType)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []int64, []string, string, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentIDs, packageTypes, search, repoType, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, []int64, []string, string, string) error); ok {
+		r1 = rf(ctx, parentIDs, packageTypes, search, repoType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -218,7 +218,14 @@ func (_m *RegistryRepository) FetchUpstreamProxyKeys(ctx context.Context, ids []
 
 // Get provides a mock function with given fields: ctx, id, opts
 func (_m *RegistryRepository) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Registry, error) {
-	ret := _m.Called(ctx, id, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -246,9 +253,9 @@ func (_m *RegistryRepository) Get(ctx context.Context, id int64, opts ...types.Q
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, opts
-func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, packageTypes []string, sortByField string, sortByOrder string, limit int, offset int, search string, repoType string, opts ...types.QueryOption) (*[]store.RegistryMetadata, error) {
-	ret := _m.Called(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, opts)
+// GetAll provides a mock function with given fields: ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType
+func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, packageTypes []string, sortByField string, sortByOrder string, limit int, offset int, search string, repoType string) (*[]store.RegistryMetadata, error) {
+	ret := _m.Called(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAll")
@@ -256,19 +263,19 @@ func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, pac
 
 	var r0 *[]store.RegistryMetadata
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string, ...types.QueryOption) (*[]store.RegistryMetadata, error)); ok {
-		return rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string) (*[]store.RegistryMetadata, error)); ok {
+		return rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string, ...types.QueryOption) *[]store.RegistryMetadata); ok {
-		r0 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, opts...)
+	if rf, ok := ret.Get(0).(func(context.Context, []int64, []string, string, string, int, int, string, string) *[]store.RegistryMetadata); ok {
+		r0 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*[]store.RegistryMetadata)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []int64, []string, string, string, int, int, string, string, ...types.QueryOption) error); ok {
-		r1 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType, opts...)
+	if rf, ok := ret.Get(1).(func(context.Context, []int64, []string, string, string, int, int, string, string) error); ok {
+		r1 = rf(ctx, parentIDs, packageTypes, sortByField, sortByOrder, limit, offset, search, repoType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -278,7 +285,14 @@ func (_m *RegistryRepository) GetAll(ctx context.Context, parentIDs []int64, pac
 
 // GetByIDIn provides a mock function with given fields: ctx, ids, opts
 func (_m *RegistryRepository) GetByIDIn(ctx context.Context, ids []int64, opts ...types.QueryOption) (*[]types.Registry, error) {
-	ret := _m.Called(ctx, ids, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, ids)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByIDIn")
@@ -308,7 +322,14 @@ func (_m *RegistryRepository) GetByIDIn(ctx context.Context, ids []int64, opts .
 
 // GetByParentIDAndName provides a mock function with given fields: ctx, parentID, name, opts
 func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID int64, name string, opts ...types.QueryOption) (*types.Registry, error) {
-	ret := _m.Called(ctx, parentID, name, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, parentID, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByParentIDAndName")
@@ -338,7 +359,14 @@ func (_m *RegistryRepository) GetByParentIDAndName(ctx context.Context, parentID
 
 // GetByRootParentIDAndName provides a mock function with given fields: ctx, parentID, name, opts
 func (_m *RegistryRepository) GetByRootParentIDAndName(ctx context.Context, parentID int64, name string, opts ...types.QueryOption) (*types.Registry, error) {
-	ret := _m.Called(ctx, parentID, name, opts)
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, parentID, name)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRootParentIDAndName")

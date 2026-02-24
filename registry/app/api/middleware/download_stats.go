@@ -227,15 +227,11 @@ func TrackDownloadStatForMavenArtifact(h *maven.Handler) func(http.Handler) http
 func dbDownloadStatForGenericArtifact(
 	ctx context.Context,
 	c *generic2.Controller,
-	info pkg.GenericArtifactInfo, //nolint:staticcheck // TODO: refactor to use generic.ArtifactInfo
+	info pkg.GenericArtifactInfo,
 	auditService audit.Service,
 	spaceFinder refcache.SpaceFinder,
 ) errcode.Error {
-	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(
-		ctx,
-		info.ParentID,
-		info.RegIdentifier,
-	)
+	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
@@ -263,11 +259,7 @@ func dbDownloadStatForGenericArtifact(
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	artifact, err := c.DBStore.ArtifactDao.GetByName(
-		ctx,
-		image.ID,
-		info.Version,
-	)
+	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
@@ -290,11 +282,7 @@ func dbDownloadStatForMavenArtifact(
 	spaceFinder refcache.SpaceFinder,
 ) errcode.Error {
 	imageName := info.GroupID + ":" + info.ArtifactID
-	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(
-		ctx,
-		info.ParentID,
-		info.RegIdentifier,
-	)
+	registry, err := c.DBStore.RegistryDao.GetByParentIDAndName(ctx, info.ParentID, info.RegIdentifier)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
@@ -325,11 +313,7 @@ func dbDownloadStatForMavenArtifact(
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}
 
-	artifact, err := c.DBStore.ArtifactDao.GetByName(
-		ctx,
-		image.ID,
-		info.Version,
-	)
+	artifact, err := c.DBStore.ArtifactDao.GetByName(ctx, image.ID, info.Version)
 	if err != nil {
 		return errcode.ErrCodeInvalidRequest.WithDetail(err)
 	}

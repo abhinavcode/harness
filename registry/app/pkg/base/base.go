@@ -109,7 +109,6 @@ type LocalBase interface {
 	CheckIfVersionExists(
 		ctx context.Context,
 		info pkg.PackageArtifactInfo,
-		opts ...types.QueryOption,
 	) (*types.Artifact, error)
 
 	DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error
@@ -455,8 +454,7 @@ func (l *localBase) postUploadArtifact(
 	var artifactUUID string
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
-			// Check if image already exists and is soft-deleted
-			existingImage, err := l.imageDao.GetByName(ctx, registry.ID, info.Image, types.WithAllDeleted())
+			existingImage, err := l.imageDao.GetByName(ctx, registry.ID, info.Image)
 			if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 				return fmt.Errorf("failed to check existing image: %w", err)
 			}
@@ -476,17 +474,8 @@ func (l *localBase) postUploadArtifact(
 
 			imageUUID = image.UUID
 
-			// Check if artifact version already exists and is soft-deleted
-			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version, types.WithAllDeleted())
-			if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
-				return fmt.Errorf("failed to check existing artifact version: %w", err)
-			}
-			if err == nil && dbArtifact.DeletedAt != nil {
-				return fmt.Errorf("cannot upload to deleted artifact version: %s", version)
-			}
-
 			// Fetch artifact without soft-deleted ones for metadata update
-			dbArtifact, err = l.artifactDao.GetByName(ctx, image.ID, version)
+			dbArtifact, err := l.artifactDao.GetByName(ctx, image.ID, version)
 
 			if err != nil && !strings.Contains(err.Error(), "resource not found") {
 				return fmt.Errorf("failed to fetch artifact : [%s] with error: %w", info.Image, err)
@@ -618,13 +607,11 @@ func (l *localBase) ExistsByFilePath(ctx context.Context, registryID int64, file
 func (l *localBase) CheckIfVersionExists(
 	ctx context.Context,
 	info pkg.PackageArtifactInfo,
-	opts ...types.QueryOption,
 ) (*types.Artifact, error) {
 	artifact, err := l.artifactDao.GetByRegistryImageAndVersion(ctx,
 		info.BaseArtifactInfo().RegistryID,
 		info.BaseArtifactInfo().Image,
 		info.GetVersion(),
-		opts...,
 	)
 	if err != nil {
 		return nil, err
