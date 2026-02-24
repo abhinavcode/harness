@@ -69,26 +69,36 @@ export function AddTagModalContent({
     }
     setLoading(true)
     try {
-      const base = getApiBaseUrl('')
-        .replace(/\/api\/v1\/?$/, '')
-        .replace(/\/har\/api\/v1\/?$/, '')
-        .replace(/\/har\/?$/, '')
-      const url = `${base}/har/api/v2/oci/tags?account_identifier=${encodeURIComponent(
-        accountId || ''
-      )}&registry_identifier=${encodeURIComponent(repoKey)}`
+      const path = '/har/api/v2/oci/tags'
+      const searchParams = new URLSearchParams({
+        account_identifier: accountId || '',
+        registry_identifier: repoKey
+      })
+      const baseResolved = new URL(getApiBaseUrl(''), window.location.origin)
+      const url = `${baseResolved.origin}${path}?${searchParams.toString()}`
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...getCustomHeaders()
       }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          package: artifactKey,
-          version: versionKey,
-          tags: trimmed
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      let res: Response
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            package: artifactKey,
+            version: versionKey,
+            tags: trimmed
+          }),
+          signal: controller.signal
         })
-      })
+        clearTimeout(timeoutId)
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        throw fetchError
+      }
       if (!res.ok) {
         const errText = await res.text()
         throw new Error(errText || res.statusText)
@@ -96,7 +106,6 @@ export function AddTagModalContent({
       showSuccess(getString('versionList.messages.addTagSuccess'))
       hideModal()
       onClose?.()
-      window.dispatchEvent(new CustomEvent('ar-refresh-artifact-list'))
       queryClient.invalidateQueries(['GetAllHarnessArtifacts'])
       queryClient.invalidateQueries(['ListVersions'])
     } catch (e) {

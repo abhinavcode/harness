@@ -17,7 +17,10 @@
 /* Fixed width for the tag input bar only when rendered inside Add Tag modal */
 .addTagInputWrapper {
   :global(.bp3-input) {
-    min-width: 400px;
-    max-width: 400px;
+    width: min(400px, 90vw);
+    min-width: min(400px, 90vw);
+    max-width: 100%;
+    
+    box-sizing: border-box;
   }
 }

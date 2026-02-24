@@ -80,7 +80,7 @@ export default function VersionActions({
         artifactKey={artifactKey}
         repoKey={repoKey}
         versionKey={versionKey}
-        accountId={(scope?.accountId as string) || ''}
+        accountId={typeof scope?.accountId === 'string' ? scope.accountId : ''}
         getApiBaseUrl={getApiBaseUrl}
         getCustomHeaders={getCustomHeaders}
         hideModal={hideAddTagModal}

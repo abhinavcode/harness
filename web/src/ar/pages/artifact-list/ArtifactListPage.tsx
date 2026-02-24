@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 import classNames from 'classnames'
 import { flushSync } from 'react-dom'
 import { Expander } from '@blueprintjs/core'
@@ -88,12 +88,6 @@ function ArtifactListPage(): JSX.Element {
     deployed_artifact: isDeployedArtifacts,
     package_type: packageTypes
   })
-
-  useEffect(() => {
-    const handler = () => refetch()
-    window.addEventListener('ar-refresh-artifact-list', handler)
-    return () => window.removeEventListener('ar-refresh-artifact-list', handler)
-  }, [refetch])
 
   const handleClearAllFilters = (): void => {
     flushSync(searchRef.current.clear)
