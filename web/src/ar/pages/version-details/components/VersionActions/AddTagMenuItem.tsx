@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react'
+import React, { useRef } from 'react'
 import { Formik } from 'formik'
 import { Button, ButtonVariation, Layout, ModalDialog, useToaster } from '@harnessio/uicore'
+import { useAddOciArtifactTagsMutation } from '@harnessio/react-har-service-client'
 
 import { useAppStore, useParentComponents } from '@ar/hooks'
-import { useParentUtils } from '@ar/hooks/useParentUtils'
 import { useStrings } from '@ar/frameworks/strings'
 import { queryClient } from '@ar/utils/queryClient'
 import { ResourceType } from '@ar/common/permissionTypes'
@@ -53,55 +53,38 @@ export function AddTagModalContent({
   onClose
 }: AddTagModalContentProps): JSX.Element {
   const { scope } = useAppStore()
-  const { getApiBaseUrl, getCustomHeaders } = useParentUtils()
-  const accountId = typeof scope?.accountId === 'string' ? scope.accountId : ''
   const { getString } = useStrings()
   const { showSuccess, showError } = useToaster()
-  const [loading, setLoading] = useState(false)
+  const { mutateAsync: addOciArtifactTags, isLoading: loading } = useAddOciArtifactTagsMutation()
+  const inputWrapperRef = useRef<HTMLDivElement>(null)
 
-  const handleSubmit = async (tagNamesRaw: string[] | (string | { label: string; value: string })[]) => {
-    const trimmed = normalizeTagNames(tagNamesRaw)
+  const handleSubmit = async (
+    tagNamesRaw: string[] | (string | { label: string; value: string })[],
+    currentInputValue?: string
+  ) => {
+    const committed = normalizeTagNames(tagNamesRaw)
+    const current = currentInputValue?.trim() ?? ''
+    const allTags = current ? [...committed, current] : committed
+    console.log('allTags', allTags);
+    const trimmed = normalizeTagNames(allTags)
     if (trimmed.length === 0) {
       showError(getString('validationMessages.entityRequired', { entity: 'Tag name' }))
       return
     }
-    setLoading(true)
     try {
-      const path = '/har/api/v2/oci/tags'
-      const baseUrl = new URL(getApiBaseUrl(''), window.location.origin)
-      console.log('baseUrl', baseUrl);
-      baseUrl.pathname = path
-      console.log('baseUrl after adding path', baseUrl);
-      baseUrl.searchParams.set('account_identifier', accountId || '')
-      baseUrl.searchParams.set('registry_identifier', repoKey)
-      const url = baseUrl.toString()
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...getCustomHeaders()
-      }
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
-      let res: Response
-      try {
-        res = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            package: artifactKey,
-            version: versionKey,
-            tags: trimmed
-          }),
-          signal: controller.signal
-        })
-        clearTimeout(timeoutId)
-      } catch (fetchError) {
-        clearTimeout(timeoutId)
-        throw fetchError
-      }
-      if (!res.ok) {
-        const errText = await res.text()
-        throw new Error(errText || res.statusText)
-      }
+      await addOciArtifactTags({
+        queryParams: {
+          account_identifier: typeof scope?.accountId === 'string' ? scope.accountId : '',
+          org_identifier: typeof scope?.orgId === 'string' ? scope.orgId : undefined,
+          project_identifier: typeof scope?.projectId === 'string' ? scope.projectId : undefined,
+          registry_identifier: repoKey
+        },
+        body: {
+          package: artifactKey,
+          version: versionKey,
+          tags: trimmed
+        }
+      })
       showSuccess(getString('versionList.messages.addTagSuccess'))
       hideModal()
       onClose?.()
@@ -109,8 +92,6 @@ export function AddTagModalContent({
       queryClient.invalidateQueries(['ListVersions'])
     } catch (e) {
       showError((e as Error)?.message || getString('versionList.messages.addTagFailed'))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -131,7 +112,11 @@ export function AddTagModalContent({
             <Layout.Horizontal spacing="large">
               <Button
                 variation={ButtonVariation.PRIMARY}
-                onClick={() => handleSubmit(formik.values.tagNames)}
+                onClick={() => {
+                  const currentInput =
+                    inputWrapperRef.current?.querySelector('input')?.value?.trim() ?? ''
+                  handleSubmit(formik.values.tagNames, currentInput)
+                }}
                 disabled={loading}>
                 {getString('add')}
               </Button>
@@ -140,7 +125,7 @@ export function AddTagModalContent({
               </Button>
             </Layout.Horizontal>
           }>
-          <div className={css.addTagInputWrapper}>
+          <div ref={inputWrapperRef} className={css.addTagInputWrapper}>
             <PatternInput
               name="tagNames"
               label={getString('versionList.table.columns.tags')}
