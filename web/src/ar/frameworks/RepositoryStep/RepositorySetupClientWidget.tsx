@@ -55,8 +55,11 @@ export default function RepositorySetupClientWidget(props: RepositorySetupClient
     artifactKey,
     versionKey
   })
-  return React.cloneElement(content as React.ReactElement, {
+  if (!content || !React.isValidElement(content)) {
+    return content
+  }
+  return React.cloneElement(content, {
     isSentFromRegistryPage,
     registryPath
-  })
+  } as React.Attributes & { isSentFromRegistryPage?: boolean; registryPath?: string })
 }

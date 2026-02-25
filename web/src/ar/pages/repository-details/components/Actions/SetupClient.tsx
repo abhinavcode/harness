@@ -30,7 +30,7 @@ export default function SetupClientMenuItem({ data, onClose }: RepositoryActions
     repoKey: data.identifier,
     packageType: data.packageType as RepositoryPackageType,
     onClose,
-    isSentFromRegistryPage: true,
+    isSentFromRegistryPage: !!(data as { path?: string }).path,
     registryPath: (data as { path?: string }).path
   })
   return (
