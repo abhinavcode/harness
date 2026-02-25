@@ -42,6 +42,8 @@ import (
 	generic2 "github.com/harness/gitness/registry/app/pkg/types/generic"
 	refcache2 "github.com/harness/gitness/registry/app/services/refcache"
 	"github.com/harness/gitness/registry/request"
+	regtypes "github.com/harness/gitness/registry/types"
+	coretypes "github.com/harness/gitness/types"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
@@ -215,19 +217,41 @@ func (h *Handler) GetFileArtifactInfoV2(r *http.Request) (generic2.ArtifactInfo,
 			rootSpace.Identifier)
 	}
 
+	return h.buildFileArtifactInfo(ctx, registry, rootSpace, rootIdentifier, registryIdentifier, path, splits)
+}
+
+// buildFileArtifactInfo is an internal helper that builds ArtifactInfo for non-GENERIC package types
+// using already-fetched registry and rootSpace to avoid duplicate database queries
+func (h *Handler) buildFileArtifactInfo(
+	ctx context.Context,
+	registry *regtypes.Registry,
+	rootSpace *coretypes.SpaceCore,
+	rootIdentifier string,
+	registryIdentifier string,
+	path string,
+	splits []string,
+) (generic2.ArtifactInfo, error) {
 	// Path format: /pkg/{rootIdentifier}/{registryIdentifier}/files/*
 	// splits[0] = "pkg", splits[1] = rootIdentifier, splits[2] = registryIdentifier, splits[3] = "files"
 	// Remaining path starts at splits[4]
 	remainingSegments := splits[4:]
 
 	if len(remainingSegments) == 0 {
+		log.Ctx(ctx).Error().
+			Str("path", path).
+			Str("registryIdentifier", registryIdentifier).
+			Msg("No file path provided in request")
 		return generic2.ArtifactInfo{}, usererror.BadRequestf("Invalid request: no file path provided")
 	}
 
 	fileName := remainingSegments[len(remainingSegments)-1]
 	filePath := strings.Join(remainingSegments, "/")
 
-	if err = validateFilePath(filePath); err != nil {
+	if err := validateFilePath(filePath); err != nil {
+		log.Ctx(ctx).Error().Err(err).
+			Str("filePath", filePath).
+			Str("registryIdentifier", registryIdentifier).
+			Msg("Invalid file path")
 		return generic2.ArtifactInfo{}, usererror.BadRequestf("%v", err)
 	}
 
@@ -251,10 +275,21 @@ func (h *Handler) GetFileArtifactInfoV2(r *http.Request) (generic2.ArtifactInfo,
 	err2 := utils.PatternAllowed(registry.AllowedPattern, registry.BlockedPattern,
 		info.FilePath)
 	if err2 != nil {
+		log.Ctx(ctx).Error().Err(err2).
+			Str("filePath", info.FilePath).
+			Str("registryIdentifier", registryIdentifier).
+			Msg("File path not allowed due to allowed/blocked patterns")
 		return generic2.ArtifactInfo{}, usererror.BadRequestf("Invalid request: File path %q not "+
 			"allowed due to allowed / blocked patterns",
 			info.FilePath)
 	}
+
+	log.Ctx(ctx).Debug().
+		Str("filePath", filePath).
+		Str("fileName", fileName).
+		Str("registryIdentifier", registryIdentifier).
+		Str("packageType", string(registry.PackageType)).
+		Msg("Built file artifact info for non-GENERIC package")
 
 	return info, nil
 }
@@ -283,9 +318,9 @@ func (h *Handler) GetGenericArtifactInfoV2(r *http.Request) (generic2.ArtifactIn
 			rootSpace.Identifier)
 	}
 
-	// For non-GENERIC package types, delegate to GetFileArtifactInfoV2
+	// For non-GENERIC package types, use the helper to avoid duplicate DB queries
 	if registry.PackageType != artifact2.PackageTypeGENERIC {
-		return h.GetFileArtifactInfoV2(r)
+		return h.buildFileArtifactInfo(ctx, registry, rootSpace, rootIdentifier, registryIdentifier, path, splits)
 	}
 
 	// Handle GENERIC package type
