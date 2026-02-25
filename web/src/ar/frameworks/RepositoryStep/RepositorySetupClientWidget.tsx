@@ -27,23 +27,12 @@ import type { RepositoryAbstractFactory } from './RepositoryAbstractFactory'
 interface RepositorySetupClientWidgetProps extends RepositoySetupClientProps {
   factory?: RepositoryAbstractFactory
   type: RepositoryPackageType
-  /** When true (e.g. from registry list), use registryPath for client-setup-details API. Injected here so types don't need to prop-drill. */
-  isSentFromRegistryPage?: boolean
-  /** Full path from list API (accountId/orgId/projectId/registryName). Injected here when isSentFromRegistryPage is true. */
-  registryPath?: string
+  /** Pre-computed registry ref (e.g. from list). When set, used for client-setup-details API. Injected here so types don't prop-drill. */
+  registryRef?: string
 }
 
 export default function RepositorySetupClientWidget(props: RepositorySetupClientWidgetProps): JSX.Element {
-  const {
-    factory = repositoryFactory,
-    type,
-    onClose,
-    repoKey,
-    artifactKey,
-    versionKey,
-    isSentFromRegistryPage,
-    registryPath
-  } = props
+  const { factory = repositoryFactory, type, onClose, repoKey, artifactKey, versionKey, registryRef } = props
   const { getString } = useStrings()
   const repositoryType = factory?.getRepositoryType(type)
   if (!repositoryType) {
@@ -59,7 +48,6 @@ export default function RepositorySetupClientWidget(props: RepositorySetupClient
     return content
   }
   return React.cloneElement(content, {
-    isSentFromRegistryPage,
-    registryPath
-  } as React.Attributes & { isSentFromRegistryPage?: boolean; registryPath?: string })
+    registryRef
+  } as React.Attributes & { registryRef?: string })
 }

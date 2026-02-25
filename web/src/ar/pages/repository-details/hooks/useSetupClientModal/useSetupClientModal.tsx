@@ -27,12 +27,12 @@ import css from './useSetupClientModal.module.scss'
 export interface useSetupClientModalProps extends Omit<RepositoySetupClientProps, 'onClose'> {
   packageType: RepositoryPackageType
   onClose?: () => void
-  isSentFromRegistryPage?: boolean
-  registryPath?: string
+  /** Pre-computed registry ref (e.g. from list). When set, used for client-setup-details API. */
+  registryRef?: string
 }
 
 export function useSetupClientModal(props: useSetupClientModalProps) {
-  const { packageType, repoKey, artifactKey, versionKey, onClose, isSentFromRegistryPage, registryPath } = props
+  const { packageType, repoKey, artifactKey, versionKey, onClose, registryRef } = props
   const { useModalHook } = useParentHooks()
 
   const [showModal, hideModal] = useModalHook(() => {
@@ -60,8 +60,7 @@ export function useSetupClientModal(props: useSetupClientModalProps) {
           versionKey={versionKey}
           onClose={handleCloseModal}
           type={packageType as RepositoryPackageType}
-          isSentFromRegistryPage={isSentFromRegistryPage}
-          registryPath={registryPath}
+          registryRef={registryRef}
         />
       </Drawer>
     )

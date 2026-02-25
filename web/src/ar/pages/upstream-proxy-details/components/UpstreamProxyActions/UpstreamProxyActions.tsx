@@ -19,6 +19,7 @@ import ActionButton from '@ar/components/ActionButton/ActionButton'
 
 import { PageType } from '@ar/common/types'
 import { useAllowSoftDelete } from '@ar/hooks'
+import { useRegistryRef } from '@ar/frameworks/RepositoryStep/RegistryRefContext'
 import SetupClientMenuItem from '@ar/pages/repository-details/components/Actions/SetupClient'
 import DeleteRepositoryMenuItem from '@ar/pages/repository-details/components/Actions/DeleteRepository'
 import SoftDeleteRepositoryMenuItem from '@ar/pages/repository-details/components/Actions/SoftDeleteRepository'
@@ -28,6 +29,7 @@ import type { UpstreamProxyActionProps } from './type'
 export default function UpstreamProxyActions({ data, readonly, pageType }: UpstreamProxyActionProps): JSX.Element {
   const [open, setOpen] = useState(false)
   const allowSoftDelete = useAllowSoftDelete()
+  const registryRef = useRegistryRef()
   return (
     <ActionButton isOpen={open} setOpen={setOpen}>
       {allowSoftDelete && (
@@ -40,7 +42,13 @@ export default function UpstreamProxyActions({ data, readonly, pageType }: Upstr
       )}
       <DeleteRepositoryMenuItem data={data} readonly={readonly} pageType={pageType} onClose={() => setOpen(false)} />
       {pageType === PageType.Table && (
-        <SetupClientMenuItem data={data} readonly={readonly} pageType={pageType} onClose={() => setOpen(false)} />
+        <SetupClientMenuItem
+          data={data}
+          readonly={readonly}
+          pageType={pageType}
+          registryRef={registryRef}
+          onClose={() => setOpen(false)}
+        />
       )}
     </ActionButton>
   )

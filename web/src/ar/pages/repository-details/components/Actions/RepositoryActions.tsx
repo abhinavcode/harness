@@ -19,6 +19,7 @@ import React, { useState } from 'react'
 import { useAllowSoftDelete } from '@ar/hooks'
 import { PageType } from '@ar/common/types'
 import ActionButton from '@ar/components/ActionButton/ActionButton'
+import { useRegistryRef } from '@ar/frameworks/RepositoryStep/RegistryRefContext'
 
 import SetupClientMenuItem from './SetupClient'
 import type { RepositoryActionsProps } from './types'
@@ -28,6 +29,7 @@ import SoftDeleteRepositoryMenuItem from './SoftDeleteRepository'
 export default function RepositoryActions({ data, readonly, pageType }: RepositoryActionsProps): JSX.Element {
   const [open, setOpen] = useState(false)
   const allowSoftDelete = useAllowSoftDelete()
+  const registryRef = useRegistryRef()
   return (
     <ActionButton isOpen={open} setOpen={setOpen}>
       {allowSoftDelete && (
@@ -40,7 +42,13 @@ export default function RepositoryActions({ data, readonly, pageType }: Reposito
       )}
       <DeleteRepositoryMenuItem data={data} readonly={readonly} pageType={pageType} onClose={() => setOpen(false)} />
       {pageType === PageType.Table && (
-        <SetupClientMenuItem data={data} readonly={readonly} pageType={pageType} onClose={() => setOpen(false)} />
+        <SetupClientMenuItem
+          data={data}
+          readonly={readonly}
+          pageType={pageType}
+          registryRef={registryRef}
+          onClose={() => setOpen(false)}
+        />
       )}
     </ActionButton>
   )

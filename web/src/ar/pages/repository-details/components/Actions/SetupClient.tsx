@@ -23,15 +23,14 @@ import { PermissionIdentifier, ResourceType } from '@ar/common/permissionTypes'
 import { useSetupClientModal } from '@ar/pages/repository-details/hooks/useSetupClientModal/useSetupClientModal'
 import type { RepositoryActionsProps } from './types'
 
-export default function SetupClientMenuItem({ data, onClose }: RepositoryActionsProps): JSX.Element {
+export default function SetupClientMenuItem({ data, onClose, registryRef }: RepositoryActionsProps): JSX.Element {
   const { getString } = useStrings()
   const { RbacMenuItem } = useParentComponents()
   const [showSetupClientModal] = useSetupClientModal({
     repoKey: data.identifier,
     packageType: data.packageType as RepositoryPackageType,
     onClose,
-    isSentFromRegistryPage: !!(data as { path?: string }).path,
-    registryPath: (data as { path?: string }).path
+    registryRef
   })
   return (
     <>
