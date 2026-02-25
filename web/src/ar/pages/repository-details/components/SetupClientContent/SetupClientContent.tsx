@@ -19,7 +19,7 @@ import { FontVariation } from '@harnessio/design-system'
 import { Button, ButtonVariation, Layout, Page, Text } from '@harnessio/uicore'
 import { type PackageType, useGetClientSetupDetailsQuery } from '@harnessio/react-har-service-client'
 
-import { useGetSpaceRef } from '@ar/hooks'
+import { useGetSpaceRef, encodeRef } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
 import type { RepositoryPackageType } from '@ar/common/types'
 import RepositoryIcon from '@ar/frameworks/RepositoryStep/RepositoryIcon'
@@ -34,12 +34,17 @@ interface SetupClientContentProps {
   artifactKey?: string
   versionKey?: string
   packageType: PackageType
+  /** When true, use registryPath for client-setup-details API ref. Default false. */
+  isSentFromRegistryPage?: boolean
+  /** Full path from list API (accountId/orgId/projectId/registryName). Used when isSentFromRegistryPage is true. */
+  registryPath?: string
 }
 
 export default function SetupClientContent(props: SetupClientContentProps): JSX.Element {
-  const { onClose, packageType, repoKey } = props
+  const { onClose, packageType, repoKey, isSentFromRegistryPage = false, registryPath } = props
   const { getString } = useStrings()
-  const spaceRef = useGetSpaceRef(repoKey)
+  const spaceRefFromScope = useGetSpaceRef(repoKey)
+  const registryRef = isSentFromRegistryPage && registryPath ? encodeRef(registryPath) : spaceRefFromScope
 
   const {
     isFetching: loading,
@@ -47,7 +52,7 @@ export default function SetupClientContent(props: SetupClientContentProps): JSX.
     error,
     refetch
   } = useGetClientSetupDetailsQuery({
-    registry_ref: spaceRef,
+    registry_ref: registryRef,
     queryParams: {
       artifact: props.artifactKey,
       version: props.versionKey

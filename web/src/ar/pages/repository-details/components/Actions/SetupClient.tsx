@@ -29,7 +29,9 @@ export default function SetupClientMenuItem({ data, onClose }: RepositoryActions
   const [showSetupClientModal] = useSetupClientModal({
     repoKey: data.identifier,
     packageType: data.packageType as RepositoryPackageType,
-    onClose
+    onClose,
+    isSentFromRegistryPage: true,
+    registryPath: (data as { path?: string }).path
   })
   return (
     <>
