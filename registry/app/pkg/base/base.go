@@ -212,35 +212,22 @@ func (l *localBase) UploadRawFile(
 		Headers: make(map[string]string),
 		Code:    0,
 	}
-
-	registry, err := l.registryFinder.FindByRootParentID(ctx, info.RootParentID, info.RegIdentifier)
+	exists, err := l.ExistsByFilePath(ctx, info.RegistryID, filePath)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).
-			Int64("rootParentID", info.RootParentID).
-			Str("regIdentifier", info.RegIdentifier).
-			Msg("Failed to find registry for raw file upload")
-		return responseHeaders, "", errcode.ErrCodeUnknown.WithDetail(err)
-	}
-
-	// Check if file already exists
-	exists, err := l.ExistsByFilePath(ctx, registry.ID, filePath)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).
-			Int64("registryID", registry.ID).
+			Int64("registryID", info.RegistryID).
 			Str("filePath", filePath).
 			Msg("Failed to check if file exists")
 		return responseHeaders, "", errcode.ErrCodeUnknown.WithDetail(err)
 	}
-
 	if exists && failOnConflict {
 		log.Ctx(ctx).Warn().
 			Str("filePath", filePath).
-			Int64("registryID", registry.ID).
+			Int64("registryID", info.RegistryID).
 			Msg("File already exists and failOnConflict is true")
 		return responseHeaders, "", usererror.Conflict(
 			fmt.Sprintf("File already exists at path: %s", filePath))
 	}
-
 	session, ok := request.AuthSessionFrom(ctx)
 	if !ok {
 		log.Ctx(ctx).Error().
@@ -248,11 +235,10 @@ func (l *localBase) UploadRawFile(
 			Msg("Authentication required for raw file upload")
 		return responseHeaders, "", usererror.ErrUnauthorized
 	}
-
 	fileInfo, err := l.fileManager.UploadFile(
 		ctx,
 		filePath,
-		registry.ID,
+		info.RegistryID,
 		info.RootParentID,
 		info.RootIdentifier,
 		nil, // multipart.File not available
@@ -262,7 +248,7 @@ func (l *localBase) UploadRawFile(
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).
 			Str("filePath", filePath).
-			Int64("registryID", registry.ID).
+			Int64("registryID", info.RegistryID).
 			Int64("principalID", session.Principal.ID).
 			Msg("Failed to upload raw file")
 		return responseHeaders, "", errcode.ErrCodeUnknown.WithDetail(err)
@@ -271,9 +257,8 @@ func (l *localBase) UploadRawFile(
 	log.Ctx(ctx).Info().
 		Str("filePath", filePath).
 		Str("sha256", fileInfo.Sha256).
-		Int64("registryID", registry.ID).
+		Int64("registryID", info.RegistryID).
 		Msg("Successfully uploaded raw file")
-
 	responseHeaders.Code = http.StatusCreated
 	return responseHeaders, fileInfo.Sha256, nil
 }
@@ -287,31 +272,19 @@ func (l *localBase) DownloadRawFile(
 		Headers: make(map[string]string),
 		Code:    0,
 	}
-
-	registry, err := l.registryFinder.FindByRootParentID(ctx, info.RootParentID, info.RegIdentifier)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).
-			Int64("rootParentID", info.RootParentID).
-			Str("regIdentifier", info.RegIdentifier).
-			Msg("Failed to find registry for raw file download")
-		return responseHeaders, nil, "", errcode.ErrCodeUnknown.WithDetail(err)
-	}
-
-	fileReader, _, redirectURL, err := l.fileManager.DownloadFileByPath(ctx, filePath, registry.ID,
+	fileReader, _, redirectURL, err := l.fileManager.DownloadFileByPath(ctx, filePath, info.RegistryID,
 		info.RegIdentifier, info.RootIdentifier, true)
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).
 			Str("filePath", filePath).
-			Int64("registryID", registry.ID).
+			Int64("registryID", info.RegistryID).
 			Msg("Failed to download raw file")
 		return responseHeaders, nil, "", err
 	}
-
 	log.Ctx(ctx).Info().
 		Str("filePath", filePath).
-		Int64("registryID", registry.ID).
+		Int64("registryID", info.RegistryID).
 		Msg("Successfully downloaded raw file")
-
 	responseHeaders.Code = http.StatusOK
 	return responseHeaders, fileReader, redirectURL, nil
 }
