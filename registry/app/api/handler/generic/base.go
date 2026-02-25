@@ -190,36 +190,6 @@ func (h *Handler) GetGenericArtifactInfo(r *http.Request) (
 	return info, errcode.Error{}
 }
 
-// GetFileArtifactInfoV2 handles file artifact info for non-GENERIC package types
-// Path format: /pkg/{rootIdentifier}/{registryIdentifier}/files/a/b/c/d/e
-// Where: fileName = e (last segment), filePath = a/b/c/d/e (entire path)
-func (h *Handler) GetFileArtifactInfoV2(r *http.Request) (generic2.ArtifactInfo, error) {
-	ctx := r.Context()
-	path := r.URL.Path
-	path = strings.TrimPrefix(path, "/")
-	splits := strings.Split(path, "/")
-
-	rootIdentifier := chi.URLParam(r, "rootIdentifier")
-	registryIdentifier := chi.URLParam(r, "registryIdentifier")
-
-	rootSpace, err := h.SpaceFinder.FindByRef(ctx, rootIdentifier)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf("Root space not found: %q", rootIdentifier)
-		return generic2.ArtifactInfo{}, usererror.NotFoundf("Root %q not found", rootIdentifier)
-	}
-
-	registry, err := h.RegistryFinder.FindByRootRef(ctx, rootSpace.Identifier, registryIdentifier)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msgf(
-			"registry %q not found for root: %q. Reason: %q", registryIdentifier, rootSpace.Identifier, err,
-		)
-		return generic2.ArtifactInfo{}, usererror.NotFoundf("Registry %q not found for root: %q", registryIdentifier,
-			rootSpace.Identifier)
-	}
-
-	return h.buildFileArtifactInfo(ctx, registry, rootSpace, rootIdentifier, registryIdentifier, path, splits)
-}
-
 // buildFileArtifactInfo is an internal helper that builds ArtifactInfo for non-GENERIC package types
 // using already-fetched registry and rootSpace to avoid duplicate database queries
 func (h *Handler) buildFileArtifactInfo(
