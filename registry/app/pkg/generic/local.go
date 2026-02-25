@@ -88,6 +88,12 @@ func (c *localRegistry) PutFile(
 	reader io.ReadCloser,
 	contentType string,
 ) (*commons.ResponseHeaders, string, error) {
+	// For non-GENERIC package types, use raw file upload
+	if info.Registry.PackageType != artifact.PackageTypeGENERIC {
+		return c.uploadRawFile(ctx, info, reader, contentType)
+	}
+
+	// For GENERIC package type, use the existing upload flow
 	completePath := pkg.JoinWithSeparator("/", info.Image, info.Version, info.FilePath)
 	headers, sha256, err := c.localBase.Upload(ctx, info.ArtifactInfo, info.FileName, info.Version, completePath,
 		reader, &generic2.GenericMetadata{})
@@ -105,6 +111,12 @@ func (c *localRegistry) DownloadFile(
 	info generic.ArtifactInfo,
 	filePath string,
 ) (*commons.ResponseHeaders, *storage.FileReader, io.ReadCloser, string, error) {
+	// For non-GENERIC package types, use raw file download
+	if info.Registry.PackageType != artifact.PackageTypeGENERIC {
+		return c.downloadRawFile(ctx, info, filePath)
+	}
+
+	// For GENERIC package type, use the existing download flow
 	download, reader, url, err := c.localBase.Download(ctx, info.ArtifactInfo, info.Version, filePath)
 	if err != nil {
 		log.Ctx(ctx).Error().Msgf("Failed to download file: %q, %q, %q", info.FileName, info.Version, filePath)
@@ -123,4 +135,48 @@ func (c *localRegistry) HeadFile(
 	filePath string,
 ) (headers *commons.ResponseHeaders, err error) {
 	return c.localBase.ExistsE(ctx, info, filePath)
+}
+
+func (c *localRegistry) uploadRawFile(
+	ctx context.Context,
+	info generic.ArtifactInfo,
+	reader io.ReadCloser,
+	contentType string,
+) (*commons.ResponseHeaders, string, error) {
+	log.Ctx(ctx).Debug().
+		Msgf("Uploading raw file for package type: %s, filePath: %s",
+			info.Registry.PackageType, info.FilePath)
+
+	headers, sha256, err := c.localBase.UploadRawFile(ctx, info.ArtifactInfo, info.FilePath, reader, true)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("Failed to upload raw file: %q, filePath: %q",
+				info.FileName, info.FilePath)
+		return nil, "", fmt.Errorf("failed to upload raw file: %w", err)
+	}
+
+	log.Ctx(ctx).Info().Str("sha256", sha256).
+		Msgf("Successfully uploaded raw file. content type: %s", contentType)
+	return headers, sha256, nil
+}
+
+func (c *localRegistry) downloadRawFile(
+	ctx context.Context,
+	info generic.ArtifactInfo,
+	filePath string,
+) (*commons.ResponseHeaders, *storage.FileReader, io.ReadCloser, string, error) {
+	log.Ctx(ctx).Debug().
+		Msgf("Downloading raw file for package type: %s, filePath: %s",
+			info.Registry.PackageType, filePath)
+
+	headers, reader, url, err := c.localBase.DownloadRawFile(ctx, info.ArtifactInfo, filePath)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).
+			Msgf("Failed to download raw file: %q, filePath: %q",
+				info.FileName, filePath)
+		return nil, nil, nil, "", fmt.Errorf("failed to download raw file: %w", err)
+	}
+
+	log.Ctx(ctx).Info().Msgf("Successfully downloaded raw file from path: %s", filePath)
+	return headers, reader, nil, url, nil
 }

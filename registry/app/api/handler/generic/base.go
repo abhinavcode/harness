@@ -188,28 +188,17 @@ func (h *Handler) GetGenericArtifactInfo(r *http.Request) (
 	return info, errcode.Error{}
 }
 
-func (h *Handler) GetGenericArtifactInfoV2(r *http.Request) (generic2.ArtifactInfo, error) {
+// GetFileArtifactInfoV2 handles file artifact info for non-GENERIC package types
+// Path format: /pkg/{rootIdentifier}/{registryIdentifier}/files/a/b/c/d/e
+// Where: fileName = e (last segment), filePath = a/b/c/d/e (entire path)
+func (h *Handler) GetFileArtifactInfoV2(r *http.Request) (generic2.ArtifactInfo, error) {
 	ctx := r.Context()
 	path := r.URL.Path
 	path = strings.TrimPrefix(path, "/")
 	splits := strings.Split(path, "/")
-	filePath := strings.Join(splits[6:], "/")
-	fileName := splits[len(splits)-1]
 
-	rootIdentifier, registryIdentifier, packageName, version :=
-		chi.URLParam(r, "rootIdentifier"),
-		chi.URLParam(r, "registryIdentifier"),
-		chi.URLParam(r, "package"),
-		chi.URLParam(r, "version")
-
-	if err := validatePackageVersionV2(packageName, version); err != nil {
-		return generic2.ArtifactInfo{}, fmt.Errorf("invalid image name/version/fileName: %q/%q %w", packageName,
-			version, err)
-	}
-
-	if err := validateFilePath(filePath); err != nil {
-		return generic2.ArtifactInfo{}, usererror.BadRequestf("%v", err)
-	}
+	rootIdentifier := chi.URLParam(r, "rootIdentifier")
+	registryIdentifier := chi.URLParam(r, "registryIdentifier")
 
 	rootSpace, err := h.SpaceFinder.FindByRef(ctx, rootIdentifier)
 	if err != nil {
@@ -224,6 +213,115 @@ func (h *Handler) GetGenericArtifactInfoV2(r *http.Request) (generic2.ArtifactIn
 		)
 		return generic2.ArtifactInfo{}, usererror.NotFoundf("Registry %q not found for root: %q", registryIdentifier,
 			rootSpace.Identifier)
+	}
+
+	// Path format: /pkg/{rootIdentifier}/{registryIdentifier}/files/*
+	// splits[0] = "pkg", splits[1] = rootIdentifier, splits[2] = registryIdentifier, splits[3] = "files"
+	// Remaining path starts at splits[4]
+	remainingSegments := splits[4:]
+
+	if len(remainingSegments) == 0 {
+		return generic2.ArtifactInfo{}, usererror.BadRequestf("Invalid request: no file path provided")
+	}
+
+	fileName := remainingSegments[len(remainingSegments)-1]
+	filePath := strings.Join(remainingSegments, "/")
+
+	if err = validateFilePath(filePath); err != nil {
+		return generic2.ArtifactInfo{}, usererror.BadRequestf("%v", err)
+	}
+
+	info := generic2.ArtifactInfo{
+		ArtifactInfo: pkg.ArtifactInfo{
+			BaseInfo: &pkg.BaseInfo{
+				PathPackageType: registry.PackageType,
+				ParentID:        registry.ParentID,
+				RootIdentifier:  rootIdentifier,
+				RootParentID:    rootSpace.ID,
+			},
+			RegIdentifier: registryIdentifier,
+			RegistryID:    registry.ID,
+			Registry:      *registry,
+		},
+		FileName: fileName,
+		FilePath: filePath,
+	}
+
+	log.Ctx(ctx).Info().Msgf("Dispatch: URI: %s", path)
+	err2 := utils.PatternAllowed(registry.AllowedPattern, registry.BlockedPattern,
+		info.FilePath)
+	if err2 != nil {
+		return generic2.ArtifactInfo{}, usererror.BadRequestf("Invalid request: File path %q not "+
+			"allowed due to allowed / blocked patterns",
+			info.FilePath)
+	}
+
+	return info, nil
+}
+
+func (h *Handler) GetGenericArtifactInfoV2(r *http.Request) (generic2.ArtifactInfo, error) {
+	ctx := r.Context()
+	path := r.URL.Path
+	path = strings.TrimPrefix(path, "/")
+	splits := strings.Split(path, "/")
+
+	rootIdentifier := chi.URLParam(r, "rootIdentifier")
+	registryIdentifier := chi.URLParam(r, "registryIdentifier")
+
+	rootSpace, err := h.SpaceFinder.FindByRef(ctx, rootIdentifier)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msgf("Root space not found: %q", rootIdentifier)
+		return generic2.ArtifactInfo{}, usererror.NotFoundf("Root %q not found", rootIdentifier)
+	}
+
+	registry, err := h.RegistryFinder.FindByRootRef(ctx, rootSpace.Identifier, registryIdentifier)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msgf(
+			"registry %q not found for root: %q. Reason: %q", registryIdentifier, rootSpace.Identifier, err,
+		)
+		return generic2.ArtifactInfo{}, usererror.NotFoundf("Registry %q not found for root: %q", registryIdentifier,
+			rootSpace.Identifier)
+	}
+
+	// For non-GENERIC package types, delegate to GetFileArtifactInfoV2
+	if registry.PackageType != artifact2.PackageTypeGENERIC {
+		return h.GetFileArtifactInfoV2(r)
+	}
+
+	// Handle GENERIC package type
+	// Path format: /pkg/{rootIdentifier}/{registryIdentifier}/files/*
+	// splits[0] = "pkg", splits[1] = rootIdentifier, splits[2] = registryIdentifier, splits[3] = "files"
+	// Remaining path starts at splits[4]
+	remainingSegments := splits[4:]
+
+	if len(remainingSegments) == 0 {
+		return generic2.ArtifactInfo{}, usererror.BadRequestf("Invalid request: no file path provided")
+	}
+
+	// For GENERIC package type:
+	// remainingSegments = [a, b, c, d, e]
+	// packageName = a (first segment)
+	// version = b (second segment)
+	// fileName = e (last segment)
+	// filePath = c/d/e (segments from index 2 onwards)
+	if len(remainingSegments) < 3 {
+		return generic2.ArtifactInfo{}, usererror.BadRequestf(
+			"Invalid request: expected at least package/version/file , got: %s",
+			strings.Join(remainingSegments, "/"))
+	}
+
+	packageName := remainingSegments[0]
+	version := remainingSegments[1]
+	fileName := remainingSegments[len(remainingSegments)-1]
+	filePath := strings.Join(remainingSegments[2:], "/")
+
+	if err = validatePackageVersionV2(packageName, version); err != nil {
+		return generic2.ArtifactInfo{}, fmt.Errorf("invalid image name/version/fileName: %q/%q %w", packageName,
+			version, err)
+	}
+
+	if err = validateFilePath(filePath); err != nil {
+		return generic2.ArtifactInfo{}, usererror.BadRequestf("%v", err)
 	}
 
 	info := generic2.ArtifactInfo{
