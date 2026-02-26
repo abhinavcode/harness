@@ -296,8 +296,6 @@ func (h *Handler) GetGenericArtifactInfoV2(r *http.Request) (generic2.ArtifactIn
 	return info, nil
 }
 
-// buildFileArtifactInfo is an internal helper that builds ArtifactInfo for non-GENERIC package types
-// using already-fetched registry and rootSpace to avoid duplicate database queries
 func (h *Handler) buildFileArtifactInfo(
 	ctx context.Context,
 	registry *regtypes.Registry,

@@ -402,17 +402,58 @@ func TestValidateFilePathRegexPattern(t *testing.T) {
 
 // Test helpers for URL path parsing
 
+type urlPathTest struct {
+	name         string
+	urlPath      string
+	wantSegments []string
+	wantPackage  string
+	wantVersion  string
+	wantFileName string
+	wantFilePath string
+	isGeneric    bool
+}
+
+func validateGenericPackageSegments(t *testing.T, segments []string, tt urlPathTest) {
+	t.Helper()
+	if len(segments) < 3 {
+		t.Errorf("GENERIC package needs at least 3 segments")
+		return
+	}
+
+	packageName := segments[0]
+	version := segments[1]
+	fileName := segments[len(segments)-1]
+	filePath := strings.Join(segments[2:], "/")
+
+	if packageName != tt.wantPackage {
+		t.Errorf("Expected package=%s, got %s", tt.wantPackage, packageName)
+	}
+	if version != tt.wantVersion {
+		t.Errorf("Expected version=%s, got %s", tt.wantVersion, version)
+	}
+	if fileName != tt.wantFileName {
+		t.Errorf("Expected fileName=%s, got %s", tt.wantFileName, fileName)
+	}
+	if filePath != tt.wantFilePath {
+		t.Errorf("Expected filePath=%s, got %s", tt.wantFilePath, filePath)
+	}
+}
+
+func validateNonGenericPackageSegments(t *testing.T, segments []string, tt urlPathTest) {
+	t.Helper()
+	fileName := segments[len(segments)-1]
+	filePath := strings.Join(segments, "/")
+
+	if fileName != tt.wantFileName {
+		t.Errorf("Expected fileName=%s, got %s", tt.wantFileName, fileName)
+	}
+	if filePath != tt.wantFilePath {
+		t.Errorf("Expected filePath=%s, got %s", tt.wantFilePath, filePath)
+	}
+}
+
 func TestURLPathParsing(t *testing.T) {
-	tests := []struct {
-		name         string
-		urlPath      string
-		wantSegments []string
-		wantPackage  string
-		wantVersion  string
-		wantFileName string
-		wantFilePath string
-		isGeneric    bool
-	}{
+	tests := []urlPathTest{
 		{
 			name:         "GENERIC package - simple",
 			urlPath:      "/pkg/root/registry/files/mypackage/1.0.0/file.jar",
@@ -455,38 +496,9 @@ func TestURLPathParsing(t *testing.T) {
 			}
 
 			if tt.isGeneric {
-				if len(remainingSegments) < 3 {
-					t.Errorf("GENERIC package needs at least 3 segments")
-					return
-				}
-
-				packageName := remainingSegments[0]
-				version := remainingSegments[1]
-				fileName := remainingSegments[len(remainingSegments)-1]
-				filePath := strings.Join(remainingSegments[2:], "/")
-
-				if packageName != tt.wantPackage {
-					t.Errorf("Expected package=%s, got %s", tt.wantPackage, packageName)
-				}
-				if version != tt.wantVersion {
-					t.Errorf("Expected version=%s, got %s", tt.wantVersion, version)
-				}
-				if fileName != tt.wantFileName {
-					t.Errorf("Expected fileName=%s, got %s", tt.wantFileName, fileName)
-				}
-				if filePath != tt.wantFilePath {
-					t.Errorf("Expected filePath=%s, got %s", tt.wantFilePath, filePath)
-				}
+				validateGenericPackageSegments(t, remainingSegments, tt)
 			} else {
-				fileName := remainingSegments[len(remainingSegments)-1]
-				filePath := strings.Join(remainingSegments, "/")
-
-				if fileName != tt.wantFileName {
-					t.Errorf("Expected fileName=%s, got %s", tt.wantFileName, fileName)
-				}
-				if filePath != tt.wantFilePath {
-					t.Errorf("Expected filePath=%s, got %s", tt.wantFilePath, filePath)
-				}
+				validateNonGenericPackageSegments(t, remainingSegments, tt)
 			}
 		})
 	}
