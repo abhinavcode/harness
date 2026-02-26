@@ -141,7 +141,7 @@ func (c *Controller) ForkSync(
 
 	headBranchRef, err := git.GetRefPath(in.Branch, gitenum.RefTypeBranch)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate ref name: %w", err)
+		return nil, nil, fmt.Errorf("failed to get ref path: %w", err)
 	}
 
 	refs = append(refs, git.RefUpdate{
@@ -154,7 +154,7 @@ func (c *Controller) ForkSync(
 
 	writeParams, err := controller.CreateRPCSystemReferencesWriteParams(ctx, c.urlProvider, session, repoForkCore)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create RPC write params: %w", err)
+		return nil, nil, fmt.Errorf("failed to create RPC sys ref write params: %w", err)
 	}
 
 	mergeOutput, err := c.git.Merge(ctx, &git.MergeParams{

@@ -22,6 +22,6 @@ type ForkSyncOutput struct {
 }
 
 type ForkSyncConflict struct {
-	ConflictFiles []string `json:"conflict_files,omitempty"`
-	Message       string   `json:"message,omitempty"`
+	ConflictFiles []string `json:"conflict_files"`
+	Message       string   `json:"message"`
 }
