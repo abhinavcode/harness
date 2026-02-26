@@ -342,7 +342,7 @@ type UpstreamProxyConfig struct {
 
 type UpstreamProxyConfigRepository interface {
 	// Get the upstreamproxy specified by ID
-	Get(ctx context.Context, id int64,opts ...types.QueryOption) (upstreamProxy *types.UpstreamProxy, err error)
+	Get(ctx context.Context, id int64, opts ...types.QueryOption) (upstreamProxy *types.UpstreamProxy, err error)
 
 	// GetByRepoKey gets the upstreamproxy specified by registry key
 	GetByRegistryIdentifier(
@@ -490,7 +490,7 @@ type RegistryBlobRepository interface {
 
 type ImageRepository interface {
 	// Get an Image specified by ID
-	Get(ctx context.Context, id int64) (*types.Image, error)
+	Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error)
 	// Get an Artifact specified by Artifact Name
 	GetByName(
 		ctx context.Context, registryID int64,

@@ -65,11 +65,20 @@ type imageLabelDB struct {
 	Labels sql.NullString `db:"labels"`
 }
 
-func (i ImageDao) Get(ctx context.Context, id int64) (*types.Image, error) {
+func (i ImageDao) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error) {
+	deleteFilter := types.ExtractDeleteFilter(opts...)
 	q := databaseg.Builder.Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(imageDB{}), ",")).
 		From("images i").
-		Where("i.image_id = ?", id).
-		Where("i.image_deleted_at IS NULL")
+		Where("i.image_id = ?", id)
+
+	switch deleteFilter {
+	case types.DeleteFilterExcludeDeleted:
+		q = q.Where("i.image_deleted_at IS NULL")
+	case types.DeleteFilterOnlyDeleted:
+		q = q.Where("i.image_deleted_at IS NOT NULL")
+	case types.DeleteFilterIncludeDeleted:
+		// No filter
+	}
 
 	sql, args, err := q.ToSql()
 	if err != nil {
