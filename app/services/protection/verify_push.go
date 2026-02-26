@@ -46,7 +46,7 @@ type (
 		PrincipalCommitterMatch bool
 		CommitterMismatchCount  int64
 		SecretScanningEnabled   bool
-		FoundSecretCount        int
+		FoundSecretsCount       int
 	}
 
 	PushViolationsOutput struct {
@@ -79,7 +79,7 @@ type (
 func (in *PushViolationsInput) HasViolations() bool {
 	return in.FindOversizeFilesOutput != nil && len(in.FindOversizeFilesOutput.FileInfosPerLimit) > 0 ||
 		in.CommitterMismatchCount > 0 ||
-		in.FoundSecretCount > 0
+		in.FoundSecretsCount > 0
 }
 
 func (v *DefPush) PushVerify(

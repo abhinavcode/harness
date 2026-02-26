@@ -33,9 +33,9 @@ func (c *Controller) processObjects(
 	repo *types.RepositoryCore,
 	principal *types.Principal,
 	refUpdates changedRefs,
-	checks protectionChecks,
 	violationsInput *protection.PushViolationsInput,
-	settingsViolations *settingsViolations,
+	settingsChecks repoSettings,
+	settingsViolations *repoSettingsViolations,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
 ) error {
@@ -45,10 +45,10 @@ func (c *Controller) processObjects(
 
 	var sizeLimits []int64
 
-	if checks.SettingsFileSizeLimit > 0 {
-		sizeLimits = append(sizeLimits, checks.SettingsFileSizeLimit)
+	if settingsChecks.FileSizeLimit > 0 {
+		sizeLimits = append(sizeLimits, settingsChecks.FileSizeLimit)
 	}
-	for _, limit := range checks.RulesFileSizeLimits {
+	for _, limit := range violationsInput.FileSizeLimits {
 		if limit > 0 {
 			sizeLimits = append(sizeLimits, limit)
 		}
@@ -72,13 +72,13 @@ func (c *Controller) processObjects(
 		}
 	}
 
-	if checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch {
+	if settingsChecks.PrincipalCommitterMatch || violationsInput.PrincipalCommitterMatch {
 		preReceiveObjsIn.FindCommitterMismatchParams = &git.FindCommitterMismatchParams{
 			PrincipalEmail: principal.Email,
 		}
 	}
 
-	if checks.SettingsGitLFSEnabled {
+	if settingsChecks.GitLFSEnabled {
 		preReceiveObjsIn.FindLFSPointersParams = &git.FindLFSPointersParams{}
 	}
 
@@ -93,9 +93,11 @@ func (c *Controller) processObjects(
 	if out := preReceiveObjsOut.FindOversizeFilesOutput; out != nil && len(out.TotalPerLimit) > 0 {
 		printOversizeFiles(output, out)
 
-		if checks.SettingsFileSizeLimit > 0 {
-			if out.AccumulatedTotal(checks.SettingsFileSizeLimit) > 0 {
-				settingsViolations.ExceededFileSizeLimit = checks.SettingsFileSizeLimit
+		violationsInput.FindOversizeFilesOutput = out
+
+		if settingsChecks.FileSizeLimit > 0 {
+			if out.AccumulatedTotal(settingsChecks.FileSizeLimit) > 0 {
+				settingsViolations.ExceededFileSizeLimit = settingsChecks.FileSizeLimit
 			}
 		}
 	}
@@ -108,7 +110,10 @@ func (c *Controller) processObjects(
 			preReceiveObjsIn.FindCommitterMismatchParams.PrincipalEmail,
 			preReceiveObjsOut.FindCommitterMismatchOutput.Total,
 		)
-		if checks.SettingsPrincipalCommitterMatch {
+
+		violationsInput.CommitterMismatchCount = preReceiveObjsOut.FindCommitterMismatchOutput.Total
+
+		if settingsChecks.PrincipalCommitterMatch {
 			settingsViolations.CommitterMismatchFound = true
 		}
 	}
@@ -135,7 +140,7 @@ func (c *Controller) processObjects(
 				preReceiveObjsOut.FindLFSPointersOutput.Total,
 			)
 
-			if checks.SettingsGitLFSEnabled {
+			if settingsChecks.GitLFSEnabled {
 				settingsViolations.UnknownLFSObjectsFound = true
 			}
 		}
