@@ -145,11 +145,6 @@ func (m *MockLocalBase) Exists(ctx context.Context, info pkg.ArtifactInfo, path 
 	return args.Bool(0)
 }
 
-func (m *MockLocalBase) ExistsByFilePath(ctx context.Context, registryID int64, filePath string) (bool, error) {
-	args := m.Called(ctx, registryID, filePath)
-	return args.Bool(0), args.Error(1)
-}
-
 func (m *MockLocalBase) Download(ctx context.Context, info pkg.ArtifactInfo, version, filename string) (
 	*commons.ResponseHeaders, *storage.FileReader, string, error,
 ) {
