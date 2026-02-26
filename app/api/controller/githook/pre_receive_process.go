@@ -20,7 +20,6 @@ import (
 	"slices"
 
 	"github.com/harness/gitness/app/services/protection"
-	"github.com/harness/gitness/app/services/settings"
 	"github.com/harness/gitness/git"
 	"github.com/harness/gitness/git/hook"
 	"github.com/harness/gitness/types"
@@ -34,9 +33,9 @@ func (c *Controller) processObjects(
 	repo *types.RepositoryCore,
 	principal *types.Principal,
 	refUpdates changedRefs,
-	sizeLimit int64,
-	principalCommitterMatch bool,
+	checks protectionChecks,
 	violationsInput *protection.PushViolationsInput,
+	settingsViolations *settingsViolations,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
 ) error {
@@ -81,7 +80,7 @@ func (c *Controller) processObjects(
 		}
 	}
 
-	if gitLFSEnabled {
+	if checks.SettingsGitLFSEnabled {
 		preReceiveObjsIn.FindLFSPointersParams = &git.FindLFSPointersParams{}
 	}
 
@@ -97,7 +96,7 @@ func (c *Controller) processObjects(
 		printOversizeFiles(output, out)
 
 		if checks.SettingsFileSizeLimit > 0 {
-			if out.TotalPerLimit[checks.SettingsFileSizeLimit] > 0 {
+			if _, ok := out.TotalPerLimit[checks.SettingsFileSizeLimit]; ok {
 				settingsViolations.ExceededFileSizeLimit = checks.SettingsFileSizeLimit
 			}
 		}
@@ -137,9 +136,8 @@ func (c *Controller) processObjects(
 		}
 	}
 
-	violationsInput.FileSizeLimit = sizeLimit
 	violationsInput.FindOversizeFilesOutput = preReceiveObjsOut.FindOversizeFilesOutput
-	violationsInput.PrincipalCommitterMatch = principalCommitterMatch
+	violationsInput.PrincipalCommitterMatch = checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch
 	if preReceiveObjsOut.FindCommitterMismatchOutput != nil {
 		violationsInput.CommitterMismatchCount = preReceiveObjsOut.FindCommitterMismatchOutput.Total
 	}
