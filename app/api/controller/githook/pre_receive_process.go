@@ -59,8 +59,6 @@ func (c *Controller) processObjects(
 		sizeLimits = slices.Compact(sizeLimits)
 	}
 
-	principalCommitterMatch := checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch
-
 	preReceiveObjsIn := git.ProcessPreReceiveObjectsParams{
 		ReadParams: git.ReadParams{
 			RepoUID:             repo.GitUID,
@@ -74,7 +72,7 @@ func (c *Controller) processObjects(
 		}
 	}
 
-	if principalCommitterMatch && principal != nil && !in.Internal {
+	if checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch {
 		preReceiveObjsIn.FindCommitterMismatchParams = &git.FindCommitterMismatchParams{
 			PrincipalEmail: principal.Email,
 		}
@@ -110,6 +108,9 @@ func (c *Controller) processObjects(
 			preReceiveObjsIn.FindCommitterMismatchParams.PrincipalEmail,
 			preReceiveObjsOut.FindCommitterMismatchOutput.Total,
 		)
+		if checks.SettingsPrincipalCommitterMatch {
+			settingsViolations.CommitterMismatchFound = true
+		}
 	}
 
 	if preReceiveObjsOut.FindLFSPointersOutput != nil &&
@@ -133,14 +134,14 @@ func (c *Controller) processObjects(
 				preReceiveObjsOut.FindLFSPointersOutput.LFSInfos,
 				preReceiveObjsOut.FindLFSPointersOutput.Total,
 			)
+
+			if checks.SettingsGitLFSEnabled {
+				settingsViolations.UnknownLFSObjectsFound = true
+			}
 		}
 	}
 
 	violationsInput.FindOversizeFilesOutput = preReceiveObjsOut.FindOversizeFilesOutput
-	violationsInput.PrincipalCommitterMatch = checks.SettingsPrincipalCommitterMatch || checks.RulesPrincipalCommitterMatch
-	if preReceiveObjsOut.FindCommitterMismatchOutput != nil {
-		violationsInput.CommitterMismatchCount = preReceiveObjsOut.FindCommitterMismatchOutput.Total
-	}
 
 	return nil
 }
