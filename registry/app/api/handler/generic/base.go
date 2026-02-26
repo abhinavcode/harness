@@ -214,7 +214,6 @@ func (h *Handler) GetGenericArtifactInfoV2(r *http.Request) (generic2.ArtifactIn
 			rootSpace.Identifier)
 	}
 
-	// For non-GENERIC package types, use the helper to avoid duplicate DB queries
 	if registry.PackageType != artifact2.PackageTypeGENERIC {
 		return h.buildFileArtifactInfo(ctx, registry, rootSpace, rootIdentifier, registryIdentifier, path, splits)
 	}
@@ -247,7 +246,7 @@ func (h *Handler) GetGenericArtifactInfoV2(r *http.Request) (generic2.ArtifactIn
 	filePath := strings.Join(remainingSegments[2:], "/")
 
 	if err = validatePackageVersionV2(packageName, version); err != nil {
-		return generic2.ArtifactInfo{}, fmt.Errorf("invalid image name/version/fileName: %q/%q %w", packageName,
+		return generic2.ArtifactInfo{}, fmt.Errorf("invalid package name/version/fileName: %q/%q %w", packageName,
 			version, err)
 	}
 
@@ -347,27 +346,7 @@ func (h *Handler) buildFileArtifactInfo(
 		FileName: fileName,
 		FilePath: filePath,
 	}
-
 	log.Ctx(ctx).Info().Msgf("Dispatch: URI: %s", path)
-	err2 := utils.PatternAllowed(registry.AllowedPattern, registry.BlockedPattern,
-		info.FilePath)
-	if err2 != nil {
-		log.Ctx(ctx).Error().Err(err2).
-			Str("filePath", info.FilePath).
-			Str("registryIdentifier", registryIdentifier).
-			Msg("File path not allowed due to allowed/blocked patterns")
-		return generic2.ArtifactInfo{}, usererror.BadRequestf("Invalid request: File path %q not "+
-			"allowed due to allowed / blocked patterns",
-			info.FilePath)
-	}
-
-	log.Ctx(ctx).Debug().
-		Str("filePath", filePath).
-		Str("fileName", fileName).
-		Str("registryIdentifier", registryIdentifier).
-		Str("packageType", string(registry.PackageType)).
-		Msg("Built file artifact info for non-GENERIC package")
-
 	return info, nil
 }
 
