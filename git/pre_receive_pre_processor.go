@@ -47,10 +47,21 @@ type FileInfo struct {
 }
 
 type FindOversizeFilesOutput struct {
-	// file size limit to files exceeding the limit
+	// Each file info is stored only at the highest limit it exceeds, avoiding repetition.
 	FileInfosPerLimit map[int64][]FileInfo
-	// file size limit to total num of files exceeding the limit
+	// TotalPerLimit maps each limit to the count of files in that specific limit band.
 	TotalPerLimit map[int64]int64
+}
+
+// AccumulatedTotal returns the total count of files exceeding the given limit.
+func (o *FindOversizeFilesOutput) AccumulatedTotal(limit int64) int64 {
+	var total int64
+	for l, t := range o.TotalPerLimit {
+		if l >= limit {
+			total += t
+		}
+	}
+	return total
 }
 
 type FindCommitterMismatchParams struct {
@@ -183,20 +194,28 @@ func findOversizeFiles(
 			continue
 		}
 
-		// For sorted limits: obj exceeds all limits < obj.Size.
+		// Limits are sorted ascending. Find the highest limit exceeded by this object.
+		// Since a file exceeding a higher limit also exceeds all lower limits,
+		// we store each file only at its highest exceeded limit to avoid repetition.
+		var highestExceeded int64 = -1
 		for _, limit := range params.SizeLimits {
 			if obj.Size <= limit {
 				break
 			}
+			highestExceeded = limit
+		}
 
-			out.TotalPerLimit[limit]++
+		if highestExceeded < 0 {
+			continue
+		}
 
-			if int64(len(out.FileInfosPerLimit[limit])) < maxOversizeFiles {
-				out.FileInfosPerLimit[limit] = append(out.FileInfosPerLimit[limit], FileInfo{
-					SHA:  obj.SHA,
-					Size: obj.Size,
-				})
-			}
+		out.TotalPerLimit[highestExceeded]++
+
+		if int64(len(out.FileInfosPerLimit[highestExceeded])) < maxOversizeFiles {
+			out.FileInfosPerLimit[highestExceeded] = append(out.FileInfosPerLimit[highestExceeded], FileInfo{
+				SHA:  obj.SHA,
+				Size: obj.Size,
+			})
 		}
 	}
 

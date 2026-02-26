@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/harness/gitness/errors"
@@ -290,44 +291,35 @@ func (s *Service) FindOversizeFiles(
 	}
 	repoPath := getFullPathForRepo(s.reposRoot, params.RepoUID)
 
-	out := &FindOversizeFilesOutput{
-		FileInfosPerLimit: make(map[int64][]FileInfo),
-		TotalPerLimit:     make(map[int64]int64),
-	}
-
 	if len(params.SizeLimits) == 0 {
-		return out, nil
+		return &FindOversizeFilesOutput{
+			FileInfosPerLimit: make(map[int64][]FileInfo),
+			TotalPerLimit:     make(map[int64]int64),
+		}, nil
 	}
 
+	var objects []parser.BatchCheckObject
 	for _, gitObjDir := range params.GitObjectDirs {
 		objs, err := s.listGitObjDir(ctx, repoPath, gitObjDir)
 		if err != nil {
 			return nil, err
 		}
-
-		for _, obj := range objs {
-			if obj.Type != string(TreeNodeTypeBlob) {
-				continue
-			}
-
-			for _, limit := range params.SizeLimits {
-				if obj.Size <= limit {
-					break
-				}
-
-				out.TotalPerLimit[limit]++
-
-				if int64(len(out.FileInfosPerLimit[limit])) < maxOversizeFiles {
-					out.FileInfosPerLimit[limit] = append(out.FileInfosPerLimit[limit], FileInfo{
-						SHA:  obj.SHA,
-						Size: obj.Size,
-					})
-				}
-			}
-		}
+		objects = append(objects, objs...)
 	}
 
-	return out, nil
+	// sort objects in descending order by Size (largest to smallest)
+	slices.SortFunc(objects, func(a, b parser.BatchCheckObject) int {
+		switch {
+		case a.Size > b.Size:
+			return -1
+		case a.Size < b.Size:
+			return 1
+		default:
+			return 0
+		}
+	})
+
+	return findOversizeFiles(objects, params), nil
 }
 
 func (s *Service) listGitObjDir(

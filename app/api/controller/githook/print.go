@@ -117,13 +117,24 @@ func printOversizeFiles(
 		return
 	}
 
-	// Deterministic ordering (important for stable test output)
+	// Deterministic ordering, largest limit first so that smaller limits
+	// can reference the "aforementioned" files from higher limits.
 	limits := make([]int64, 0, len(findOut.TotalPerLimit))
 	for limit := range findOut.TotalPerLimit {
 		limits = append(limits, limit)
 	}
-	slices.Sort(limits)
+	slices.SortFunc(limits, func(a, b int64) int {
+		switch {
+		case a > b:
+			return -1
+		case a < b:
+			return 1
+		default:
+			return 0
+		}
+	})
 
+	var cumulativeTotal int64
 	for _, limit := range limits {
 		total := findOut.TotalPerLimit[limit]
 		if total == 0 {
@@ -132,14 +143,28 @@ func printOversizeFiles(
 
 		files := findOut.FileInfosPerLimit[limit]
 
-		output.Messages = append(
-			output.Messages,
-			colorScanHeader.Sprintf(
-				"Push contains files exceeding the size limit of %dB:",
-				limit,
-			),
-			"",
-		)
+		if cumulativeTotal > 0 {
+			output.Messages = append(
+				output.Messages,
+				colorScanHeader.Sprintf(
+					"Push contains files exceeding the size limit of %dB"+
+						" (in addition to the %d %s above):",
+					limit,
+					cumulativeTotal,
+					singularOrPlural("file", cumulativeTotal != 1),
+				),
+				"",
+			)
+		} else {
+			output.Messages = append(
+				output.Messages,
+				colorScanHeader.Sprintf(
+					"Push contains files exceeding the size limit of %dB:",
+					limit,
+				),
+				"",
+			)
+		}
 
 		for _, file := range files {
 			output.Messages = append(
@@ -163,19 +188,20 @@ func printOversizeFiles(
 				),
 				"", "",
 			)
-			continue
+		} else {
+			output.Messages = append(
+				output.Messages,
+				colorScanSummary.Sprintf(
+					"%d %s found exceeding the size limit of %dB",
+					total,
+					singularOrPlural("file", total != 1),
+					limit,
+				),
+				"", "",
+			)
 		}
 
-		output.Messages = append(
-			output.Messages,
-			colorScanSummary.Sprintf(
-				"%d %s found exceeding the size limit of %dB",
-				total,
-				singularOrPlural("file", total != 1),
-				limit,
-			),
-			"", "",
-		)
+		cumulativeTotal += total
 	}
 }
 

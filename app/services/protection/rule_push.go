@@ -62,7 +62,7 @@ func (p *Push) Violations(
 	if out := in.FindOversizeFilesOutput; out != nil && p.Push.FileSizeLimit > 0 {
 		limit := p.Push.FileSizeLimit
 
-		if total := out.TotalPerLimit[limit]; total > 0 {
+		if total := out.AccumulatedTotal(limit); total > 0 {
 			violations.Addf(
 				codePushFileSizeLimit,
 				"Found file(s) exceeding the filesize limit of %d.",

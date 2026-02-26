@@ -94,7 +94,7 @@ func (c *Controller) processObjects(
 		printOversizeFiles(output, out)
 
 		if checks.SettingsFileSizeLimit > 0 {
-			if _, ok := out.TotalPerLimit[checks.SettingsFileSizeLimit]; ok {
+			if out.AccumulatedTotal(checks.SettingsFileSizeLimit) > 0 {
 				settingsViolations.ExceededFileSizeLimit = checks.SettingsFileSizeLimit
 			}
 		}

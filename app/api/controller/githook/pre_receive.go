@@ -47,9 +47,8 @@ type protectionChecks struct {
 }
 
 type settingsViolations struct {
-	SecretsFound bool
-	// 0 indicates no limit exceeded; any value > 0 indicates the limit exceeded.
-	ExceededFileSizeLimit  int64
+	SecretsFound           bool
+	ExceededFileSizeLimit  int64 // 0 = no limit exceeded; >0 = limit value exceeded
 	CommitterMismatchFound bool
 	UnknownLFSObjectsFound bool
 }
@@ -138,7 +137,9 @@ func (c *Controller) PreReceive(
 	// TODO: use store.PrincipalInfoCache once we abstracted principals.
 	principal, err := c.principalStore.Find(ctx, in.PrincipalID)
 	if err != nil {
-		return hook.Output{}, fmt.Errorf("failed to find inner principal with id %d: %w", in.PrincipalID, err)
+		return hook.Output{}, fmt.Errorf(
+			"failed to find principal with id %d: %w", in.PrincipalID, err,
+		)
 	}
 
 	dummySession := &auth.Session{Principal: *principal, Metadata: nil}
@@ -148,26 +149,29 @@ func (c *Controller) PreReceive(
 		return hook.Output{}, fmt.Errorf("failed to determine if user is repo owner: %w", err)
 	}
 
-	var ruleViolations []types.RuleViolations
+	var rulesViolations []types.RuleViolations
 	// For internal calls - through the application interface (API) - no need to verify protection rules.
 	if !in.Internal {
-		ruleViolations, err = c.checkProtectionRules(
+		// check branch and tag protection rules
+		refRulesViolations, err := c.checkRefRules(
 			ctx, dummySession, repo, refUpdates, protectionRules, isRepoOwner,
 		)
 		if err != nil {
 			return hook.Output{}, fmt.Errorf("failed to check protection rules: %w", err)
 		}
+		rulesViolations = append(rulesViolations, refRulesViolations...)
 	}
 
-	pushRulesViolations, settingsViolations, err := c.processPushProtection(
+	// check push protection rules and repository settings
+	pushRulesViolations, settingsViolations, err := c.checkPushProtection(
 		ctx, rgit, repo, principal, isRepoOwner, refUpdates, protectionRules, in, &output,
 	)
 	if err != nil {
 		return hook.Output{}, err
 	}
-	ruleViolations = append(ruleViolations, pushRulesViolations...)
+	rulesViolations = append(rulesViolations, pushRulesViolations...)
 
-	processRuleViolations(&output, settingsViolations, ruleViolations)
+	processProtectionViolations(&output, rulesViolations, settingsViolations)
 
 	return output, nil
 }
@@ -231,8 +235,8 @@ func (c *Controller) populateProtectionChecks(
 	return checks, nil
 }
 
-// processPushProtection handles push protection verification for active repositories.
-func (c *Controller) processPushProtection(
+// checkPushProtection handles push protection verification for active repositories.
+func (c *Controller) checkPushProtection(
 	ctx context.Context,
 	rgit RestrictedGIT,
 	repo *types.RepositoryCore,
@@ -332,7 +336,7 @@ func (c *Controller) blockPullReqRefUpdate(refUpdates changedRefs, state enum.Re
 		slices.ContainsFunc(refUpdates.other.forced, fn)
 }
 
-func (c *Controller) checkProtectionRules(
+func (c *Controller) checkRefRules(
 	ctx context.Context,
 	session *auth.Session,
 	repo *types.RepositoryCore,
@@ -412,10 +416,10 @@ func (c *Controller) checkProtectionRules(
 	return ruleViolations, nil
 }
 
-func processRuleViolations(
+func processProtectionViolations(
 	output *hook.Output,
-	settingsViolations *settingsViolations,
 	ruleViolations []types.RuleViolations,
+	settingsViolations *settingsViolations,
 ) {
 	if len(ruleViolations) == 0 {
 		return
