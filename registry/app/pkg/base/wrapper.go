@@ -201,8 +201,16 @@ func factory(key string) pkg.Artifact {
 	return TypeRegistry[key]
 }
 
+func Factory(key string) pkg.Artifact {
+	return factory(key)
+}
+
 func getFactoryKey(packageType artifact.PackageType, registryType artifact.RegistryType) string {
 	return string(packageType) + ":" + string(registryType)
+}
+
+func GetFactoryKey(packageType artifact.PackageType, registryType artifact.RegistryType) string {
+	return getFactoryKey(packageType, registryType)
 }
 
 func GetArtifactRegistry(registry registrytypes.Registry) pkg.Artifact {
