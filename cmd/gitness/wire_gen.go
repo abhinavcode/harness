@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+
 	check2 "github.com/harness/gitness/app/api/controller/check"
 	connector2 "github.com/harness/gitness/app/api/controller/connector"
 	"github.com/harness/gitness/app/api/controller/execution"
@@ -182,10 +183,9 @@ import (
 	"github.com/harness/gitness/store/database/dbtx"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/check"
-)
 
-import (
 	_ "github.com/lib/pq"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 

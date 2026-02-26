@@ -404,14 +404,14 @@ func TestValidateFilePathRegexPattern(t *testing.T) {
 
 func TestURLPathParsing(t *testing.T) {
 	tests := []struct {
-		name           string
-		urlPath        string
-		wantSegments   []string
-		wantPackage    string
-		wantVersion    string
-		wantFileName   string
-		wantFilePath   string
-		isGeneric      bool
+		name         string
+		urlPath      string
+		wantSegments []string
+		wantPackage  string
+		wantVersion  string
+		wantFileName string
+		wantFilePath string
+		isGeneric    bool
 	}{
 		{
 			name:         "GENERIC package - simple",

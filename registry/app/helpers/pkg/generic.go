@@ -64,7 +64,7 @@ func (c *genericPackageType) GetPackageType() string {
 }
 
 func (c *genericPackageType) IsFileOperationSupported() bool {
-	return false
+	return true
 }
 
 func (c *genericPackageType) GetPathPackageType() string {
