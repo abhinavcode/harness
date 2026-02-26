@@ -24,7 +24,6 @@ import (
 	"github.com/harness/gitness/app/api/usererror"
 	"github.com/harness/gitness/app/auth"
 	"github.com/harness/gitness/app/services/protection"
-	"github.com/harness/gitness/app/services/settings"
 	"github.com/harness/gitness/git/hook"
 	"github.com/harness/gitness/types"
 	"github.com/harness/gitness/types/enum"
@@ -114,19 +113,6 @@ func (c *Controller) PreReceive(
 		return output, nil
 	}
 
-	err = c.preReceiveExtender.Extend(ctx, rgit, session, repo, in, &output)
-	if err != nil {
-		return hook.Output{}, fmt.Errorf("failed to extend pre-receive hook: %w", err)
-	}
-	if output.Error != nil {
-		return output, nil
-	}
-
-	// If repository is not active, skip all further processing.
-	if repo.State != enum.RepoStateActive {
-		return output, nil
-	}
-
 	protectionRules, err := c.protectionManager.ListRepoRules(
 		ctx, repo.ID, protection.TypeBranch, protection.TypeTag, protection.TypePush,
 	)
@@ -136,40 +122,65 @@ func (c *Controller) PreReceive(
 		)
 	}
 
-	// TODO: use store.PrincipalInfoCache once we abstracted principals.
-	principal, err := c.principalStore.Find(ctx, in.PrincipalID)
-	if err != nil {
-		return hook.Output{}, fmt.Errorf("failed to find inner principal with id %d: %w", in.PrincipalID, err)
-	}
-	dummySession := &auth.Session{Principal: *principal, Metadata: nil}
-	isRepoOwner, err := apiauth.IsRepoOwner(ctx, c.authorizer, dummySession, repo)
-	if err != nil {
-		return hook.Output{}, fmt.Errorf("failed to determine if user is repo owner: %w", err)
+	var principal *types.Principal
+	repoActive := repo.State == enum.RepoStateActive
+	if repoActive {
+		// TODO: use store.PrincipalInfoCache once we abstracted principals.
+		principal, err = c.principalStore.Find(ctx, in.PrincipalID)
+		if err != nil {
+			return hook.Output{}, fmt.Errorf("failed to find inner principal with id %d: %w", in.PrincipalID, err)
+		}
 	}
 
 	var ruleViolations []types.RuleViolations
-
+	var isRepoOwner bool
 	// For internal calls - through the application interface (API) - no need to verify protection rules.
-	if !in.Internal {
-		protectionRulesViolations, err := c.checkProtectionRules(
+	if !in.Internal && repoActive {
+		dummySession := &auth.Session{Principal: *principal, Metadata: nil}
+		isRepoOwner, err = apiauth.IsRepoOwner(ctx, c.authorizer, dummySession, repo)
+		if err != nil {
+			return hook.Output{}, fmt.Errorf("failed to determine if user is repo owner: %w", err)
+		}
+
+		ruleViolations, err = c.checkProtectionRules(
 			ctx, dummySession, repo, refUpdates, protectionRules, isRepoOwner,
 		)
 		if err != nil {
 			return hook.Output{}, fmt.Errorf("failed to check protection rules: %w", err)
 		}
-		ruleViolations = append(ruleViolations, protectionRulesViolations...)
+		if output.Error != nil {
+			return output, nil
+		}
 	}
 
-	settingsViolations, pushRulesViolations, err := c.processPushProtection(
-		ctx, rgit, repo, principal, isRepoOwner, refUpdates, protectionRules, in, &output,
-	)
+	err = c.preReceiveExtender.Extend(ctx, rgit, session, repo, in, &output)
 	if err != nil {
-		return hook.Output{}, fmt.Errorf("failed to process push protection: %w", err)
+		return hook.Output{}, fmt.Errorf("failed to extend pre-receive hook: %w", err)
+	}
+	if output.Error != nil {
+		return output, nil
 	}
 
-	ruleViolations = append(ruleViolations, pushRulesViolations...)
+	if repoActive {
+		// check secret scanning apart from push rules as it is enabled in repository settings.
+		err = c.scanSecrets(ctx, rgit, repo, false, nil, in, &output)
+		if err != nil {
+			return hook.Output{}, fmt.Errorf("failed to scan secrets: %w", err)
+		}
+		if output.Error != nil {
+			return output, nil
+		}
 
-	processViolations(&output, settingsViolations, ruleViolations)
+		violations, err := c.processPushProtection(
+			ctx, rgit, repo, principal, isRepoOwner, refUpdates, protectionRules, in, &output,
+		)
+		if err != nil {
+			return hook.Output{}, err
+		}
+		ruleViolations = append(ruleViolations, violations...)
+
+		processRuleViolations(&output, ruleViolations)
+	}
 
 	return output, nil
 }
@@ -244,7 +255,7 @@ func (c *Controller) processPushProtection(
 	protectionRules []types.RuleInfoInternal,
 	in types.GithookPreReceiveInput,
 	output *hook.Output,
-) (*settingsViolations, []types.RuleViolations, error) {
+) ([]types.RuleViolations, error) {
 	pushProtection := c.protectionManager.FilterCreatePushProtection(protectionRules)
 	out, _, err := pushProtection.PushVerify(
 		ctx,
@@ -257,12 +268,12 @@ func (c *Controller) processPushProtection(
 		},
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to verify git objects: %w", err)
+		return nil, fmt.Errorf("failed to verify git objects: %w", err)
 	}
 
-	checks, err := c.populateProtectionChecks(ctx, repo, &out)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to populate protection checks: %w", err)
+	if len(out.Protections) == 0 {
+		// No push protections to verify.
+		return []types.RuleViolations{}, nil
 	}
 
 	violationsInput := &protection.PushViolationsInput{
@@ -275,30 +286,31 @@ func (c *Controller) processPushProtection(
 		SecretScanningEnabled:   checks.RulesSecretScanningEnabled,
 	}
 
-	settingsViolations := new(settingsViolations)
-
-	err = c.scanSecrets(ctx, rgit, repo, &checks, violationsInput, settingsViolations, in, output)
+	err = c.scanSecrets(ctx, rgit, repo, out.SecretScanningEnabled, violationsInput, in, output)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to scan secrets: %w", err)
+		return nil, fmt.Errorf("failed to scan secrets: %w", err)
 	}
 
-	if err := c.processObjects(
+	if err = c.processObjects(
 		ctx, rgit,
 		repo, principal, refUpdates,
-		&checks,
-		violationsInput,
-		settingsViolations,
+		out.FileSizeLimit, out.PrincipalCommitterMatch, violationsInput,
 		in, output,
 	); err != nil {
-		return nil, nil, fmt.Errorf("failed to process pre-receive objects: %w", err)
+		return nil, fmt.Errorf("failed to process pre-receive objects: %w", err)
 	}
 
-	ruleViolations, err := pushProtection.Violations(ctx, violationsInput)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to backfill violations: %w", err)
+	var violations []types.RuleViolations
+	if violationsInput.HasViolations() {
+		pushViolations, err := pushProtection.Violations(ctx, violationsInput)
+		if err != nil {
+			return nil, fmt.Errorf("failed to backfill violations: %w", err)
+		}
+
+		violations = pushViolations.Violations
 	}
 
-	return settingsViolations, ruleViolations.Violations, nil
+	return violations, nil
 }
 
 func (c *Controller) blockPullReqRefUpdate(refUpdates changedRefs, state enum.RepoState) bool {
@@ -396,13 +408,15 @@ func (c *Controller) checkProtectionRules(
 	return ruleViolations, nil
 }
 
-func processViolations(
+func processRuleViolations(
 	output *hook.Output,
-	settingsViolations *settingsViolations,
 	ruleViolations []types.RuleViolations,
 ) {
+	if len(ruleViolations) == 0 {
+		return
+	}
+
 	var criticalViolation bool
-	var outErrorMsg string
 
 	for _, ruleViolation := range ruleViolations {
 		criticalViolation = criticalViolation || ruleViolation.IsCritical()

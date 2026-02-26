@@ -19,11 +19,13 @@ import type React from 'react'
 import type { PermissionIdentifier, ResourceType } from '@ar/common/permissionTypes'
 import type RbacButton from '@ar/__mocks__/components/RbacButton'
 import type RbacMenuItem from '@ar/__mocks__/components/RbacMenuItem'
+import type OssOverviewView from '@ar/__mocks__/components/OssOverviewView'
 import type NGBreadcrumbs from '@ar/__mocks__/components/NGBreadcrumbs'
 import type PageNotPublic from '@ar/__mocks__/components/PageNotPublic'
 import type DependencyView from '@ar/__mocks__/components/DependencyView'
 import type SecretFormInput from '@ar/__mocks__/components/SecretFormInput'
 import type VulnerabilityView from '@ar/__mocks__/components/VulnerabilityView'
+import type OssVulnerabilitiesView from '@ar/__mocks__/components/OssVulnerabilitiesView'
 import type PolicySetFixedTypeSelector from '@ar/__mocks__/components/PolicySetFixedTypeSelector'
 import type {
   ModalProvider,
@@ -106,6 +108,8 @@ export interface CustomComponents {
   SecretFormInput: typeof SecretFormInput
   VulnerabilityView: typeof VulnerabilityView
   DependencyView: typeof DependencyView
+  OssOverviewView: typeof OssOverviewView
+  OssVulnerabilitiesView: typeof OssVulnerabilitiesView
   PolicySetFixedTypeSelector: typeof PolicySetFixedTypeSelector
   PageNotPublic: typeof PageNotPublic
 }
@@ -151,10 +155,8 @@ export interface MFEAppProps {
 export enum FeatureFlags {
   HAR_TRIGGERS = 'HAR_TRIGGERS',
   HAR_CUSTOM_METADATA_ENABLED = 'HAR_CUSTOM_METADATA_ENABLED',
-  HAR_ARTIFACT_QUARANTINE_ENABLED = 'HAR_ARTIFACT_QUARANTINE_ENABLED',
   HAR_ENABLE_UNTAGGED_IMAGES_SUPPORT = 'HAR_ENABLE_UNTAGGED_IMAGES_SUPPORT',
   HAR_SUPPORT_LOCAL_REGISTRY_AS_UPSTREAM_PROXY = 'HAR_SUPPORT_LOCAL_REGISTRY_AS_UPSTREAM_PROXY',
-  HAR_BULK_DOWNLOAD_FILE = 'HAR_BULK_DOWNLOAD_FILE',
   HAR_SOFT_DELETE_SUPPORT = 'HAR_SOFT_DELETE_SUPPORT',
   HAR_DEPENDENCY_FIREWALL = 'HAR_DEPENDENCY_FIREWALL'
 }

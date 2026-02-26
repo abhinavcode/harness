@@ -23,6 +23,7 @@ import (
 	"github.com/harness/gitness/app/services/refcache"
 	corestore "github.com/harness/gitness/app/store"
 	urlprovider "github.com/harness/gitness/app/url"
+	"github.com/harness/gitness/audit"
 	cargo2 "github.com/harness/gitness/registry/app/api/controller/pkg/cargo"
 	generic3 "github.com/harness/gitness/registry/app/api/controller/pkg/generic"
 	gopackage2 "github.com/harness/gitness/registry/app/api/controller/pkg/gopackage"
@@ -47,6 +48,7 @@ import (
 	storagedriver "github.com/harness/gitness/registry/app/driver"
 	"github.com/harness/gitness/registry/app/driver/factory"
 	"github.com/harness/gitness/registry/app/driver/filesystem"
+	"github.com/harness/gitness/registry/app/driver/gcs"
 	"github.com/harness/gitness/registry/app/driver/s3-aws"
 	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/base"
@@ -81,22 +83,30 @@ type RegistryApp struct {
 	AppRouter router.AppRouter
 }
 
-func BlobStorageProvider(ctx context.Context, c *types.Config) (storagedriver.StorageDriver, error) {
+func DefaultStorageProvider(ctx context.Context, c *types.Config) (storagedriver.StorageDriver, error) {
 	var d storagedriver.StorageDriver
 	var err error
 
-	if c.Registry.Storage.StorageType == "filesystem" {
+	switch c.Registry.Storage.StorageType {
+	case "filesystem":
 		filesystem.Register(ctx)
 		d, err = factory.Create(ctx, "filesystem", config.GetFilesystemParams(c))
 		if err != nil {
 			log.Fatal().Stack().Err(err).Msgf("")
 			panic(err)
 		}
-	} else {
+	case "gcs":
+		gcs.Register(ctx)
+		d, err = factory.Create(ctx, "gcs", config.GetGCSStorageParameters(c))
+		if err != nil {
+			log.Error().Stack().Err(err).Msg("failed to init gcs Blob storage")
+			panic(err)
+		}
+	default:
 		s3.Register(ctx)
 		d, err = factory.Create(ctx, "s3aws", config.GetS3StorageParameters(c))
 		if err != nil {
-			log.Error().Stack().Err(err).Msg("failed to init s3 Blob storage ")
+			log.Error().Stack().Err(err).Msg("failed to init s3 Blob storage")
 			panic(err)
 		}
 	}
@@ -115,6 +125,7 @@ func NewHandlerProvider(
 	config *types.Config,
 	registryFinder refcache2.RegistryFinder,
 	publicAccessService publicaccess2.CacheService,
+	auditService audit.Service,
 ) *ocihandler.Handler {
 	return ocihandler.NewHandler(
 		controller,
@@ -129,6 +140,7 @@ func NewHandlerProvider(
 		registryFinder,
 		publicAccessService,
 		config.Auth.AnonymousUserSecret,
+		auditService,
 	)
 }
 
@@ -136,7 +148,7 @@ func NewMavenHandlerProvider(
 	controller *maven.Controller, spaceStore corestore.SpaceStore,
 	tokenStore corestore.TokenStore, userCtrl *usercontroller.Controller, authenticator authn.Authenticator,
 	authorizer authz.Authorizer, spaceFinder refcache.SpaceFinder, registryFinder refcache2.RegistryFinder,
-	publicAccessService publicaccess2.CacheService,
+	publicAccessService publicaccess2.CacheService, auditService audit.Service,
 ) *mavenhandler.Handler {
 	return mavenhandler.NewHandler(
 		controller,
@@ -148,6 +160,7 @@ func NewMavenHandlerProvider(
 		spaceFinder,
 		registryFinder,
 		publicAccessService,
+		auditService,
 	)
 }
 
@@ -160,6 +173,8 @@ func NewPackageHandlerProvider(
 	regFinder refcache2.RegistryFinder,
 	fileManager filemanager.FileManager, quarantineFinder quarantine.Finder,
 	packageWrapper interfaces.PackageWrapper,
+	auditService audit.Service,
+	artifactDao store.ArtifactRepository,
 ) packages.Handler {
 	return packages.NewHandler(
 		registryDao,
@@ -176,6 +191,8 @@ func NewPackageHandlerProvider(
 		fileManager,
 		quarantineFinder,
 		packageWrapper,
+		auditService,
+		artifactDao,
 	)
 }
 
@@ -211,7 +228,7 @@ func NewGenericHandlerProvider(
 	spaceStore corestore.SpaceStore, controller *generic3.Controller, tokenStore corestore.TokenStore,
 	userCtrl *usercontroller.Controller, authenticator authn.Authenticator, urlProvider urlprovider.Provider,
 	authorizer authz.Authorizer, packageHandler packages.Handler, spaceFinder refcache.SpaceFinder,
-	registryFinder refcache2.RegistryFinder,
+	registryFinder refcache2.RegistryFinder, auditService audit.Service,
 ) *generic.Handler {
 	return generic.NewGenericArtifactHandler(
 		spaceStore,
@@ -224,6 +241,7 @@ func NewGenericHandlerProvider(
 		packageHandler,
 		spaceFinder,
 		registryFinder,
+		auditService,
 	)
 }
 
@@ -242,7 +260,7 @@ func NewGoPackageHandlerProvider(
 }
 
 var WireSet = wire.NewSet(
-	BlobStorageProvider,
+	DefaultStorageProvider,
 	NewHandlerProvider,
 	NewMavenHandlerProvider,
 	NewGenericHandlerProvider,

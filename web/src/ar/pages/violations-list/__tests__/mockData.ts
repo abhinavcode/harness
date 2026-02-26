@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import type { ArtifactScanDetails, ListArtifactScanResponseResponse } from '@harnessio/react-har-service-client'
+import type { ArtifactScanDetailsV3, ListArtifactScanResponseV3Response } from '@harnessio/react-har-service-client'
 
-export const mockData: ListArtifactScanResponseResponse = {
+export const mockData: ListArtifactScanResponseV3Response = {
   data: [
     {
       id: '1',
@@ -58,7 +58,7 @@ export const mockData: ListArtifactScanResponseResponse = {
   pageSize: 10
 }
 
-export const mockArtifactScanDetails: ArtifactScanDetails = {
+export const mockArtifactScanDetails: ArtifactScanDetailsV3 = {
   id: '1',
   packageType: 'NPM',
   packageName: 'package1',
@@ -66,44 +66,91 @@ export const mockArtifactScanDetails: ArtifactScanDetails = {
   scanStatus: 'BLOCKED',
   version: '1.0.0',
   registryId: '1',
-  policySetName: 'policy set 1',
-  policySetRef: 'policySetRef1',
-  fixVersionDetails: {
-    fixVersionAvailable: true,
-    currentVersion: '1.0.0',
-    fixVersion: '2.0.0'
-  },
-  policyFailureDetails: [
+  policySetFailureDetails: [
     {
-      policyName: 'Policy 1',
-      policyRef: 'policy1',
-      category: 'Security',
-      vulnerabilities: [
+      policySetName: 'policy set 1',
+      policySetRef: 'policySetRef1',
+      policyFailureDetails: [
         {
-          cveId: 'CVE-2023-12345',
-          cvssScore: 10,
-          cvssThreshold: 10
+          policyName: 'Policy 1',
+          policyRef: 'policy1',
+          category: 'Security',
+          vulnerabilities: [
+            {
+              cveId: 'CVE-2023-12345',
+              cvssScore: 10,
+              cvssThreshold: 10
+            },
+            {
+              cveId: 'CVE-2023-54332',
+              cvssScore: 2,
+              cvssThreshold: 8
+            }
+          ]
         },
         {
-          cveId: 'CVE-2023-54332',
-          cvssScore: 2,
-          cvssThreshold: 8
+          policyName: 'Policy 2',
+          policyRef: 'policy2',
+          category: 'License',
+          allowedLicenses: ['Apache-2.0', 'MIT'],
+          blockedLicense: 'GPL-3.0'
+        },
+        {
+          policyName: 'Policy 3',
+          policyRef: 'policy3',
+          category: 'PackageAge',
+          packageAgeThreshold: '365',
+          publishedOn: '2023-01-01'
         }
       ]
     },
     {
-      policyName: 'Policy 2',
-      policyRef: 'policy2',
-      category: 'License',
-      allowedLicenses: ['Apache-2.0', 'MIT'],
-      blockedLicense: 'GPL-3.0'
-    },
-    {
-      policyName: 'Policy 3',
-      policyRef: 'policy3',
-      category: 'PackageAge',
-      packageAgeThreshold: '365',
-      publishedOn: '2023-01-01'
+      policySetName: 'policy set 1',
+      policySetRef: 'policySetRef2',
+      policyFailureDetails: [
+        {
+          policyName: 'Policy 1',
+          policyRef: 'policy1',
+          category: 'Security',
+          vulnerabilities: [
+            {
+              cveId: 'CVE-2023-12345',
+              cvssScore: 10,
+              cvssThreshold: 10
+            },
+            {
+              cveId: 'CVE-2023-54332',
+              cvssScore: 2,
+              cvssThreshold: 8
+            }
+          ]
+        },
+        {
+          policyName: 'Policy 2',
+          policyRef: 'policy2',
+          category: 'License',
+          allowedLicenses: ['Apache-2.0', 'MIT'],
+          blockedLicense: 'GPL-3.0'
+        },
+        {
+          policyName: 'Policy 3',
+          policyRef: 'policy3',
+          category: 'PackageAge',
+          packageAgeThreshold: '365',
+          publishedOn: '2023-01-01'
+        },
+        {
+          policyName: 'Policy 4',
+          policyRef: 'policy4',
+          category: 'OssRiskLevel',
+          ossRiskLevel: 'MEDIUM'
+        }
+      ]
     }
-  ]
+  ],
+  fixVersionDetails: {
+    fixVersionAvailable: true,
+    currentVersion: '1.0.0',
+    fixVersion: '2.0.0'
+  }
 }

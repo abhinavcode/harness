@@ -85,6 +85,8 @@ type ManifestRepository interface {
 	// References finds all manifests directly
 	// referenced by a manifest (if any).
 	References(ctx context.Context, m *types.Manifest) (types.Manifests, error)
+	// ReferencedBy finds all manifests that reference the provided manifest (parent manifests).
+	ReferencedBy(ctx context.Context, m *types.Manifest) (types.Manifests, error)
 	// Create saves a new Manifest. ID value is updated in given request object
 	Create(ctx context.Context, m *types.Manifest) error
 	// CreateOrFind attempts to create a manifest. If the manifest already exists
@@ -637,7 +639,13 @@ type DownloadStatRepository interface {
 		artifactVersion []string,
 		imageID int64,
 	) (map[string]int64, error)
-	CreateByRegistryIDImageAndArtifactName(ctx context.Context, regID int64, image string, artifactName string) error
+	CreateByRegistryIDImageAndArtifactName(
+		ctx context.Context,
+		regID int64,
+		image string,
+		artifactName string,
+		artifactType *artifact.ArtifactType,
+	) error
 	GetTotalDownloadsForArtifactID(ctx context.Context, artifactID int64) (int64, error)
 }
 
@@ -739,7 +747,7 @@ type GenericBlobRepository interface {
 		ctx context.Context, sha256 string,
 		rootParentID int64,
 	) (*types.GenericBlob, error)
-	Create(ctx context.Context, gb *types.GenericBlob) (bool, error)
+	Create(ctx context.Context, gb *types.GenericBlob) (string, bool, error)
 	DeleteByID(ctx context.Context, id string) error
 	TotalSizeByRootParentID(ctx context.Context, id int64) (int64, error)
 }

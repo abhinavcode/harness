@@ -288,6 +288,7 @@ export interface StringsMap {
   'versionDetails.artifactDetails.tabs.layers': string
   'versionDetails.artifactDetails.tabs.manifest': string
   'versionDetails.artifactDetails.tabs.readme': string
+  'versionDetails.artifactFiles.noFilesTitle': string
   'versionDetails.artifactFiles.table.columns.checksum': string
   'versionDetails.artifactFiles.table.columns.created': string
   'versionDetails.artifactFiles.table.columns.downloadCommand': string
@@ -382,6 +383,8 @@ export interface StringsMap {
   'versionDetails.restoreModal.inputLabel': string
   'versionDetails.restoreModal.inputPlaceholder': string
   'versionDetails.restoreModal.title': string
+  'versionDetails.securityTests.tabs.overview': string
+  'versionDetails.securityTests.tabs.vulnerabilities': string
   'versionDetails.selectDigestPlaceholder': string
   'versionDetails.softDeleteModal.contentText': string
   'versionDetails.softDeleteModal.inputLabel': string
@@ -390,6 +393,7 @@ export interface StringsMap {
   'versionDetails.tabs.artifactDetails': string
   'versionDetails.tabs.code': string
   'versionDetails.tabs.deployments': string
+  'versionDetails.tabs.evaluationDetails': string
   'versionDetails.tabs.overview': string
   'versionDetails.tabs.securityTests': string
   'versionDetails.tabs.supplyChain': string
@@ -452,9 +456,13 @@ export interface StringsMap {
   'violationsList.violationDetailsModal.violatedPoliciesSection.licenseViolation.allowedLicenses': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.licenseViolation.blockedLicense': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.licenseViolation.packageLicense': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.ossRiskLevelViolation.ossRiskLevel': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.packageAgeViolation.packageAgeThreshold': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.packageAgeViolation.publishedOn': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.policiesViolated': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.policyName': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.policySetViolated': string
+  'violationsList.violationDetailsModal.violatedPoliciesSection.policyViolated': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.securityViolation.cveId': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.securityViolation.cvssScore': string
   'violationsList.violationDetailsModal.violatedPoliciesSection.securityViolation.cvssThreshold': string
@@ -628,6 +636,11 @@ export interface StringsMap {
   restore: string
   retriableError: string
   save: string
+  'scanCategory.license': string
+  'scanCategory.ossRiskLevel': string
+  'scanCategory.packageAge': string
+  'scanCategory.security': string
+  'scanCategory.unknown': string
   search: string
   'sideNav.artifacts': string
   'sideNav.repositories': string
