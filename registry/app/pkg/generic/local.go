@@ -154,6 +154,7 @@ func (c *localRegistry) downloadRawFile(
 	info generic.ArtifactInfo,
 	filePath string,
 ) (*commons.ResponseHeaders, *storage.FileReader, io.ReadCloser, string, error) {
+	filePath = "/" + filePath
 	headers, reader, url, err := c.localBase.DownloadRawFile(ctx, info.ArtifactInfo, filePath)
 	if err != nil {
 		return nil, nil, nil, "", fmt.Errorf("failed to download raw file: %w", err)
