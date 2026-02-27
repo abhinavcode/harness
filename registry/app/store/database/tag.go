@@ -1776,8 +1776,10 @@ func (t tagDao) FindTag(
 ) (*types.Tag, error) {
 	stmt := databaseg.Builder.
 		Select(util.ArrToStringByDelimiter(util.GetDBTagsFromStruct(tagDB{}), ",")).
-		From("tags").
-		Where("tag_registry_id = ? AND tag_image_name = ? AND tag_name = ?", repoID, imageName, name)
+		From("tags t").
+		Join("images i ON i.image_registry_id = t.tag_registry_id AND i.image_name = t.tag_image_name").
+		Where("t.tag_registry_id = ? AND t.tag_image_name = ? AND t.tag_name = ?", repoID, imageName, name).
+		Where("i.image_deleted_at IS NULL")
 
 	db := dbtx.GetAccessor(ctx, t.db)
 

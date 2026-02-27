@@ -130,7 +130,7 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 
 	// if package file belongs to maven-metadata file, then file override is expected.
 	if !utils.IsMetadataFile(info.FileName) {
-		existingArtifact, err := r.localBase.CheckIfVersionExists(ctx, info)
+		artifactExists, err := r.localBase.CheckIfVersionExists(ctx, info)
 		if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 			return responseHeaders, []error{
 				fmt.Errorf("failed to check if version: %s with artifact: %s "+
@@ -144,7 +144,7 @@ func (r *LocalRegistry) PutArtifact(ctx context.Context, info pkg.MavenArtifactI
 					filePath, err),
 			}
 		}
-		if existingArtifact != nil && fileExists {
+		if artifactExists && fileExists {
 			log.Ctx(ctx).Info().Msgf("file with path: %s already exists for artifact: %s with version: %s",
 				filePath, info.Image, info.Version)
 			responseHeaders = &commons.ResponseHeaders{Code: http.StatusOK}

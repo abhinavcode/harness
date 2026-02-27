@@ -374,7 +374,7 @@ func (c *localRegistry) UploadPackage(
 	info.Version = normalisedVersion
 	info.Metadata = metadata
 	if fileBundleType == SymbolsFile {
-		existingArtifact, err3 := c.localBase.CheckIfVersionExists(ctx, info)
+		versionExists, err3 := c.localBase.CheckIfVersionExists(ctx, info)
 		if err3 != nil {
 			log.Ctx(ctx).Error().Err(err3).
 				Msgf("failed to check package version existence for id: %s, version: %s with registry: %d",
@@ -382,7 +382,7 @@ func (c *localRegistry) UploadPackage(
 			return headers, "", fmt.Errorf(
 				"failed to check package version existence for id: %s , version: %s "+
 					"with registry: %d with error: %w", info.Image, info.Version, info.RegistryID, err)
-		} else if existingArtifact == nil {
+		} else if !versionExists {
 			log.Ctx(ctx).Warn().
 				Msgf("can't push symbol package as package doesn't exist for id: %s, version: %s with registry: %d",
 					info.Image, info.Version, info.RegistryID)

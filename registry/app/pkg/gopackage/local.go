@@ -102,11 +102,11 @@ func (c *localRegistry) UploadPackage(
 	ctx context.Context, info gopackagetype.ArtifactInfo,
 	modfile io.ReadCloser, zipfile io.ReadCloser,
 ) (*commons.ResponseHeaders, error) {
-	existingArtifact, err := c.localBase.CheckIfVersionExists(ctx, info)
+	checkIfVersionExists, err := c.localBase.CheckIfVersionExists(ctx, info)
 	if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
 		return nil, fmt.Errorf("failed to check if version exists: %w", err)
 	}
-	if existingArtifact != nil {
+	if checkIfVersionExists {
 		return nil, fmt.Errorf("version %s already exists", info.Version)
 	}
 

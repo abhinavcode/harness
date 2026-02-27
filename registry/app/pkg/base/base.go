@@ -42,7 +42,6 @@ import (
 	"github.com/harness/gitness/registry/app/storage"
 	"github.com/harness/gitness/registry/app/store"
 	"github.com/harness/gitness/registry/types"
-	gitnessstore "github.com/harness/gitness/store"
 	"github.com/harness/gitness/store/database/dbtx"
 	"github.com/harness/gitness/types/enum"
 
@@ -123,7 +122,7 @@ type LocalBase interface {
 	CheckIfVersionExists(
 		ctx context.Context,
 		info pkg.PackageArtifactInfo,
-	) (*types.Artifact, error)
+	) (bool, error)
 
 	DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error
 
@@ -556,20 +555,12 @@ func (l *localBase) postUploadArtifact(
 	var artifactUUID string
 	err := l.tx.WithTx(
 		ctx, func(ctx context.Context) error {
-			existingImage, err := l.imageDao.GetByName(ctx, registry.ID, info.Image)
-			if err != nil && !errors.Is(err, gitnessstore.ErrResourceNotFound) {
-				return fmt.Errorf("failed to check existing image: %w", err)
-			}
-			if err == nil && existingImage.DeletedAt != nil {
-				return fmt.Errorf("cannot upload to deleted image: %s", info.Image)
-			}
-
 			image := &types.Image{
 				Name:       info.Image,
 				RegistryID: registry.ID,
 				Enabled:    true,
 			}
-			err = l.imageDao.CreateOrUpdate(ctx, image)
+			err := l.imageDao.CreateOrUpdate(ctx, image)
 			if err != nil {
 				return fmt.Errorf("failed to create image for artifact: [%s], error: %w", info.Image, err)
 			}
@@ -709,17 +700,17 @@ func (l *localBase) ExistsByFilePath(ctx context.Context, registryID int64, file
 func (l *localBase) CheckIfVersionExists(
 	ctx context.Context,
 	info pkg.PackageArtifactInfo,
-) (*types.Artifact, error) {
-	artifact, err := l.artifactDao.GetByRegistryImageAndVersion(ctx,
+) (bool, error) {
+	_, err := l.artifactDao.GetByRegistryImageAndVersion(ctx,
 		info.BaseArtifactInfo().RegistryID,
 		info.BaseArtifactInfo().Image,
 		info.GetVersion(),
 	)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return artifact, nil
+	return true, nil
 }
 
 func (l *localBase) getSHA256(ctx context.Context, registryID int64, path string) (

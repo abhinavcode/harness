@@ -50,7 +50,7 @@ type mockLocalBase struct {
 	checkIfVersionExists func(
 		ctx context.Context,
 		info pkg.PackageArtifactInfo,
-	) (*types.Artifact, error)
+	) (bool, error)
 	download func(
 		ctx context.Context,
 		info pkg.ArtifactInfo, version, filename string,
@@ -187,11 +187,11 @@ func (m *mockLocalBase) ExistsByFilePath(context.Context, int64, string) (bool, 
 func (m *mockLocalBase) CheckIfVersionExists(
 	ctx context.Context,
 	info pkg.PackageArtifactInfo,
-) (*types.Artifact, error) {
+) (bool, error) {
 	if m.checkIfVersionExists != nil {
 		return m.checkIfVersionExists(ctx, info)
 	}
-	return nil, nil //nolint:nilnil
+	return false, nil
 }
 func (m *mockLocalBase) DeletePackage(ctx context.Context, info pkg.PackageArtifactInfo) error {
 	return m.deletePackage(ctx, info)
@@ -278,7 +278,7 @@ func (m *mockImageDAO) GetByUUID(context.Context, string) (*types.Image, error) 
 	return nil, nil //nolint:nilnil
 }
 
-func (m *mockImageDAO) Get(context.Context, int64) (*types.Image, error) {
+func (m *mockImageDAO) Get(context.Context, int64, ...types.QueryOption) (*types.Image, error) {
 	return nil, nil //nolint:nilnil
 }
 
@@ -604,8 +604,8 @@ func TestHeadAndDownloadAndDeleteDelegation(t *testing.T) {
 		checkIfVersionExists: func(
 			_ context.Context,
 			_ pkg.PackageArtifactInfo,
-		) (*types.Artifact, error) {
-			return &types.Artifact{ID: 1}, nil
+		) (bool, error) {
+			return true, nil
 		},
 		download: func(
 			_ context.Context,

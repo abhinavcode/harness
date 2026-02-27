@@ -129,9 +129,9 @@ func (_m *ImageRepository) DuplicateImage(ctx context.Context, sourceImage *type
 	return r0, r1
 }
 
-// Get provides a mock function with given fields: ctx, id
-func (_m *ImageRepository) Get(ctx context.Context, id int64) (*types.Image, error) {
-	ret := _m.Called(ctx, id)
+// Get provides a mock function with given fields: ctx, id, opts
+func (_m *ImageRepository) Get(ctx context.Context, id int64, opts ...types.QueryOption) (*types.Image, error) {
+	ret := _m.Called(ctx, id, opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -139,19 +139,19 @@ func (_m *ImageRepository) Get(ctx context.Context, id int64) (*types.Image, err
 
 	var r0 *types.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) (*types.Image, error)); ok {
-		return rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, ...types.QueryOption) (*types.Image, error)); ok {
+		return rf(ctx, id, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int64) *types.Image); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, ...types.QueryOption) *types.Image); ok {
+		r0 = rf(ctx, id, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*types.Image)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, ...types.QueryOption) error); ok {
+		r1 = rf(ctx, id, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}

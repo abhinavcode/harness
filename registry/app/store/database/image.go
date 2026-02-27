@@ -230,9 +230,46 @@ func (i ImageDao) GetByNameAndType(
 	return i.mapImageDB(ctx, dst)
 }
 
+// checkSoftDeletedImageExists checks if a soft-deleted image exists with the same registry_id, name, and type.
+func (i ImageDao) checkSoftDeletedImageExists(
+	ctx context.Context, registryID int64, name string, artifactType *artifact.ArtifactType,
+) error {
+	checkQuery := databaseg.Builder.Select("image_id").
+		From("images").
+		Where("image_registry_id = ? AND image_name = ? AND image_deleted_at IS NOT NULL", registryID, name)
+
+	// Handle artifact type matching (NULL or specific type)
+	if artifactType == nil {
+		checkQuery = checkQuery.Where("image_type IS NULL")
+	} else {
+		checkQuery = checkQuery.Where("image_type = ?", *artifactType)
+	}
+
+	checkSQL, checkArgs, err := checkQuery.ToSql()
+	if err != nil {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to build check query")
+	}
+
+	db := dbtx.GetAccessor(ctx, i.db)
+	var existingID int64
+	err = db.QueryRowContext(ctx, checkSQL, checkArgs...).Scan(&existingID)
+	if err == nil {
+		// Soft-deleted image exists with same identifier
+		return errors.New("image with same name already exists but is soft-deleted")
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return databaseg.ProcessSQLErrorf(ctx, err, "Failed to check for soft-deleted image")
+	}
+	return nil
+}
+
 func (i ImageDao) CreateOrUpdate(ctx context.Context, image *types.Image) error {
 	if commons.IsEmpty(image.Name) {
 		return errors.New("package/image name is empty")
+	}
+
+	// Check if a soft-deleted image exists with the same registry_id, name, and type
+	if err := i.checkSoftDeletedImageExists(ctx, image.RegistryID, image.Name, image.ArtifactType); err != nil {
+		return err
 	}
 	var conflictCondition string
 	if image.ArtifactType == nil {

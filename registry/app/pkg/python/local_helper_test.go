@@ -128,7 +128,7 @@ func (m *MockLocalBase) UpdateFileManagerAndCreateArtifact(
 func (m *MockLocalBase) CheckIfVersionExists(
 	_ context.Context,
 	_ pkg.PackageArtifactInfo,
-) (*types.Artifact, error) {
+) (bool, error) {
 	// TODO implement me
 	panic("implement me")
 }

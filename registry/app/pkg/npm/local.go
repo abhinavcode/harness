@@ -61,11 +61,7 @@ type localRegistry struct {
 }
 
 func (c *localRegistry) HeadPackageMetadata(ctx context.Context, info npm.ArtifactInfo) (bool, error) {
-	artifact, err := c.localBase.CheckIfVersionExists(ctx, info)
-	if err != nil {
-		return false, err
-	}
-	return artifact != nil, nil
+	return c.localBase.CheckIfVersionExists(ctx, info)
 }
 
 func (c *localRegistry) DownloadPackageFile(
