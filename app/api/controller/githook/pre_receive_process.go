@@ -72,7 +72,8 @@ func (c *Controller) processObjects(
 		}
 	}
 
-	if settingsChecks.PrincipalCommitterMatch || violationsInput.PrincipalCommitterMatch {
+	if (settingsChecks.PrincipalCommitterMatch || violationsInput.PrincipalCommitterMatch) &&
+		!in.Internal {
 		preReceiveObjsIn.FindCommitterMismatchParams = &git.FindCommitterMismatchParams{
 			PrincipalEmail: principal.Email,
 		}
@@ -90,7 +91,7 @@ func (c *Controller) processObjects(
 		return fmt.Errorf("failed to process pre-receive objects: %w", err)
 	}
 
-	if out := preReceiveObjsOut.FindOversizeFilesOutput; out != nil && len(out.TotalPerLimit) > 0 {
+	if out := preReceiveObjsOut.FindOversizeFilesOutput; out != nil && len(out.TotalsPerLimit) > 0 {
 		printOversizeFiles(output, out)
 
 		violationsInput.FindOversizeFilesOutput = out

@@ -294,7 +294,7 @@ func (s *Service) FindOversizeFiles(
 	if len(params.SizeLimits) == 0 {
 		return &FindOversizeFilesOutput{
 			FileInfosPerLimit: make(map[int64][]FileInfo),
-			TotalPerLimit:     make(map[int64]int64),
+			TotalsPerLimit:    make(map[int64]int64),
 		}, nil
 	}
 

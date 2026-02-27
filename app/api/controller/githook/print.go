@@ -113,14 +113,14 @@ func printOversizeFiles(
 		return
 	}
 
-	if len(findOut.TotalPerLimit) == 0 {
+	if len(findOut.TotalsPerLimit) == 0 {
 		return
 	}
 
 	// Deterministic ordering, largest limit first so that smaller limits
 	// can reference the "aforementioned" files from higher limits.
-	limits := make([]int64, 0, len(findOut.TotalPerLimit))
-	for limit := range findOut.TotalPerLimit {
+	limits := make([]int64, 0, len(findOut.TotalsPerLimit))
+	for limit := range findOut.TotalsPerLimit {
 		limits = append(limits, limit)
 	}
 	slices.SortFunc(limits, func(a, b int64) int {
@@ -136,7 +136,7 @@ func printOversizeFiles(
 
 	var cumulativeTotal int64
 	for _, limit := range limits {
-		total := findOut.TotalPerLimit[limit]
+		total := findOut.TotalsPerLimit[limit]
 		if total == 0 {
 			continue
 		}

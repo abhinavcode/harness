@@ -49,14 +49,14 @@ type FileInfo struct {
 type FindOversizeFilesOutput struct {
 	// Each file info is stored only at the highest limit it exceeds, avoiding repetition.
 	FileInfosPerLimit map[int64][]FileInfo
-	// TotalPerLimit maps each limit to the count of files in that specific limit band.
-	TotalPerLimit map[int64]int64
+	// TotalsPerLimit maps each limit to the count of files in that specific limit band.
+	TotalsPerLimit map[int64]int64
 }
 
 // AccumulatedTotal returns the total count of files exceeding the given limit.
 func (o *FindOversizeFilesOutput) AccumulatedTotal(limit int64) int64 {
 	var total int64
-	for l, t := range o.TotalPerLimit {
+	for l, t := range o.TotalsPerLimit {
 		if l >= limit {
 			total += t
 		}
@@ -182,7 +182,7 @@ func findOversizeFiles(
 ) *FindOversizeFilesOutput {
 	out := &FindOversizeFilesOutput{
 		FileInfosPerLimit: make(map[int64][]FileInfo),
-		TotalPerLimit:     make(map[int64]int64),
+		TotalsPerLimit:    make(map[int64]int64),
 	}
 
 	if params == nil || len(params.SizeLimits) == 0 {
@@ -199,7 +199,7 @@ func findOversizeFiles(
 		// we store each file only at its highest exceeded limit to avoid repetition.
 		var highestExceeded int64 = -1
 		for _, limit := range params.SizeLimits {
-			if obj.Size <= limit {
+			if obj.Size < limit {
 				break
 			}
 			highestExceeded = limit
@@ -209,7 +209,7 @@ func findOversizeFiles(
 			continue
 		}
 
-		out.TotalPerLimit[highestExceeded]++
+		out.TotalsPerLimit[highestExceeded]++
 
 		if int64(len(out.FileInfosPerLimit[highestExceeded])) < maxOversizeFiles {
 			out.FileInfosPerLimit[highestExceeded] = append(out.FileInfosPerLimit[highestExceeded], FileInfo{

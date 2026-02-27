@@ -287,8 +287,9 @@ func (c *Controller) checkPushProtection(
 		FoundSecretsCount:       secretsCount,
 	}
 
-	settingsViolations := repoSettingsViolations{
-		SecretsFound: secretsCount > 0,
+	var settingsViolations repoSettingsViolations
+	if repoSettings.SecretScanningEnabled && secretsCount > 0 {
+		settingsViolations.SecretsFound = true
 	}
 
 	if err = c.processObjects(
