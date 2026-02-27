@@ -22,7 +22,7 @@ import (
 	artifact2 "github.com/harness/gitness/registry/app/api/openapi/contracts/artifact"
 	"github.com/harness/gitness/registry/app/pkg"
 	"github.com/harness/gitness/registry/app/pkg/base"
-	generic2 "github.com/harness/gitness/registry/app/pkg/generic"
+	genericpkg "github.com/harness/gitness/registry/app/pkg/generic"
 	"github.com/harness/gitness/registry/app/pkg/response"
 	"github.com/harness/gitness/registry/app/pkg/types/generic"
 	registrytypes "github.com/harness/gitness/registry/types"
@@ -45,8 +45,7 @@ func (c Controller) DownloadFile(
 			}
 		}
 
-		key := base.GetFactoryKey(artifact2.PackageTypeGENERIC, registry.Type)
-		genericRegistry, _ := base.Factory(key).(generic2.Registry)
+		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, fileReader, readCloser, redirectURL, err := genericRegistry.DownloadFile(ctx, info, filePath)
 		return &GetArtifactResponse{
 			BaseResponse: BaseResponse{
@@ -104,8 +103,7 @@ func (c Controller) HeadFile(
 			}
 		}
 
-		key := base.GetFactoryKey(artifact2.PackageTypeGENERIC, registry.Type)
-		genericRegistry, _ := base.Factory(key).(generic2.Registry)
+		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, err := genericRegistry.HeadFile(ctx, info, filePath)
 		return &HeadArtifactResponse{
 			BaseResponse: BaseResponse{
@@ -147,8 +145,7 @@ func (c Controller) DeleteFile(ctx context.Context, info generic.ArtifactInfo) *
 			}
 		}
 
-		key := base.GetFactoryKey(artifact2.PackageTypeGENERIC, registry.Type)
-		genericRegistry, _ := base.Factory(key).(generic2.Registry)
+		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, err := genericRegistry.DeleteFile(ctx, info)
 		return &DeleteArtifactResponse{
 			BaseResponse: BaseResponse{
@@ -195,8 +192,7 @@ func (c Controller) PutFile(
 			}
 		}
 
-		key := base.GetFactoryKey(artifact2.PackageTypeGENERIC, registry.Type)
-		genericRegistry, _ := base.Factory(key).(generic2.Registry)
+		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, sha256, err := genericRegistry.PutFile(ctx, info, reader, contentType)
 		return &PutArtifactResponse{
 			BaseResponse: BaseResponse{
