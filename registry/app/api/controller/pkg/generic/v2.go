@@ -45,6 +45,7 @@ func (c Controller) DownloadFile(
 			}
 		}
 
+		//nolint:errcheck
 		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, fileReader, readCloser, redirectURL, err := genericRegistry.DownloadFile(ctx, info, filePath)
 		return &GetArtifactResponse{
@@ -103,6 +104,7 @@ func (c Controller) HeadFile(
 			}
 		}
 
+		//nolint:errcheck
 		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, err := genericRegistry.HeadFile(ctx, info, filePath)
 		return &HeadArtifactResponse{
@@ -145,6 +147,7 @@ func (c Controller) DeleteFile(ctx context.Context, info generic.ArtifactInfo) *
 			}
 		}
 
+		//nolint:errcheck
 		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, err := genericRegistry.DeleteFile(ctx, info)
 		return &DeleteArtifactResponse{
@@ -192,6 +195,7 @@ func (c Controller) PutFile(
 			}
 		}
 
+		//nolint:errcheck
 		genericRegistry := base.GetRegistry(artifact2.PackageTypeGENERIC, registry.Type).(genericpkg.Registry)
 		headers, sha256, err := genericRegistry.PutFile(ctx, info, reader, contentType)
 		return &PutArtifactResponse{
