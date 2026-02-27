@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"slices"
 	"time"
 
 	"github.com/harness/gitness/errors"
@@ -279,47 +278,6 @@ func (s *Service) GetCommitDivergences(
 	return &GetCommitDivergencesOutput{
 		Divergences: divergences,
 	}, nil
-}
-
-// TODO: remove. Kept for backwards compatibility.
-func (s *Service) FindOversizeFiles(
-	ctx context.Context,
-	params *FindOversizeFilesParams,
-) (*FindOversizeFilesOutput, error) {
-	if params == nil || params.RepoUID == "" {
-		return nil, api.ErrRepositoryPathEmpty
-	}
-	repoPath := getFullPathForRepo(s.reposRoot, params.RepoUID)
-
-	if len(params.SizeLimits) == 0 {
-		return &FindOversizeFilesOutput{
-			FileInfosPerLimit: make(map[int64][]FileInfo),
-			TotalsPerLimit:    make(map[int64]int64),
-		}, nil
-	}
-
-	var objects []parser.BatchCheckObject
-	for _, gitObjDir := range params.GitObjectDirs {
-		objs, err := s.listGitObjDir(ctx, repoPath, gitObjDir)
-		if err != nil {
-			return nil, err
-		}
-		objects = append(objects, objs...)
-	}
-
-	// sort objects in descending order by Size (largest to smallest)
-	slices.SortFunc(objects, func(a, b parser.BatchCheckObject) int {
-		switch {
-		case a.Size > b.Size:
-			return -1
-		case a.Size < b.Size:
-			return 1
-		default:
-			return 0
-		}
-	})
-
-	return findOversizeFiles(objects, params), nil
 }
 
 func (s *Service) listGitObjDir(

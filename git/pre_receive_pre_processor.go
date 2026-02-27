@@ -38,6 +38,9 @@ type FindOversizeFilesParams struct {
 	RepoUID       string
 	GitObjectDirs []string
 
+	// depracated: use SizeLimits instead
+	SizeLimit int64
+
 	SizeLimits []int64
 }
 
@@ -47,6 +50,10 @@ type FileInfo struct {
 }
 
 type FindOversizeFilesOutput struct {
+	// deprecated: use FileInfosPerLimit and TotalsPerLimit instead
+	FileInfos []FileInfo
+	Total     int64
+
 	// Each file info is stored only at the highest limit it exceeds, avoiding repetition.
 	FileInfosPerLimit map[int64][]FileInfo
 	// TotalsPerLimit maps each limit to the count of files in that specific limit band.
@@ -185,7 +192,17 @@ func findOversizeFiles(
 		TotalsPerLimit:    make(map[int64]int64),
 	}
 
-	if params == nil || len(params.SizeLimits) == 0 {
+	if params == nil {
+		return out
+	}
+
+	// Backward compatibility: if only SizeLimit is set, use it as a single-element SizeLimits.
+	sizeLimits := params.SizeLimits
+	if len(sizeLimits) == 0 && params.SizeLimit > 0 {
+		sizeLimits = []int64{params.SizeLimit}
+	}
+
+	if len(sizeLimits) == 0 {
 		return out
 	}
 
@@ -198,8 +215,8 @@ func findOversizeFiles(
 		// Since a file exceeding a higher limit also exceeds all lower limits,
 		// we store each file only at its highest exceeded limit to avoid repetition.
 		var highestExceeded int64 = -1
-		for _, limit := range params.SizeLimits {
-			if obj.Size < limit {
+		for _, limit := range sizeLimits {
+			if obj.Size <= limit {
 				break
 			}
 			highestExceeded = limit
@@ -217,6 +234,14 @@ func findOversizeFiles(
 				Size: obj.Size,
 			})
 		}
+	}
+
+	// Backward compatibility: populate deprecated FileInfos and Total
+	// with the accumulated results for the smallest limit (all oversize files).
+	minLimit := sizeLimits[0]
+	out.Total = out.AccumulatedTotal(minLimit)
+	for _, limit := range sizeLimits {
+		out.FileInfos = append(out.FileInfos, out.FileInfosPerLimit[limit]...)
 	}
 
 	return out

@@ -454,7 +454,10 @@ func processProtectionViolations(
 		if settingsViolations.ExceededFileSizeLimit > 0 {
 			output.Messages = append(
 				output.Messages,
-				repoSettingsBlockPrefix+fmt.Sprintf("File size limit of %d bytes exceeded.", settingsViolations.ExceededFileSizeLimit),
+				repoSettingsBlockPrefix+fmt.Sprintf(
+					"File size limit of %d bytes exceeded.",
+					settingsViolations.ExceededFileSizeLimit,
+				),
 			)
 			criticalViolation = true
 		}

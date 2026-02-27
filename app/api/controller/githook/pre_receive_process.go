@@ -68,6 +68,7 @@ func (c *Controller) processObjects(
 
 	if len(sizeLimits) > 0 {
 		preReceiveObjsIn.FindOversizeFilesParams = &git.FindOversizeFilesParams{
+			SizeLimit:  sizeLimits[0], // deprecated: min of all limits for backward compatibility
 			SizeLimits: sizeLimits,
 		}
 	}
