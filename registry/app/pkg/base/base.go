@@ -281,10 +281,6 @@ func (l *localBase) DownloadRawFile(
 			Msg("Failed to download raw file")
 		return responseHeaders, nil, "", err
 	}
-	log.Ctx(ctx).Info().
-		Str("filePath", filePath).
-		Int64("registryID", info.RegistryID).
-		Msg("Successfully downloaded raw file")
 	responseHeaders.Code = http.StatusOK
 	return responseHeaders, fileReader, redirectURL, nil
 }
