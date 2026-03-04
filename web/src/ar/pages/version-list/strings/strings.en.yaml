@@ -17,6 +17,8 @@ table:
     tags: Tags
     scanStatus: Evaluation Status
 actions:
+  addTag: Add Tag
+  addTagPlaceholder: Type tag name and press Enter
   deleteVersion: Delete
   archiveVersion: Archive
   restoreVersion: Restore
@@ -24,5 +26,7 @@ actions:
   removeQuarantine: Remove From Quarantine
   reEvaluate: Re-Evaluate
 messages:
+  addTagSuccess: Tag added successfully
+  addTagFailed: Failed to add tag
   reEvaluateSuccess: Submitted request for Re-Evaluation successfully!
   reEvaluateFailed: Failed to submit request!

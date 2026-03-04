@@ -18,7 +18,14 @@ import React, { useState } from 'react'
 import { get } from 'lodash-es'
 
 import { RepositoryConfigType } from '@ar/common/types'
-import { useAppStore, useBulkDownloadFile, useAllowSoftDelete, useFeatureFlags, useRoutes } from '@ar/hooks'
+import {
+  useAppStore,
+  useBulkDownloadFile,
+  useAllowSoftDelete,
+  useFeatureFlags,
+  useRoutes,
+  useParentHooks
+} from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
 import ActionButton from '@ar/components/ActionButton/ActionButton'
 import CopyMenuItem from '@ar/components/MenuItemTypes/CopyMenuItem'
@@ -34,6 +41,7 @@ import RemoveQurantineMenuItem from './RemoveQurantineMenuItem'
 import DownloadVersionMenuItem from './DownloadVersionMenuItem'
 import SoftDeleteVersionMenuItem from './SoftDeleteVersionMenuItem'
 import ReEvaluateMenuItem from './ReEvaluateMenuItem'
+import AddTagMenuItem, { AddTagModalContent } from './AddTagMenuItem'
 
 export default function VersionActions({
   data,
@@ -52,11 +60,30 @@ export default function VersionActions({
   const routes = useRoutes()
   const { isCurrentSessionPublic } = useAppStore()
   const { getString } = useStrings()
+  const { useModalHook } = useParentHooks()
   const { HAR_DEPENDENCY_FIREWALL } = useFeatureFlags()
   const isBulkDownloadFileEnabled = useBulkDownloadFile()
   const allowSoftDelete = useAllowSoftDelete()
   const isFirewallEnabled = data.firewallMode ? data.firewallMode !== 'ALLOW' : false
   const allowReEvaluate = HAR_DEPENDENCY_FIREWALL && isFirewallEnabled && repoType === RepositoryConfigType.UPSTREAM
+
+  const closeMenu = () => {
+    setOpen(false)
+    onClose?.()
+  }
+
+  const [showAddTagModal, hideAddTagModal] = useModalHook(
+    () => (
+      <AddTagModalContent
+        artifactKey={artifactKey}
+        repoKey={repoKey}
+        versionKey={versionKey}
+        hideModal={hideAddTagModal}
+        onClose={closeMenu}
+      />
+    ),
+    [artifactKey, repoKey, versionKey]
+  )
 
   const isAllowed = (action: VersionAction): boolean => {
     if (!allowedActions) return true
@@ -177,6 +204,18 @@ export default function VersionActions({
             setOpen(false)
             onClose?.()
           }}
+        />
+      )}
+      {isAllowed(VersionAction.AddTag) && (
+        <AddTagMenuItem
+          artifactKey={artifactKey}
+          repoKey={repoKey}
+          versionKey={versionKey}
+          data={data}
+          pageType={pageType}
+          readonly={readonly}
+          onClose={closeMenu}
+          openAddTagModal={showAddTagModal}
         />
       )}
     </ActionButton>
