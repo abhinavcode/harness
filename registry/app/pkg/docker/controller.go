@@ -422,13 +422,13 @@ func (c *Controller) CancelBlobUpload(
 		errors = append(errors, e)
 		return responseHeaders, errors
 	}
-	defer blobCtx.Upload.Close()
 
 	responseHeaders = &commons.ResponseHeaders{
 		Headers: map[string]string{"Docker-Upload-UUID": blobCtx.UUID},
 	}
 
 	//nolint:contextcheck
+	// Note: Cancel() internally closes the writer, so no defer Close() needed
 	if err := blobCtx.Upload.Cancel(blobCtx); err != nil {
 		log.Ctx(ctx).Error().Stack().Err(err).Msgf("error encountered canceling upload: %v", err)
 		errors = append(errors, errcode.ErrCodeUnknown.WithDetail(err))
