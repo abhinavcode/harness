@@ -43,7 +43,7 @@ table:
     archivedAt: Archived At
     url: URL
     size: '{{ $.digestList.table.columns.size }}'
-    artifacts: '{{ $.artifactList.pageHeading }}'
+    artifacts: Packages
     upstreamProxies: '{{ $.repositoryDetails.repositoryForm.upstreamProxiesTitle }}'
     downloads: Downloads
     type: Type

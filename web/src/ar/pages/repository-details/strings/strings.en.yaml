@@ -61,7 +61,7 @@ repositoryForm:
     privateDescription: You can manage who can access this registry
 tabs:
   configuration: Configuration
-  packages: '{{ $.artifactList.pageHeading }}'
+  packages: Packages
   datasets: Datasets
   models: Models
   webhooks: Webhooks
