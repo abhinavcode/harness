@@ -19,13 +19,14 @@ import React from 'react'
 import { useStrings } from '@ar/frameworks/strings'
 import { useParentComponents } from '@ar/hooks'
 import { PermissionIdentifier, ResourceType } from '@ar/common/permissionTypes'
+import type { RepositoryPackageType } from '@ar/common/types'
 
 import type { VersionActionProps } from './types'
 import useDeleteVersionModal from '../../hooks/useDeleteVersionModal'
 import { useUtilsForDeleteVersion } from '../../hooks/useUtilsForDeleteVersion'
 
 export default function DeleteVersionMenuItem(props: VersionActionProps): JSX.Element {
-  const { artifactKey, repoKey, readonly, onClose, versionKey, pageType, data } = props
+  const { artifactKey, repoKey, readonly, onClose, versionKey, pageType, data, digest } = props
   const { getString } = useStrings()
   const { RbacMenuItem } = useParentComponents()
 
@@ -41,6 +42,8 @@ export default function DeleteVersionMenuItem(props: VersionActionProps): JSX.El
     repoKey,
     versionKey,
     artifactType: data?.artifactType,
+    packageType: data?.packageType as RepositoryPackageType,
+    digest,
     onSuccess: handleAfterDeleteVersion
   })
 

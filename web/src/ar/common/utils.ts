@@ -47,3 +47,5 @@ export function getPackageTypesForApiQueryParams(packageTypes: RepositoryPackage
 export const encodeFileName = (fileName: string): string => {
   return fileName.replace(INVALID_FILENAME_CHARS, '_')
 }
+
+export { decodeHtmlEntities } from './utils/decodeHtmlEntities'

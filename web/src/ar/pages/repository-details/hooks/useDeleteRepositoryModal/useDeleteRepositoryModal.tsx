@@ -22,6 +22,7 @@ import { useDeleteRegistryMutation } from '@harnessio/react-har-service-client'
 import { useStrings } from '@ar/frameworks/strings'
 import { useGetSpaceRef, useParentHooks } from '@ar/hooks'
 import DeleteModalContent from '@ar/components/Form/DeleteModalContent'
+import { decodeHtmlEntities } from '@ar/common/utils'
 
 interface useDeleteRepositoryModalProps {
   repoKey: string
@@ -35,6 +36,9 @@ export default function useDeleteRepositoryModal(props: useDeleteRepositoryModal
   const spaceRef = useGetSpaceRef(repoKey)
 
   const { mutateAsync: deleteRepository } = useDeleteRegistryMutation()
+
+  // Decode HTML entities to display properly
+  const decodedRepoKey = decodeHtmlEntities(repoKey)
 
   const handleDeleteRepository = async (): Promise<void> => {
     try {
@@ -60,12 +64,13 @@ export default function useDeleteRepositoryModal(props: useDeleteRepositoryModal
     contentText: (
       <DeleteModalContent
         entity="repository"
-        value={repoKey}
+        value={decodedRepoKey}
         onSubmit={handleDeleteRepository}
         onClose={handleCloseDialog}
         content={getString('repositoryList.deleteModal.contentText')}
         placeholder={getString('repositoryList.deleteModal.inputPlaceholder')}
         inputLabel={getString('repositoryList.deleteModal.inputLabel')}
+        inputLabelValue={decodedRepoKey}
       />
     ),
     customButtons: <></>,

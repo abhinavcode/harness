@@ -23,6 +23,7 @@ import { useGetSpaceRef, useParentHooks } from '@ar/hooks'
 import { useStrings } from '@ar/frameworks/strings'
 import { encodeRef } from '@ar/hooks/useGetSpaceRef'
 import DeleteModalContent from '@ar/components/Form/DeleteModalContent'
+import { decodeHtmlEntities } from '@ar/common/utils'
 
 interface useDeleteArtifactModalProps {
   repoKey: string
@@ -38,6 +39,9 @@ export default function useDeleteArtifactModal(props: useDeleteArtifactModalProp
   const spaceRef = useGetSpaceRef(repoKey)
 
   const { mutateAsync: deleteArtifact } = useDeleteArtifactMutation()
+
+  // Decode HTML entities to display properly
+  const decodedArtifactKey = decodeHtmlEntities(artifactKey)
 
   const handleDeleteArtifact = async (): Promise<void> => {
     try {
@@ -67,12 +71,13 @@ export default function useDeleteArtifactModal(props: useDeleteArtifactModalProp
     contentText: (
       <DeleteModalContent
         entity="package"
-        value={artifactKey}
+        value={decodedArtifactKey}
         onSubmit={handleDeleteArtifact}
         onClose={handleCloseDialog}
         content={getString('artifactDetails.deleteModal.contentText')}
         placeholder={getString('artifactDetails.deleteModal.inputPlaceholder')}
         inputLabel={getString('artifactDetails.deleteModal.inputLabel')}
+        inputLabelValue={decodedArtifactKey}
       />
     ),
     customButtons: <></>,
