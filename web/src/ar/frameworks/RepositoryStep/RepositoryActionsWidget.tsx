@@ -22,23 +22,30 @@ import type { RepositoryPackageType } from '@ar/common/types'
 import repositoryFactory from './RepositoryFactory'
 import type { RepositoryAbstractFactory } from './RepositoryAbstractFactory'
 import type { RepositoryActionsProps } from './Repository'
+import { RegistryRefProvider } from './RegistryRefContext'
 
 interface RepositoryActionsWidgetProps<T> extends RepositoryActionsProps<T> {
   factory?: RepositoryAbstractFactory
   packageType: RepositoryPackageType
+  /** Pre-computed registry ref from list (path). Provided via context to actions for Setup Client. */
+  registryRef?: string
 }
 
 export default function RepositoryActionsWidget<T>(props: RepositoryActionsWidgetProps<T>): JSX.Element {
-  const { factory = repositoryFactory, packageType, type, data, readonly, pageType } = props
+  const { factory = repositoryFactory, packageType, type, data, readonly, pageType, registryRef } = props
   const { getString } = useStrings()
   const repositoryType = factory?.getRepositoryType(packageType)
   if (!repositoryType) {
     return <Text intent="warning">{getString('stepNotFound')}</Text>
   }
-  return repositoryType.renderActions({
-    data,
-    readonly,
-    type,
-    pageType
-  })
+  return (
+    <RegistryRefProvider value={registryRef}>
+      {repositoryType.renderActions({
+        data,
+        readonly,
+        type,
+        pageType
+      })}
+    </RegistryRefProvider>
+  )
 }

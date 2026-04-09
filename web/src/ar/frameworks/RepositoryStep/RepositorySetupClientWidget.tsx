@@ -27,19 +27,27 @@ import type { RepositoryAbstractFactory } from './RepositoryAbstractFactory'
 interface RepositorySetupClientWidgetProps extends RepositoySetupClientProps {
   factory?: RepositoryAbstractFactory
   type: RepositoryPackageType
+  /** Pre-computed registry ref (e.g. from list). When set, used for client-setup-details API. Injected here so types don't prop-drill. */
+  registryRef?: string
 }
 
 export default function RepositorySetupClientWidget(props: RepositorySetupClientWidgetProps): JSX.Element {
-  const { factory = repositoryFactory, type, onClose, repoKey, artifactKey, versionKey } = props
+  const { factory = repositoryFactory, type, onClose, repoKey, artifactKey, versionKey, registryRef } = props
   const { getString } = useStrings()
   const repositoryType = factory?.getRepositoryType(type)
   if (!repositoryType) {
     return <Text intent="warning">{getString('stepNotFound')}</Text>
   }
-  return repositoryType.renderSetupClient({
+  const content = repositoryType.renderSetupClient({
     onClose,
     repoKey,
     artifactKey,
     versionKey
   })
+  if (!content || !React.isValidElement(content)) {
+    return content
+  }
+  return React.cloneElement(content, {
+    registryRef
+  } as React.Attributes & { registryRef?: string })
 }
