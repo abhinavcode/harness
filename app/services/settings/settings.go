@@ -28,4 +28,6 @@ var (
 	DefaultPrincipalCommitterMatch     = false
 	KeyGitLFSEnabled               Key = "git_lfs_enabled"
 	DefaultGitLFSEnabled               = true
+	DefaultBranchKey               Key = "default_branch"
+	DefaultBranch                      = string("main")
 )
